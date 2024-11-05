@@ -1,11 +1,13 @@
-import firebaseDB, { firebaseStorage } from "@/firebase";
-import { FileType } from "@/types/app";
-import { getBase64 } from "@/utils/app";
+import firebaseDB from "@/firebase";
+import { QueryNames } from "@/react-query/queryNames";
+import { getBase64, removeBase64Prefix } from "@/utils/app";
 import { InboxOutlined } from "@ant-design/icons";
-import { Image, Modal, Upload, UploadFile, UploadProps } from "antd";
+import { useQueryClient } from "@tanstack/react-query";
+import { message, Modal, Upload, UploadFile, UploadProps } from "antd";
+import { RcFile } from "antd/es/upload";
 import { addDoc, collection } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { FC, useState } from "react";
+import "./AddImagesModal.scss";
 
 type Props = {
   isOpen: boolean;
@@ -13,50 +15,59 @@ type Props = {
 };
 
 export const AddImagesModal: FC<Props> = ({ isOpen, onCancel }) => {
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState("");
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePreview = async (file: UploadFile) => {
-    if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj as FileType);
-    }
-
-    setPreviewImage(file.url || (file.preview as string));
-    setPreviewOpen(true);
-  };
+  const queryClient = useQueryClient();
 
   const handleChange: UploadProps["onChange"] = ({ fileList: newFileList }) =>
     setFileList(newFileList);
 
-  const customUpload = async ({ file, onSuccess, onError }: any) => {
+  const onSave = async () => {
+    setIsLoading(true);
+
+    const newBase64fileList = await Promise.all(
+      fileList.map((file) => getBase64(file.originFileObj as RcFile))
+    ).then((res) =>
+      res.map((r) => ({ ...r, image: removeBase64Prefix(r.image) }))
+    );
+
     try {
-      const storageRef = ref(firebaseStorage, `images/${file.name}`);
-      await uploadBytes(storageRef, file);
+      await Promise.all(
+        newBase64fileList.map(async (img) => {
+          await addDoc(collection(firebaseDB, "images"), img);
+        })
+      );
 
-      const downloadURL = await getDownloadURL(storageRef);
-
-      await addDoc(collection(firebaseDB, "images"), {
-        url: downloadURL,
-        name: file.name,
-      });
-
-      onSuccess("Ok");
+      onCancel();
+      message.success("Imagen(s) adicionada(s) com sucesso!");
+      queryClient.refetchQueries({ queryKey: [QueryNames.GetImages] });
     } catch (error) {
-      onError(error);
       console.error(error);
     }
+
+    setIsLoading(false);
   };
 
   return (
-    <Modal title="Adicionar imagen(s)" open={isOpen} onCancel={onCancel}>
+    <Modal
+      title="Adicionar imagen(s)"
+      open={isOpen}
+      onCancel={onCancel}
+      onOk={onSave}
+      destroyOnClose
+      okText="Guardar"
+      okButtonProps={{ loading: isLoading }}
+    >
       <Upload
-        customRequest={customUpload}
         type="drag"
+        listType="picture"
         fileList={fileList}
-        onPreview={handlePreview}
         onChange={handleChange}
+        beforeUpload={() => false}
         multiple
+        className="upload-images"
+        accept="image/png, image/jpeg"
       >
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
@@ -71,18 +82,6 @@ export const AddImagesModal: FC<Props> = ({ isOpen, onCancel }) => {
           (Suporta apenas imagens do tipo PNG, JPG, JPEG)
         </p>
       </Upload>
-
-      {previewImage && (
-        <Image
-          wrapperStyle={{ display: "none" }}
-          preview={{
-            visible: previewOpen,
-            onVisibleChange: (visible) => setPreviewOpen(visible),
-            afterOpenChange: (visible) => !visible && setPreviewImage(""),
-          }}
-          src={previewImage}
-        />
-      )}
     </Modal>
   );
 };

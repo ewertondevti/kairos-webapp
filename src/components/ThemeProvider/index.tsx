@@ -16,15 +16,26 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
     token: {
       colorPrimary: Colors.ColorPrimary,
       colorText: Colors.ColorPrimaryText,
+      fontFamily: '"Nunito", sans-serif',
     },
     components: {
       Layout: {
-        headerBg: Colors.ColorHeader,
-        bodyBg: Colors.ColorContent,
+        headerBg: "linear-gradient(to top, #000000, #002c00)",
       },
       Card: {
         colorBgContainer: Colors.ColorContent,
         colorBorderSecondary: Colors.ColorHeader,
+      },
+      Typography: {
+        colorTextHeading: Colors.ColorPrimary,
+      },
+      Drawer: {
+        colorIcon: Colors.ColorPrimary,
+        colorText: Colors.ColorPrimary,
+        colorSplit: Colors.ColorPrimary,
+      },
+      Modal: {
+        colorTextHeading: Colors.ColorPrimary,
       },
     },
   };

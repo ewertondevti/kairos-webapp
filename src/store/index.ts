@@ -1,12 +1,12 @@
-import firebaseDB from "@/firebase";
-import { AddDocumentPayload } from "@/types/store";
-import { doc, setDoc } from "firebase/firestore";
+import { User } from "firebase/auth";
+import { createContext, useContext } from "react";
 
-export const addDocument = async ({
-  collectionId,
-  documentId,
-  data,
-}: AddDocumentPayload) => {
-  const result = await setDoc(doc(firebaseDB, collectionId), data);
-  return result;
-};
+interface AuthContextType {
+  user: User | null;
+}
+
+const AuthContext = createContext<AuthContextType>({ user: null });
+
+export const useAuth = () => useContext(AuthContext);
+
+export default AuthContext;

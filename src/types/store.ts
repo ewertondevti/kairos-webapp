@@ -4,6 +4,14 @@ export type CommonType = {
 
 export type ImageType = {
   image: string;
+  filename: string;
+  type: string;
+};
+
+export type CollectionType = {
+  name: string;
+  date: string;
+  images: string[];
 };
 
 export type ImageResult = ImageType & CommonType;

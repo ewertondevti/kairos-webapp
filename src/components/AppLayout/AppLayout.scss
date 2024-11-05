@@ -3,6 +3,10 @@
     height: 100%;
     overflow: hidden;
 
+    &-header {
+      border-bottom: 1px solid rgba(253, 253, 253, 0.12);
+    }
+
     &-content {
       height: 100%;
       overflow-y: auto;

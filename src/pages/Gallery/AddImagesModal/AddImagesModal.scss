@@ -1,0 +1,23 @@
+.upload {
+  &-images {
+    &.ant-upload-wrapper {
+      .ant-upload-list {
+        max-height: 60dvh;
+        overflow-y: auto;
+      }
+    }
+  }
+}
+
+@media (max-width: 800px) {
+  .upload {
+    &-images {
+      &.ant-upload-wrapper {
+        .ant-upload-list {
+          max-height: 30dvh;
+          overflow-y: auto;
+        }
+      }
+    }
+  }
+}

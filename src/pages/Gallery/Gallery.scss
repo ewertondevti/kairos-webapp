@@ -1,0 +1,58 @@
+.gallery {
+  &__image {
+    &.ant-image-img {
+      height: 185px;
+      width: 185px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+  }
+}
+
+/* Smartphones (retratos) */
+@media only screen and (max-width: 480px) {
+  .gallery {
+    &__image {
+      &.ant-image-img {
+        height: 80px;
+        width: 80px;
+      }
+    }
+  }
+}
+
+/* Smartphones (paisagens) */
+@media only screen and (min-width: 481px) and (max-width: 767px) {
+  .gallery {
+    &__image {
+      &.ant-image-img {
+        height: 100px;
+        width: 100px;
+      }
+    }
+  }
+}
+
+/* Tablets (retratos) */
+@media only screen and (min-width: 768px) and (max-width: 1024px) {
+  .gallery {
+    &__image {
+      &.ant-image-img {
+        height: 100px;
+        width: 100px;
+      }
+    }
+  }
+}
+
+/* Tablets (paisagens) */
+@media only screen and (min-width: 1025px) and (max-width: 1280px) {
+  .gallery {
+    &__image {
+      &.ant-image-img {
+        height: 120px;
+        width: 120px;
+      }
+    }
+  }
+}

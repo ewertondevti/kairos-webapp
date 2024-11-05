@@ -3,6 +3,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import AuthProvider from "./components/AuthProvider/index.tsx";
 import { ThemeProvider } from "./components/ThemeProvider/index.tsx";
 import "./globals.scss";
 
@@ -12,7 +13,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
 
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
