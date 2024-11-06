@@ -8,13 +8,20 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Col, Divider, Row } from "antd";
 import { signOut } from "firebase/auth";
-import { useMemo } from "react";
+import { FC, useMemo } from "react";
 
-export const MenuContent = () => {
+type Props = {
+  onClose: () => void;
+};
+
+export const MenuContent: FC<Props> = ({ onClose }) => {
   const { user } = useAuth();
   const isAuthenticated = useMemo(() => !!user, [user]);
 
-  const onLogout = async () => await signOut(firebaseAuth);
+  const onLogout = async () => {
+    await signOut(firebaseAuth);
+    onClose();
+  };
 
   return (
     <Row gutter={[8, 16]}>
@@ -36,21 +43,25 @@ export const MenuContent = () => {
         </Button>
       </Col>
 
-      <Col span={24}>
-        <Divider style={{ width: "auto", margin: 0 }} />
-      </Col>
+      {isAuthenticated && (
+        <>
+          <Col span={24}>
+            <Divider style={{ width: "auto", margin: 0 }} />
+          </Col>
 
-      <Col span={24}>
-        <Button
-          type="text"
-          danger
-          icon={<FontAwesomeIcon icon={faPowerOff} />}
-          block
-          onClick={onLogout}
-        >
-          Log out
-        </Button>
-      </Col>
+          <Col span={24}>
+            <Button
+              type="text"
+              danger
+              icon={<FontAwesomeIcon icon={faPowerOff} />}
+              block
+              onClick={onLogout}
+            >
+              Log out
+            </Button>
+          </Col>
+        </>
+      )}
     </Row>
   );
 };
