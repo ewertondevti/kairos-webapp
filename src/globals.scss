@@ -22,3 +22,13 @@
 .no-margin {
   margin: 0;
 }
+
+.align-left {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.align-center {
+  justify-content: center;
+  text-align: center;
+}

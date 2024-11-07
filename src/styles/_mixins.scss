@@ -1,0 +1,13 @@
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin object-fit-cover {
+  object-fit: cover;
+}
+
+@mixin gradient-background($direction, $colors...) {
+  background: linear-gradient($direction, $colors);
+}

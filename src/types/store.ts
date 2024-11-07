@@ -3,18 +3,18 @@ export type CommonType = {
 };
 
 export type ImageType = {
-  image: string;
-  filename: string;
-  type: string;
+  url: string;
+  name: string;
 };
 
-export type CollectionType = {
+export type AlbumType = {
   name: string;
-  date: string;
+  coverImage: string;
   images: string[];
 };
 
 export type ImageResult = ImageType & CommonType;
+export type AlbumResult = AlbumType & CommonType;
 
 export type AddDocumentPayload = {
   collectionId: string;

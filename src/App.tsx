@@ -8,6 +8,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path={RoutesEnums.Home} element={<AppLayout />}>
+          <Route index element={<></>} />
           <Route path={RoutesEnums.Gallery} element={<Gallery />} />
         </Route>
 

@@ -1,11 +1,10 @@
-import firebaseDB from "@/firebase";
+import firebaseDB, { firebaseStorage } from "@/firebase";
 import { QueryNames } from "@/react-query/queryNames";
-import { getBase64, removeBase64Prefix } from "@/utils/app";
 import { InboxOutlined } from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { message, Modal, Upload, UploadFile, UploadProps } from "antd";
-import { RcFile } from "antd/es/upload";
 import { addDoc, collection } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { FC, useState } from "react";
 import "./AddImagesModal.scss";
 
@@ -20,43 +19,78 @@ export const AddImagesModal: FC<Props> = ({ isOpen, onCancel }) => {
 
   const queryClient = useQueryClient();
 
+  const refresh = () =>
+    queryClient.refetchQueries({ queryKey: [QueryNames.GetImages] });
+
   const handleChange: UploadProps["onChange"] = ({ fileList: newFileList }) =>
     setFileList(newFileList);
 
   const onSave = async () => {
     setIsLoading(true);
-
-    const newBase64fileList = await Promise.all(
-      fileList.map((file) => getBase64(file.originFileObj as RcFile))
-    ).then((res) =>
-      res.map((r) => ({ ...r, image: removeBase64Prefix(r.image) }))
+    setFileList((state) =>
+      state.map((file) => ({ ...file, status: "uploading", percent: 0 }))
     );
 
-    try {
-      await Promise.all(
-        newBase64fileList.map(async (img) => {
-          await addDoc(collection(firebaseDB, "images"), img);
-        })
+    const newProgress: number[] = new Array(fileList.length).fill(0);
+
+    fileList.forEach((file, idx) => {
+      const storageRef = ref(firebaseStorage, `images/${file.name}`);
+      const uploadTask = uploadBytesResumable(
+        storageRef,
+        file.originFileObj as File
       );
 
-      onCancel();
-      message.success("Imagen(s) adicionada(s) com sucesso!");
-      queryClient.refetchQueries({ queryKey: [QueryNames.GetImages] });
-    } catch (error) {
-      console.error(error);
-    }
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const percent =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          newProgress[idx] = percent;
 
-    setIsLoading(false);
+          const status = percent === 100 ? "done" : "uploading";
+
+          setFileList((state) =>
+            state.map((file, index) => {
+              if (idx === index) return { ...file, percent, status };
+              return file;
+            })
+          );
+        },
+        (error) => {
+          message.error(
+            `Erro ao fazer upload do arquivo ${file.name}: ${error.message}`,
+            5
+          );
+        },
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          await addDoc(collection(firebaseDB, "images"), {
+            url: downloadURL,
+            name: file.name,
+          });
+
+          if (idx === fileList.length - 1) {
+            setIsLoading(false);
+            setFileList([]);
+
+            refresh();
+            onCancel();
+
+            message.success("Upload completo!", 3);
+          }
+        }
+      );
+    });
   };
 
   return (
     <Modal
-      title="Adicionar imagen(s)"
+      title="Adicionar imagem(s)"
       open={isOpen}
       onCancel={onCancel}
       onOk={onSave}
       destroyOnClose
-      okText="Guardar"
+      okText="Gravar"
       okButtonProps={{ loading: isLoading }}
     >
       <Upload
