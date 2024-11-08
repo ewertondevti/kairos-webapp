@@ -1,5 +1,6 @@
 import firebaseDB, { firebaseStorage } from "@/firebase";
 import { QueryNames } from "@/react-query/queryNames";
+import { ImageResult } from "@/types/store";
 import { InboxOutlined } from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { message, Modal, Upload, UploadFile, UploadProps } from "antd";
@@ -64,10 +65,13 @@ export const AddImagesModal: FC<Props> = ({ isOpen, onCancel }) => {
         },
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          await addDoc(collection(firebaseDB, "images"), {
-            url: downloadURL,
+
+          const payload: ImageResult = {
             name: file.name,
-          });
+            url: downloadURL,
+          };
+
+          await addDoc(collection(firebaseDB, "images"), payload);
 
           if (idx === fileList.length - 1) {
             setIsLoading(false);

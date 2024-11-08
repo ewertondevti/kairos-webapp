@@ -1,5 +1,5 @@
 export type CommonType = {
-  id: string;
+  id?: string;
 };
 
 export type ImageType = {
@@ -9,8 +9,8 @@ export type ImageType = {
 
 export type AlbumType = {
   name: string;
-  coverImage: string;
-  images: string[];
+  coverImages: ImageResult[];
+  images: ImageResult[];
 };
 
 export type ImageResult = ImageType & CommonType;

@@ -2,20 +2,19 @@
 
 .gallery {
   &__image {
-    &-content {
-      @include gradient-background(to top, #002c00, green);
+    @include object-fit-cover;
 
-      background-color: #002c00;
-      position: relative;
-      padding: 3px;
-      border-radius: 10px;
+    &-container {
+      &--photos {
+        width: 100dvw;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
     }
 
-    &.ant-image-img {
-      @include object-fit-cover;
-
-      height: 185px;
-      width: 185px;
+    &-content {
+      position: relative;
+      padding: 3px;
       border-radius: 10px;
     }
 
@@ -29,6 +28,108 @@
         opacity: 1;
       }
     }
+
+    &.image__size {
+      &-default {
+        @include view-default-desktop;
+      }
+
+      &-small {
+        @include view-small-desktop;
+      }
+
+      &-large {
+        @include view-large-desktop;
+      }
+    }
+
+    &-select {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+    }
+  }
+
+  &__album {
+    &-content {
+      &-create {
+        padding: 3px;
+        border: 1px dashed green;
+        transition: transform 0.5s ease;
+
+        &:hover {
+          @include hover-scale(1.1);
+        }
+      }
+
+      &:hover {
+        @include hover-scale(1.1);
+      }
+    }
+  }
+
+  &__album {
+    &-content {
+      position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+      width: 200px;
+      height: 200px;
+
+      span {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+      }
+
+      &--cover1 {
+        &.ant-image-img {
+          @include album-xl;
+
+          position: absolute;
+          transform: rotate(0deg);
+          top: 10px;
+          left: 48px;
+          z-index: 3;
+
+          &:hover {
+            z-index: 10;
+          }
+        }
+      }
+
+      &--cover2 {
+        &.ant-image-img {
+          @include album-xl;
+
+          position: absolute;
+          transform: rotate(5deg);
+          top: 5px;
+          left: 48px;
+          z-index: 2;
+
+          &:hover {
+            z-index: 10;
+          }
+        }
+      }
+
+      &--cover3 {
+        &.ant-image-img {
+          @include album-xl;
+
+          position: absolute;
+          transform: rotate(10deg);
+          top: 0;
+          left: 48px;
+          z-index: 1;
+
+          &:hover {
+            z-index: 10;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -36,9 +137,25 @@
 @media only screen and (max-width: 480px) {
   .gallery {
     &__image {
-      &.ant-image-img {
-        height: 80px;
-        width: 80px;
+      &-container {
+        &--photos {
+          width: 100dvw;
+          justify-content: center;
+        }
+      }
+
+      &.image__size {
+        &-default {
+          @include view-default-smartphone-portrait;
+        }
+
+        &-small {
+          @include view-small-smartphone-portrait;
+        }
+
+        &-large {
+          @include view-large-smartphone-portrait;
+        }
       }
     }
   }
@@ -48,9 +165,25 @@
 @media only screen and (min-width: 481px) and (max-width: 767px) {
   .gallery {
     &__image {
-      &.ant-image-img {
-        height: 100px;
-        width: 100px;
+      &-container {
+        &--photos {
+          width: 100dvw;
+          justify-content: center;
+        }
+      }
+
+      &.image__size {
+        &-default {
+          @include view-default-smartphone-landscape;
+        }
+
+        &-small {
+          @include view-small-smartphone-landscape;
+        }
+
+        &-large {
+          @include view-large-smartphone-landscape;
+        }
       }
     }
   }
@@ -60,21 +193,53 @@
 @media only screen and (min-width: 768px) and (max-width: 1024px) {
   .gallery {
     &__image {
-      &.ant-image-img {
-        height: 100px;
-        width: 100px;
+      &-container {
+        &--photos {
+          width: 100dvw;
+          justify-content: center;
+        }
+      }
+
+      &.image__size {
+        &-default {
+          @include view-default-tablet-portrait;
+        }
+
+        &-small {
+          @include view-small-tablet-portrait;
+        }
+
+        &-large {
+          @include view-large-tablet-portrait;
+        }
       }
     }
   }
 }
 
 /* Tablets (paisagens) */
-@media only screen and (min-width: 1025px) and (max-width: 1280px) {
+@media only screen and (min-width: 1025px) and (max-width: 1366px) {
   .gallery {
     &__image {
-      &.ant-image-img {
-        height: 120px;
-        width: 120px;
+      &-container {
+        &--photos {
+          width: 100dvw;
+          justify-content: center;
+        }
+      }
+
+      &.image__size {
+        &-default {
+          @include view-default-tablet-landscape;
+        }
+
+        &-small {
+          @include view-small-tablet-landscape;
+        }
+
+        &-large {
+          @include view-large-tablet-landscape;
+        }
       }
     }
   }

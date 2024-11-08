@@ -1,8 +1,7 @@
 import { AlbumModal } from "@/components/AlbumModal";
-import { CustomImage } from "@/components/CustomImage";
+import { TopBar } from "@/components/TopBar";
 import { useGetImages } from "@/react-query";
 import api from "@/services/httpClient";
-import { useAuth } from "@/store";
 import {
   DownloadOutlined,
   LeftOutlined,
@@ -14,27 +13,17 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
 } from "@ant-design/icons";
-import { faUpload } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Col, Flex, Image, Row, Space, Tabs, TabsProps } from "antd";
+import { Col, Image, Row, Space, Tabs } from "antd";
 import Title from "antd/es/typography/Title";
 import { saveAs } from "file-saver";
-import { useMemo, useState } from "react";
-import { AddImagesModal } from "./AddImagesModal";
+import { useState } from "react";
 import "./Gallery.scss";
-import { AlbumsTab } from "./tabs/AlbumsTab";
+import { galleryTabs } from "./tabs/gallery.tabs";
 
 const Gallery = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [current, setCurrent] = useState(0);
 
-  const { user } = useAuth();
-  const isAuthenticated = useMemo(() => !!user, [user]);
-
-  const showModal = () => setIsOpen(true);
-  const hideModal = () => setIsOpen(false);
-
-  const { data, isLoading } = useGetImages();
+  const { data } = useGetImages();
 
   const onDownload = () => {
     if (data) {
@@ -46,61 +35,12 @@ const Gallery = () => {
     }
   };
 
-  const extraBtns: TabsProps["tabBarExtraContent"] = {
-    right: (
-      <Flex gap={8}>
-        <Button type="primary">Selecionar imagem(s)</Button>
-      </Flex>
-    ),
-  };
-
-  const items: TabsProps["items"] = [
-    {
-      key: "all",
-      label: "Todas as fotos",
-      children: (
-        <Flex gap={8} justify="center" className="gallery__image-container">
-          {data?.map((image) => (
-            <CustomImage {...image} key={image.id} isLoading={isLoading} />
-          ))}
-        </Flex>
-      ),
-    },
-    {
-      key: "albuns",
-      label: "Álbuns",
-      children: <AlbumsTab />,
-    },
-    {
-      key: "presentation",
-      label: "Apresentação",
-      children: <></>,
-    },
-    {
-      key: "events",
-      label: "Próximos eventos",
-      children: <></>,
-    },
-  ];
-
   return (
     <Row gutter={[16, 16]}>
-      <Col span={24}>
-        <Flex justify="space-between" align="center">
-          <Title style={{ margin: 0 }}>Galeria</Title>
+      <Title style={{ margin: 0 }}>Galeria</Title>
 
-          <Flex>
-            {isAuthenticated && (
-              <Button
-                type="primary"
-                icon={<FontAwesomeIcon icon={faUpload} />}
-                onClick={showModal}
-              >
-                Upload
-              </Button>
-            )}
-          </Flex>
-        </Flex>
+      <Col span={24}>
+        <TopBar />
       </Col>
 
       <Col span={24}>
@@ -165,11 +105,10 @@ const Gallery = () => {
             },
           }}
         >
-          <Tabs size="large" items={items} tabBarExtraContent={extraBtns} />
+          <Tabs size="large" items={galleryTabs} destroyInactiveTabPane />
         </Image.PreviewGroup>
       </Col>
 
-      <AddImagesModal isOpen={isOpen} onCancel={hideModal} />
       <AlbumModal />
     </Row>
   );

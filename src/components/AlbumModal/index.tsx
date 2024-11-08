@@ -1,7 +1,9 @@
 import firebaseDB from "@/firebase";
 import { useAppState } from "@/store";
 import { AlbumValuesType } from "@/types/album";
+import { AlbumResult } from "@/types/store";
 import { requiredRules } from "@/utils/app";
+import { useQueryClient } from "@tanstack/react-query";
 import { Form, Input, message, Modal } from "antd";
 import { addDoc, collection } from "firebase/firestore";
 import { useState } from "react";
@@ -11,16 +13,27 @@ export const AlbumModal = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [form] = Form.useForm();
+  const queryClient = useQueryClient();
 
-  const { albumModalOpen, toogleAlbumModal } = useAppState();
+  const {
+    albumModalOpen,
+    selectedImages,
+    toogleAlbumModal,
+    updateSelectedImages,
+    updateMode,
+  } = useAppState();
 
   const onSave = async (values: AlbumValuesType) => {
     setIsLoading(true);
 
+    const payload: AlbumResult = {
+      ...values,
+      images: selectedImages,
+      coverImages: selectedImages.slice(0, 3),
+    };
+
     try {
-      await addDoc(collection(firebaseDB, "albums"), {
-        name: values.name,
-      });
+      await addDoc(collection(firebaseDB, "albums"), payload);
 
       message.success("Álbum criado com sucesso!");
     } catch (error) {
@@ -30,9 +43,15 @@ export const AlbumModal = () => {
 
     setIsLoading(false);
     onCancel();
+    queryClient.refetchQueries();
   };
 
-  const onCancel = () => toogleAlbumModal(false);
+  const onCancel = () => {
+    form.resetFields();
+    toogleAlbumModal(false);
+    updateSelectedImages([]);
+    updateMode("default");
+  };
 
   return (
     <Modal
