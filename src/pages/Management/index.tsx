@@ -2,6 +2,7 @@ import { AlbumModal } from "@/components/AlbumModal";
 import { TopBar } from "@/components/TopBar";
 import { useGetImages } from "@/react-query";
 import api from "@/services/httpClient";
+import { useAppState } from "@/store";
 import {
   DownloadOutlined,
   LeftOutlined,
@@ -13,17 +14,25 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
 } from "@ant-design/icons";
-import { Col, Image, Row, Space, Tabs } from "antd";
+import { Col, Image, Row, Space, Tabs, TabsProps } from "antd";
 import Title from "antd/es/typography/Title";
 import { saveAs } from "file-saver";
 import { useState } from "react";
-import "./Gallery.scss";
-import { galleryTabs } from "./tabs/gallery.tabs";
+import { useLocation, useNavigate } from "react-router-dom";
+import "./Management.scss";
+import { managementTabs } from "./tabs/management.tabs";
 
-const Gallery = () => {
+const Management = () => {
   const [current, setCurrent] = useState(0);
 
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
   const { data } = useGetImages();
+
+  const { updateMode } = useAppState();
+
+  const defaultKey = pathname.split("/").filter(Boolean)[1];
 
   const onDownload = () => {
     if (data) {
@@ -35,9 +44,14 @@ const Gallery = () => {
     }
   };
 
+  const onChange: TabsProps["onChange"] = (key) => {
+    updateMode("default");
+    navigate(key);
+  };
+
   return (
     <Row gutter={[16, 16]}>
-      <Title style={{ margin: 0 }}>Galeria</Title>
+      <Title style={{ margin: 0 }}>Gerenciamento</Title>
 
       <Col span={24}>
         <TopBar />
@@ -105,7 +119,12 @@ const Gallery = () => {
             },
           }}
         >
-          <Tabs size="large" items={galleryTabs} destroyInactiveTabPane />
+          <Tabs
+            items={managementTabs}
+            defaultActiveKey={defaultKey}
+            destroyInactiveTabPane
+            onChange={onChange}
+          />
         </Image.PreviewGroup>
       </Col>
 
@@ -114,4 +133,4 @@ const Gallery = () => {
   );
 };
 
-export default Gallery;
+export default Management;

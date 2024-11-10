@@ -28,7 +28,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
   };
 
   const onRedirect = () => {
-    navigate(RoutesEnums.Gallery);
+    navigate(RoutesEnums.Management);
     onClose();
   };
 
@@ -44,9 +44,10 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
             type="text"
             icon={<FontAwesomeIcon icon={faGears} />}
             className="align-left"
+            onClick={onRedirect}
             block
           >
-            Admin
+            Gerenciamento
           </Button>
         </Col>
       )}
@@ -55,7 +56,6 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
         <Button
           type="text"
           icon={<FontAwesomeIcon icon={faImages} />}
-          onClick={onRedirect}
           className="align-left"
           block
         >

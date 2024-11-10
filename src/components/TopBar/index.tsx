@@ -1,5 +1,6 @@
+import { ManagementRoutesEnums } from "@/enums/routesEnums";
 import firebaseDB, { firebaseStorage } from "@/firebase";
-import { AddImagesModal } from "@/pages/Gallery/AddImagesModal";
+import { AddImagesModal } from "@/pages/Management/AddImagesModal";
 import { useAppState, useAuth } from "@/store";
 import { AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
 import {
@@ -22,14 +23,17 @@ import {
   Segmented,
   Tooltip,
 } from "antd";
-import { deleteDoc, doc } from "firebase/firestore";
+import { arrayRemove, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import { useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 
 export const TopBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { pathname } = useLocation();
+  const { id: albumId } = useParams();
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
@@ -44,10 +48,33 @@ export const TopBar = () => {
     toogleAlbumModal,
   } = useAppState();
 
+  const isAlbums = pathname.includes(ManagementRoutesEnums.Albums);
+
   const showModal = () => setIsOpen(true);
   const hideModal = () => setIsOpen(false);
 
   const refresh = () => queryClient.refetchQueries();
+
+  const onDeleteFromAlbum = async () => {
+    setIsLoading(true);
+    const albumRef = doc(firebaseDB, "albums", albumId!);
+
+    // Atualize o campo "images" usando arrayRemove para remover a imagem específica
+    await Promise.all(
+      selectedImages.map(
+        async (image) =>
+          await updateDoc(albumRef, { images: arrayRemove(image) })
+      )
+    )
+      .then(() => {
+        message.success("Fotos removidas do álbum com sucesso!");
+        refresh();
+      })
+      .catch(() =>
+        message.error("Houve um erro ao tentar remover fotos deste álbum!")
+      )
+      .finally(() => setIsLoading(false));
+  };
 
   const onDelete = async () => {
     setIsLoading(true);
@@ -123,7 +150,7 @@ export const TopBar = () => {
               ]}
             />
 
-            {!!selectedImages.length && (
+            {!!selectedImages.length && !albumId && (
               <Button
                 type="primary"
                 icon={<FontAwesomeIcon icon={faImages} />}
@@ -132,12 +159,39 @@ export const TopBar = () => {
                 Criar álbum
               </Button>
             )}
+
+            {!!albumId && (
+              <Button
+                type="primary"
+                icon={<FontAwesomeIcon icon={faImages} />}
+                onClick={() => toogleAlbumModal(true)}
+              >
+                Editar álbum
+              </Button>
+            )}
           </Flex>
         </Col>
 
         <Col>
           <Flex gap={8}>
-            {!!selectedImages.length && (
+            {!!selectedImages.length && !!albumId && (
+              <Popconfirm
+                title={getConfirmMessage()}
+                onConfirm={onDeleteFromAlbum}
+                okText="Apagar"
+                okButtonProps={{ danger: true }}
+              >
+                <Tooltip title="Apagar foto(s) deste álbum">
+                  <Button
+                    danger
+                    icon={<FontAwesomeIcon icon={faTrash} />}
+                    loading={isLoading}
+                  />
+                </Tooltip>
+              </Popconfirm>
+            )}
+
+            {!!selectedImages.length && !isAlbums && (
               <Popconfirm
                 title={getConfirmMessage()}
                 onConfirm={onDelete}
@@ -163,7 +217,7 @@ export const TopBar = () => {
               </Button>
             )}
 
-            {user && mode === "default" && (
+            {user && mode === "default" && !isAlbums && (
               <Button
                 icon={<FontAwesomeIcon icon={faObjectGroup} />}
                 onClick={() => updateMode("select")}

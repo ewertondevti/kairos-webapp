@@ -1,0 +1,412 @@
+@import "/src/styles/mixins";
+
+.management {
+  &__image {
+    @include object-fit-cover;
+
+    &-container {
+      &--photos {
+        width: 100dvw;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+
+    &-content {
+      position: relative;
+      padding: 3px;
+      border-radius: 10px;
+    }
+
+    &-options {
+      opacity: 0.5;
+      position: absolute;
+      top: 5px;
+      right: 5px;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    &.image__size {
+      &-default {
+        @include view-default-desktop;
+      }
+
+      &-small {
+        @include view-small-desktop;
+      }
+
+      &-large {
+        @include view-large-desktop;
+      }
+    }
+
+    &-select {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+    }
+  }
+
+  &__album {
+    &-content {
+      position: relative;
+      transition: transform 1s ease;
+      width: 200px;
+      height: 200px;
+
+      &-create {
+        padding: 3px;
+        border: 1px dashed green;
+        transition: transform 0.5s ease;
+
+        &:hover {
+          @include hover-scale(1.1);
+        }
+      }
+
+      span {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+      }
+
+      &--cover1 {
+        &.ant-image-img {
+          @include album-desktop;
+
+          position: absolute;
+          transform: translateX(0);
+          top: 10px;
+          left: 48px;
+          z-index: 3;
+          transition: transform 1s ease;
+        }
+      }
+
+      &--cover2 {
+        &.ant-image-img {
+          @include album-desktop;
+
+          position: absolute;
+          transform: translateX(10px);
+          top: 5px;
+          left: 48px;
+          z-index: 2;
+          transition: transform 1s ease;
+        }
+      }
+
+      &--cover3 {
+        &.ant-image-img {
+          @include album-desktop;
+
+          position: absolute;
+          transform: translateX(20px);
+          top: 0;
+          left: 48px;
+          z-index: 1;
+          transition: transform 1s ease;
+        }
+      }
+
+      &:hover {
+        @include hover-scale(1.1);
+
+        .management__album-content--cover1 {
+          transform: scale(1.25) rotate(-15deg) rotateX(-3deg)
+            translate(-60px, -5px);
+
+          &:hover {
+            z-index: 10;
+            transform: scale(1.5) rotate(-15deg) rotateX(-3deg)
+              translate(-60px, -5px);
+          }
+        }
+
+        .management__album-content--cover2 {
+          transform: scale(1.25);
+
+          &:hover {
+            z-index: 10;
+            transform: scale(1.5);
+          }
+        }
+
+        .management__album-content--cover3 {
+          transform: scale(1.25) rotate(15deg) rotateX(3deg)
+            translate(60px, 5px);
+
+          &:hover {
+            z-index: 10;
+            transform: scale(1.5) rotate(15deg) rotateX(3deg)
+              translate(60px, 5px);
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Smartphones (retratos) */
+@media only screen and (max-width: 480px) {
+  .management {
+    &__image {
+      &-container {
+        &--photos {
+          width: 100dvw;
+          justify-content: center;
+        }
+      }
+
+      &.image__size {
+        &-default {
+          @include view-default-smartphone-portrait;
+        }
+
+        &-small {
+          @include view-small-smartphone-portrait;
+        }
+
+        &-large {
+          @include view-large-smartphone-portrait;
+        }
+      }
+    }
+
+    &__album {
+      &-content {
+        width: 100px;
+        height: 106px;
+
+        &--cover1 {
+          &.ant-image-img {
+            @include album-mobile;
+
+            transform: translateX(0);
+            top: 10px;
+            left: 15px;
+          }
+        }
+
+        &--cover2 {
+          &.ant-image-img {
+            @include album-mobile;
+
+            transform: translateX(10px);
+            top: 5px;
+            left: 15px;
+          }
+        }
+
+        &--cover3 {
+          &.ant-image-img {
+            @include album-mobile;
+
+            transform: translateX(20px);
+            top: 0;
+            left: 15px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Smartphones (paisagens) */
+@media only screen and (min-width: 481px) and (max-width: 767px) {
+  .management {
+    &__image {
+      &-container {
+        &--photos {
+          width: 100dvw;
+          justify-content: center;
+        }
+      }
+
+      &.image__size {
+        &-default {
+          @include view-default-smartphone-landscape;
+        }
+
+        &-small {
+          @include view-small-smartphone-landscape;
+        }
+
+        &-large {
+          @include view-large-smartphone-landscape;
+        }
+      }
+    }
+
+    &__album {
+      &-content {
+        width: 100px;
+        height: 106px;
+
+        &--cover1 {
+          &.ant-image-img {
+            @include album-mobile;
+
+            transform: translateX(0);
+            top: 10px;
+            left: 15px;
+          }
+        }
+
+        &--cover2 {
+          &.ant-image-img {
+            @include album-mobile;
+
+            transform: translateX(10px);
+            top: 5px;
+            left: 15px;
+          }
+        }
+
+        &--cover3 {
+          &.ant-image-img {
+            @include album-mobile;
+
+            transform: translateX(20px);
+            top: 0;
+            left: 15px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Tablets (retratos) */
+@media only screen and (min-width: 768px) and (max-width: 1024px) {
+  .management {
+    &__image {
+      &-container {
+        &--photos {
+          width: 100dvw;
+          justify-content: center;
+        }
+      }
+
+      &.image__size {
+        &-default {
+          @include view-default-tablet-portrait;
+        }
+
+        &-small {
+          @include view-small-tablet-portrait;
+        }
+
+        &-large {
+          @include view-large-tablet-portrait;
+        }
+      }
+    }
+
+    &__album {
+      &-content {
+        width: 150px;
+        height: 140px;
+
+        &--cover1 {
+          &.ant-image-img {
+            @include album-tablet;
+
+            transform: translateX(0);
+            top: 10px;
+            left: 30px;
+          }
+        }
+
+        &--cover2 {
+          &.ant-image-img {
+            @include album-tablet;
+
+            transform: translateX(10px);
+            top: 5px;
+            left: 30px;
+          }
+        }
+
+        &--cover3 {
+          &.ant-image-img {
+            @include album-tablet;
+
+            transform: translateX(20px);
+            top: 0;
+            left: 30px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Tablets (paisagens) */
+@media only screen and (min-width: 1025px) and (max-width: 1366px) {
+  .management {
+    &__image {
+      &-container {
+        &--photos {
+          width: 100dvw;
+          justify-content: center;
+        }
+      }
+
+      &.image__size {
+        &-default {
+          @include view-default-tablet-landscape;
+        }
+
+        &-small {
+          @include view-small-tablet-landscape;
+        }
+
+        &-large {
+          @include view-large-tablet-landscape;
+        }
+      }
+    }
+
+    &__album {
+      &-content {
+        width: 150px;
+        height: 140px;
+
+        &--cover1 {
+          &.ant-image-img {
+            @include album-tablet;
+
+            transform: translateX(0);
+            top: 10px;
+            left: 30px;
+          }
+        }
+
+        &--cover2 {
+          &.ant-image-img {
+            @include album-tablet;
+
+            transform: translateX(10px);
+            top: 5px;
+            left: 30px;
+          }
+        }
+
+        &--cover3 {
+          &.ant-image-img {
+            @include album-tablet;
+
+            transform: translateX(20px);
+            top: 0;
+            left: 30px;
+          }
+        }
+      }
+    }
+  }
+}

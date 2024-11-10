@@ -135,23 +135,26 @@
   border-radius: 10px;
 }
 
-@mixin album-xl {
+@mixin album-desktop {
   @include object-fit-cover;
 
   width: 100px;
-  border-radius: 10px;
+  border-radius: 7px;
+  border: 1px solid white;
 }
 
-@mixin album-default {
+@mixin album-tablet {
   @include object-fit-cover;
 
-  // width: 200px;
-  // height: 400px;
+  width: 75px;
+  border-radius: 7px;
+  border: 1px solid white;
 }
 
-@mixin album-sm {
+@mixin album-mobile {
   @include object-fit-cover;
 
-  // width: 200px;
-  // height: 400px;
+  width: 50px;
+  border-radius: 7px;
+  border: 1px solid white;
 }

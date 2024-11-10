@@ -23,14 +23,14 @@ export const CustomImage: FC<Props> = ({ id, name, url, isLoading }) => {
       <>
         <Image
           src={url}
-          className={`gallery__image image__size-${view}`}
+          className={`management__image image__size-${view}`}
           alt={name}
           loading="lazy"
           preview={mode === "default"}
         />
 
         {mode === "select" && (
-          <div className="gallery__image-select">
+          <div className="management__image-select">
             <Checkbox
               onClick={onSelect}
               checked={selectedImages.some((img) => img.url === url)}
@@ -42,7 +42,7 @@ export const CustomImage: FC<Props> = ({ id, name, url, isLoading }) => {
   };
 
   return (
-    <Flex className="gallery__image-content" key={id} onClick={onSelect}>
+    <Flex className="management__image-content" key={id} onClick={onSelect}>
       {renderImage()}
     </Flex>
   );

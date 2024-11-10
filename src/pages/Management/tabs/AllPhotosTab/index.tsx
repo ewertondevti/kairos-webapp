@@ -31,8 +31,6 @@ export const AllPhotosTab = () => {
 
   useEffect(() => {
     if (data) {
-      console.log(count());
-
       setImages((state) => data.slice(0, state.length + count()));
     }
 
@@ -59,8 +57,8 @@ export const AllPhotosTab = () => {
       }
       scrollableTarget="scrollableDiv"
     >
-      <Flex gap={8} justify="center" className="gallery__image-container">
-        <Row className="gallery__image-container--photos">
+      <Flex gap={8} justify="center" className="management__image-container">
+        <Row className="management__image-container--photos">
           {data?.map((image) => (
             <Col key={image.id}>
               <CustomImage {...image} key={image.id} isLoading={isLoading} />

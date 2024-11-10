@@ -1,4 +1,5 @@
 import firebaseDB from "@/firebase";
+import { useGetAlbums } from "@/react-query";
 import { useAppState } from "@/store";
 import { AlbumValuesType } from "@/types/album";
 import { AlbumResult } from "@/types/store";
@@ -6,14 +7,20 @@ import { requiredRules } from "@/utils/app";
 import { useQueryClient } from "@tanstack/react-query";
 import { Form, Input, message, Modal } from "antd";
 import { addDoc, collection } from "firebase/firestore";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import "./AlbumModal.scss";
 
 export const AlbumModal = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [form] = Form.useForm();
+  const { id: albumId } = useParams();
   const queryClient = useQueryClient();
+
+  const { data: albums } = useGetAlbums();
+
+  const album = albums?.find((a) => a.id === albumId);
 
   const {
     albumModalOpen,
@@ -22,6 +29,16 @@ export const AlbumModal = () => {
     updateSelectedImages,
     updateMode,
   } = useAppState();
+
+  useEffect(() => {
+    if (album) {
+      form.setFieldsValue(album);
+    }
+
+    return () => {
+      form.resetFields();
+    };
+  }, [album]);
 
   const onSave = async (values: AlbumValuesType) => {
     setIsLoading(true);

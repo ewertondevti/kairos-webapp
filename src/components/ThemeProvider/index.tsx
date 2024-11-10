@@ -17,6 +17,10 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
       colorPrimary: Colors.ColorPrimary,
       colorText: Colors.ColorPrimaryText,
       fontFamily: '"Nunito", sans-serif',
+      fontSize: 14,
+      fontSizeSM: 14,
+      fontSizeLG: 16,
+      fontSizeXL: 18,
     },
     components: {
       Layout: {
@@ -28,6 +32,14 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
       },
       Typography: {
         colorTextHeading: Colors.ColorPrimary,
+        fontSizeHeading1: 36,
+        fontSizeHeading2: 32,
+        fontSizeHeading3: 28,
+        fontSizeHeading4: 24,
+        fontSizeHeading5: 20,
+        fontSizeSM: 14,
+        fontSizeLG: 16,
+        fontSizeXL: 18,
       },
       Drawer: {
         colorIcon: Colors.ColorPrimary,
