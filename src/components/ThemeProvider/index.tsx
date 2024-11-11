@@ -28,7 +28,6 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
       },
       Card: {
         colorBgContainer: Colors.ColorContent,
-        colorBorderSecondary: Colors.ColorHeader,
       },
       Typography: {
         colorTextHeading: Colors.ColorPrimary,
@@ -48,6 +47,9 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
       },
       Modal: {
         colorTextHeading: Colors.ColorPrimary,
+      },
+      Button: {
+        colorLink: Colors.ColorPrimary,
       },
     },
   };

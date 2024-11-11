@@ -1,4 +1,6 @@
 export enum QueryNames {
   GetImages = "GetImages",
-  GetAlbuns = "GetAlbuns",
+  GetAlbums = "GetAlbums",
+  GetPresentations = "GetPresentations",
+  GetEvents = "GetEvents",
 }

@@ -24,7 +24,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "PackageJson": ["./package.json"]
-    }
+    },
+    "types": ["vite/client"]
   },
-  "include": ["src"]
+  "include": ["env.d.ts", "src"]
 }

@@ -9,12 +9,13 @@ export type ImageType = {
 
 export type AlbumType = {
   name: string;
-  coverImages: ImageResult[];
-  images: ImageResult[];
+  images?: ImageResult[];
 };
 
 export type ImageResult = ImageType & CommonType;
 export type AlbumResult = AlbumType & CommonType;
+export type PresentationResult = ImageType & CommonType;
+export type EventResult = ImageType & CommonType;
 
 export type AddDocumentPayload = {
   collectionId: string;

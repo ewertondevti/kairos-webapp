@@ -1,10 +1,32 @@
 @import url("https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap");
 
+html {
+  scroll-behavior: smooth;
+}
+
 * {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
   font-family: "Nunito", sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 15px;
+
+  &-track {
+    background: #1b1c1d;
+  }
+
+  &-thumb {
+    background-color: #888; /* cor do polegar */
+    border-radius: 10px; /* arredondamento do polegar */
+    border: 3px solid #1b1c1d;
+
+    &:hover {
+      background-color: #555;
+    }
+  }
 }
 
 #root {

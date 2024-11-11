@@ -5,6 +5,7 @@ import {
   faGears,
   faImages,
   faPowerOff,
+  faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Col, Divider, Row } from "antd";
@@ -38,6 +39,30 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
         <Divider style={{ width: "auto", margin: 0 }} />
       </Col>
 
+      <Col span={24}>
+        <Button
+          type="text"
+          icon={<FontAwesomeIcon icon={faImages} />}
+          className="align-left"
+          onClick={() => navigate(`/${RoutesEnums.Gallery}`)}
+          block
+        >
+          Galeria de fotos
+        </Button>
+      </Col>
+
+      <Col span={24}>
+        <Button
+          type="text"
+          icon={<FontAwesomeIcon icon={faUsers} />}
+          className="align-left"
+          onClick={() => navigate(`/${RoutesEnums.NewMember}`)}
+          block
+        >
+          Novo membro
+        </Button>
+      </Col>
+
       {isAuthenticated && (
         <Col span={24}>
           <Button
@@ -51,17 +76,6 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
           </Button>
         </Col>
       )}
-
-      <Col span={24}>
-        <Button
-          type="text"
-          icon={<FontAwesomeIcon icon={faImages} />}
-          className="align-left"
-          block
-        >
-          Galeria de fotos
-        </Button>
-      </Col>
 
       {isAuthenticated && (
         <>

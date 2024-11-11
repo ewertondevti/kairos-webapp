@@ -1,6 +1,7 @@
 import { AlbumModal } from "@/components/AlbumModal";
 import { TopBar } from "@/components/TopBar";
-import { useGetImages } from "@/react-query";
+import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
+import { useGetAlbums, useGetImages } from "@/react-query";
 import api from "@/services/httpClient";
 import { useAppState } from "@/store";
 import {
@@ -14,7 +15,17 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
 } from "@ant-design/icons";
-import { Col, Image, Row, Space, Tabs, TabsProps } from "antd";
+import {
+  Breadcrumb,
+  BreadcrumbProps,
+  Flex,
+  Image,
+  Layout,
+  Space,
+  Tabs,
+  TabsProps,
+} from "antd";
+import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
 import { saveAs } from "file-saver";
 import { useState } from "react";
@@ -29,8 +40,9 @@ const Management = () => {
   const { pathname } = useLocation();
 
   const { data } = useGetImages();
+  const { data: albums } = useGetAlbums();
 
-  const { updateMode } = useAppState();
+  const { updateMode, updateSelectedImages } = useAppState();
 
   const defaultKey = pathname.split("/").filter(Boolean)[1];
 
@@ -46,18 +58,59 @@ const Management = () => {
 
   const onChange: TabsProps["onChange"] = (key) => {
     updateMode("default");
+    updateSelectedImages([]);
     navigate(key);
   };
 
+  const keys = pathname.split("/").filter(Boolean);
+
+  const getLabel = (key: string) => {
+    const album = albums?.find((a) => a.id === key);
+
+    switch (key) {
+      case RoutesEnums.Management:
+        return "Gerenciamento";
+      case ManagementRoutesEnums.AllPhotos:
+        return "Todas as fotos";
+      case ManagementRoutesEnums.Albums:
+        return "Álbuns";
+      case ManagementRoutesEnums.Presentation:
+        return "Apresentação";
+      case ManagementRoutesEnums.Events:
+        return "Eventos";
+
+      default:
+        if (album) return album.name;
+        return "";
+    }
+  };
+
+  const getLink = (index: number) => {
+    const link = keys.reduce((acc, curr, currIndex) => {
+      if (currIndex <= index) return (acc += `/${curr}`);
+      return acc;
+    }, "");
+
+    return link;
+  };
+
+  const items: BreadcrumbProps["items"] = keys.map((key, idx) => ({
+    key,
+    title: getLabel(key),
+    href: getLink(idx),
+  }));
+
   return (
-    <Row gutter={[16, 16]}>
-      <Title style={{ margin: 0 }}>Gerenciamento</Title>
+    <Layout style={{ height: "100%", padding: 20 }}>
+      <Flex gap={16} vertical>
+        <Breadcrumb style={{ textTransform: "capitalize" }} items={items} />
 
-      <Col span={24}>
+        <Title style={{ margin: 0 }}>Gerenciamento</Title>
+
         <TopBar />
-      </Col>
+      </Flex>
 
-      <Col span={24}>
+      <Content>
         <Image.PreviewGroup
           preview={{
             toolbarRender: (
@@ -124,12 +177,13 @@ const Management = () => {
             defaultActiveKey={defaultKey}
             destroyInactiveTabPane
             onChange={onChange}
+            className="management__container"
           />
         </Image.PreviewGroup>
-      </Col>
+      </Content>
 
       <AlbumModal />
-    </Row>
+    </Layout>
   );
 };
 

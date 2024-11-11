@@ -8,21 +8,20 @@ import { message, Modal, Upload, UploadFile, UploadProps } from "antd";
 import { addDoc, collection } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { FC, useState } from "react";
-import "./AddImagesModal.scss";
 
 type Props = {
   isOpen: boolean;
   onCancel: () => void;
 };
 
-export const AddImagesModal: FC<Props> = ({ isOpen, onCancel }) => {
+export const EventModal: FC<Props> = ({ isOpen, onCancel }) => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const queryClient = useQueryClient();
 
   const refresh = () =>
-    queryClient.refetchQueries({ queryKey: [QueryNames.GetImages] });
+    queryClient.refetchQueries({ queryKey: [QueryNames.GetEvents] });
 
   const handleChange: UploadProps["onChange"] = ({ fileList: newFileList }) =>
     setFileList(newFileList);
@@ -38,7 +37,7 @@ export const AddImagesModal: FC<Props> = ({ isOpen, onCancel }) => {
     fileList.forEach((file, idx) => {
       const storageRef = ref(
         firebaseStorage,
-        `${DatabaseTableKeys.AllPhotos}/${file.name}`
+        `${DatabaseTableKeys.Events}/${file.name}`
       );
 
       const uploadTask = uploadBytesResumable(
@@ -77,7 +76,7 @@ export const AddImagesModal: FC<Props> = ({ isOpen, onCancel }) => {
           };
 
           await addDoc(
-            collection(firebaseDB, DatabaseTableKeys.AllPhotos),
+            collection(firebaseDB, DatabaseTableKeys.Events),
             payload
           );
 
@@ -88,7 +87,7 @@ export const AddImagesModal: FC<Props> = ({ isOpen, onCancel }) => {
             refresh();
             onCancel();
 
-            message.success("Upload completo!", 3);
+            message.success("Evento(s) criado com sucesso!", 3);
           }
         }
       );
@@ -97,7 +96,7 @@ export const AddImagesModal: FC<Props> = ({ isOpen, onCancel }) => {
 
   return (
     <Modal
-      title="Adicionar imagem(s)"
+      title="Apresentação"
       open={isOpen}
       onCancel={onCancel}
       onOk={onSave}

@@ -1,19 +1,26 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "./components/AppLayout";
 import { ManagementRoutesEnums, RoutesEnums } from "./enums/routesEnums";
+import { Gallery } from "./pages/Gallery";
+import { Home } from "./pages/Home";
 import Management from "./pages/Management";
 import { AlbumsTab } from "./pages/Management/tabs/AlbumsTab";
 import { AlbumDetails } from "./pages/Management/tabs/AlbumsTab/AlbumDetails";
 import { AllPhotosTab } from "./pages/Management/tabs/AllPhotosTab";
 import { EventsTab } from "./pages/Management/tabs/EventsTab";
 import { PresentationTab } from "./pages/Management/tabs/PresentationTab";
+import { NewMember } from "./pages/NewMember";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path={RoutesEnums.Home} element={<AppLayout />}>
-          <Route index element={<></>} />
+          <Route index element={<Home />} />
+
+          <Route path={RoutesEnums.Gallery} element={<Gallery />} />
+          <Route path={RoutesEnums.NewMember} element={<NewMember />} />
+
           <Route path={RoutesEnums.Management} element={<Management />}>
             <Route
               index

@@ -20,61 +20,61 @@
 @mixin view-large-desktop {
   width: 484px;
   height: 645px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-default-desktop {
   width: 240px;
   height: 320px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-small-desktop {
   width: 117px;
   height: 156px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-large-smartphone-portrait {
   width: 150px;
   height: 200px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-default-smartphone-portrait {
   width: 75px;
   height: 100px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-small-smartphone-portrait {
   width: 45px;
   height: 60px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-large-smartphone-landscape {
   width: 200px;
   height: 266px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-default-smartphone-landscape {
   width: 98px;
   height: 130px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-small-smartphone-landscape {
   width: 63px;
   height: 84px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-large-tablet-portrait {
   width: 245px;
   height: 326px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-default-tablet-portrait {
@@ -84,55 +84,55 @@
 @mixin view-small-tablet-portrait {
   width: 80px;
   height: 106px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-large-tablet-landscape {
   width: 275px;
   height: 366px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-default-tablet-landscape {
   width: 134px;
   height: 178px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin view-small-tablet-landscape {
   width: 89px;
   height: 118px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin photo-xl {
   width: 495px;
   height: 660px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin photo-lg {
   width: 120px;
   height: 160px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin photo-md {
   width: 115px;
   height: 153px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin photo-xs {
   width: 150px;
   height: 200px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin photo-xxs {
   width: 120px;
   height: 160px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 @mixin album-desktop {
@@ -157,4 +157,12 @@
   width: 50px;
   border-radius: 7px;
   border: 1px solid white;
+}
+
+@mixin carousel-image-xl {
+  @include object-fit-cover;
+
+  height: 72dvh;
+  width: 100dvw;
+  border-radius: 5px;
 }

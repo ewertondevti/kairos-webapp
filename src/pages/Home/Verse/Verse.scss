@@ -1,0 +1,16 @@
+.verse {
+  padding: 100px 0;
+
+  &__content {
+    text-align: center;
+    width: 60%;
+
+    &-buttons {
+      margin-top: 20px;
+
+      button {
+        width: 200px;
+      }
+    }
+  }
+}

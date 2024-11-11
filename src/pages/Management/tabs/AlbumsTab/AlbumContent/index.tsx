@@ -7,13 +7,15 @@ const { Text } = Typography;
 
 type Props = AlbumResult;
 
-export const AlbumContent: FC<Props> = ({ id, name, coverImages }) => {
+export const AlbumContent: FC<Props> = ({ id, name, images }) => {
   const navigate = useNavigate();
   const { id: albumId } = useParams();
 
   if (albumId) {
     return <Outlet />;
   }
+
+  const coverImages = images.filter((_, idx) => idx < 3);
 
   const onRedirect = () => navigate(id!);
 

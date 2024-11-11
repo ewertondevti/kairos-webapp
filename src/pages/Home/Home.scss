@@ -1,0 +1,27 @@
+@import "/src/styles/mixins";
+
+.home {
+  overflow-y: auto;
+
+  &__content {
+    height: 100%;
+
+    &-presentation {
+      .ant-carousel {
+        .home__content-carousel {
+          .slick-dots {
+            & > li > button {
+              background: green;
+            }
+          }
+        }
+      }
+    }
+
+    &-image {
+      &.ant-image-img {
+        @include carousel-image-xl;
+      }
+    }
+  }
+}

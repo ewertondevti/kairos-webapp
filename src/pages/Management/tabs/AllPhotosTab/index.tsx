@@ -2,7 +2,7 @@ import { CustomImage } from "@/components/CustomImage";
 import { useGetImages } from "@/react-query";
 import { useAppState } from "@/store";
 import { ImageResult } from "@/types/store";
-import { Col, Flex, Row, Skeleton } from "antd";
+import { Col, Empty, Flex, Row, Skeleton } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 
@@ -40,32 +40,40 @@ export const AllPhotosTab = () => {
   }, [data, count]);
 
   const getMoreImages = () =>
-    data && setImages((state) => data.slice(0, state.length + count()));
+    setImages(data!.slice(0, images.length + count()));
+
+  if (!images.length) return <Empty style={{ marginTop: 50 }} />;
 
   return (
-    <InfiniteScroll
-      dataLength={images.length}
-      next={getMoreImages}
-      hasMore={false}
-      loader={
-        <Flex gap={8} justify="center" align="center" style={{ padding: 10 }}>
-          <Skeleton.Image active />
-          <Skeleton.Image active />
-          <Skeleton.Image active />
-          <Skeleton.Image active />
-        </Flex>
-      }
-      scrollableTarget="scrollableDiv"
+    <div
+      id="scrollableDiv"
+      className="events__container"
+      style={{
+        height: "100%",
+        overflow: "auto",
+      }}
     >
-      <Flex gap={8} justify="center" className="management__image-container">
-        <Row className="management__image-container--photos">
-          {data?.map((image) => (
-            <Col key={image.id}>
-              <CustomImage {...image} key={image.id} isLoading={isLoading} />
-            </Col>
-          ))}
-        </Row>
-      </Flex>
-    </InfiniteScroll>
+      <InfiniteScroll
+        dataLength={images.length}
+        next={getMoreImages}
+        hasMore={images.length < (data?.length ?? 0) && !isLoading}
+        loader={
+          <Flex gap={8} justify="center" align="center" style={{ padding: 10 }}>
+            <Skeleton.Input active block />
+          </Flex>
+        }
+        scrollableTarget="scrollableDiv"
+      >
+        <Flex gap={8} justify="center" className="management__image-container">
+          <Row className="management__image-container--photos">
+            {images?.map((image) => (
+              <Col key={image.id}>
+                <CustomImage {...image} key={image.id} isLoading={isLoading} />
+              </Col>
+            ))}
+          </Row>
+        </Flex>
+      </InfiniteScroll>
+    </div>
   );
 };
