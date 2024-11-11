@@ -15,7 +15,7 @@ export const AlbumContent: FC<Props> = ({ id, name, images }) => {
     return <Outlet />;
   }
 
-  const coverImages = images.filter((_, idx) => idx < 3);
+  const coverImages = images?.filter((_, idx) => idx < 3) ?? [];
 
   const onRedirect = () => navigate(id!);
 

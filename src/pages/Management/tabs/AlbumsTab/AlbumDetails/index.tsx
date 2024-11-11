@@ -14,7 +14,7 @@ export const AlbumDetails = () => {
   return (
     <Flex gap={8} justify="center" className="management__image-container">
       <Row className="management__image-container--photos">
-        {album?.images.map((image) => (
+        {album?.images?.map((image) => (
           <Col key={image.id}>
             <CustomImage {...image} key={image.id} isLoading={isLoading} />
           </Col>
