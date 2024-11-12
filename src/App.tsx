@@ -9,7 +9,7 @@ import { AlbumDetails } from "./pages/Management/tabs/AlbumsTab/AlbumDetails";
 import { AllPhotosTab } from "./pages/Management/tabs/AllPhotosTab";
 import { EventsTab } from "./pages/Management/tabs/EventsTab";
 import { PresentationTab } from "./pages/Management/tabs/PresentationTab";
-import { NewMember } from "./pages/NewMember";
+import { MembershipForm } from "./pages/MembershipForm";
 
 function App() {
   return (
@@ -19,7 +19,7 @@ function App() {
           <Route index element={<Home />} />
 
           <Route path={RoutesEnums.Gallery} element={<Gallery />} />
-          <Route path={RoutesEnums.NewMember} element={<NewMember />} />
+          <Route path={RoutesEnums.MembershipForm} element={<MembershipForm />} />
 
           <Route path={RoutesEnums.Management} element={<Management />}>
             <Route

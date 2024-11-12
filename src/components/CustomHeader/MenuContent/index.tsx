@@ -56,10 +56,10 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
           type="text"
           icon={<FontAwesomeIcon icon={faUsers} />}
           className="align-left"
-          onClick={() => navigate(`/${RoutesEnums.NewMember}`)}
+          onClick={() => navigate(`/${RoutesEnums.MembershipForm}`)}
           block
         >
-          Novo membro
+          Ficha de membro
         </Button>
       </Col>
 

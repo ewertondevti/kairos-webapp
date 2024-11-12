@@ -55,6 +55,50 @@ html {
   text-align: center;
 }
 
+.avatar-uploader {
+  &.ant-upload-wrapper {
+    &.ant-upload-picture-circle-wrapper {
+      .ant-upload {
+        margin-inline-end: 0;
+        margin-bottom: 0;
+
+        &-select {
+          margin-inline-end: 0;
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+
+  .float-btn {
+    opacity: 0;
+
+    position: absolute;
+    bottom: 23%;
+    left: 42%;
+
+    transition: opacity 0.5s ease;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &-container {
+      width: 100%;
+      height: 100%;
+
+      display: flex;
+      justify-content: center;
+
+      &:hover {
+        .float-btn {
+          opacity: 1;
+        }
+      }
+    }
+  }
+}
+
 @media only screen and (max-width: 768px) {
   h1 {
     font-size: 24px !important;

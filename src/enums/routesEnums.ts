@@ -2,7 +2,7 @@ export enum RoutesEnums {
   Home = "/",
   Management = "management",
   Gallery = "gallery",
-  NewMember = "new-member",
+  MembershipForm = "membership-form",
 }
 
 export enum ManagementRoutesEnums {

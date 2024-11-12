@@ -9,6 +9,7 @@ declare interface ImportMetaEnv {
   readonly VITE_DEFAULT_USER_TOKEN: string;
   readonly VITE_FACEBOOK_URL: string;
   readonly VITE_INSTAGRAM_URL: string;
+  readonly VITE_PTCP_APP_ID: string;
 }
 
 declare interface ImportMeta {
