@@ -4,9 +4,12 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "site": "https://kairos-webapp-4de65.firebaseapp.com/",
     "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "**",
