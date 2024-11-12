@@ -28,8 +28,8 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
     onClose();
   };
 
-  const onRedirect = () => {
-    navigate(RoutesEnums.Management);
+  const onRedirect = (to: string) => {
+    navigate(to);
     onClose();
   };
 
@@ -56,7 +56,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
           type="text"
           icon={<FontAwesomeIcon icon={faUsers} />}
           className="align-left"
-          onClick={() => navigate(`/${RoutesEnums.MembershipForm}`)}
+          onClick={() => onRedirect(`/${RoutesEnums.MembershipForm}`)}
           block
         >
           Ficha de membro
@@ -69,7 +69,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
             type="text"
             icon={<FontAwesomeIcon icon={faGears} />}
             className="align-left"
-            onClick={onRedirect}
+            onClick={() => onRedirect(`/${RoutesEnums.Management}`)}
             block
           >
             Gerenciamento

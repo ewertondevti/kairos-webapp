@@ -1,3 +1,4 @@
+import { RoutesEnums } from "@/enums/routesEnums";
 import { useGetPresentations } from "@/react-query";
 import { Button, Carousel, Col, Flex, Image } from "antd";
 
@@ -7,7 +8,7 @@ export const Presentation = () => {
   return (
     <Col span={24} className="home__content-presentation">
       <Flex justify="flex-end" align="center">
-        <Button type="link" href="">
+        <Button type="link" href={`/${RoutesEnums.Gallery}`}>
           Ver todas
         </Button>
       </Flex>
