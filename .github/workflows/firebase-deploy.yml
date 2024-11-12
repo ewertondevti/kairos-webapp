@@ -28,5 +28,5 @@ jobs:
 
       - name: Deploy to Firebase Hosting
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KAIROS_WEBAPP_4DE65 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KAIROS_WEBAPP_4DE65 }}
         run: firebase deploy --only hosting --project ${{ secrets.PROJECT_ID }}
