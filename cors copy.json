@@ -1,0 +1,7 @@
+[
+  {
+    "origin": ["https://localhost:3000", "https://kairos-portugal.com"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
+  }
+]
