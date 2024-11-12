@@ -5,6 +5,8 @@ import { Button, Carousel, Col, Flex, Image } from "antd";
 export const Presentation = () => {
   const { data: images } = useGetPresentations();
 
+  if (!images?.length) return null;
+
   return (
     <Col span={24} className="home__content-presentation">
       <Flex justify="flex-end" align="center">
