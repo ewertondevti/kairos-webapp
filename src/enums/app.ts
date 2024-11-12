@@ -7,4 +7,5 @@ export enum DatabaseTableKeys {
   Albums = "albums",
   Presentations = "presentations",
   Events = "events",
+  Members = "members",
 }

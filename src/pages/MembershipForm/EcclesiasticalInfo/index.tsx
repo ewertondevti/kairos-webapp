@@ -1,6 +1,6 @@
 import { MembershipFields } from "@/enums/membership";
 import { disabledDate } from "@/utils/app";
-import { Col, DatePicker, Form, Input, Row } from "antd";
+import { Col, DatePicker, Form, Input, Row, Select } from "antd";
 import Title from "antd/es/typography/Title";
 
 export const EcclesiasticalInfo = () => {
@@ -32,7 +32,7 @@ export const EcclesiasticalInfo = () => {
             name={MembershipFields.AdmissionType}
             label="Tipo de admissão"
           >
-            <Input placeholder="Tipo de admissão..." />
+            <Select placeholder="Selecione o tipo de admissão" />
           </Form.Item>
         </Col>
 

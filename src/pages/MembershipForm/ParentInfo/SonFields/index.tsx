@@ -24,12 +24,13 @@ export const SonFields = () => {
                     {
                       required: true,
                       whitespace: true,
-                      message: "Adicione o nome do filho ou remove este campo.",
+                      message:
+                        "Adicione o nome completo do filho ou remova este campo.",
                     },
                   ]}
                   noStyle
                 >
-                  <Input placeholder="Nome do filho..." />
+                  <Input placeholder="Nome completo do filho..." />
                 </Form.Item>
               </Col>
 

@@ -20,18 +20,18 @@ import {
   Flex,
   Form,
   Input,
-  InputNumber,
   Row,
   Select,
   Tooltip,
   Upload,
 } from "antd";
 import { RcFile, UploadProps } from "antd/es/upload";
+import { useState } from "react";
 
 export const PersonalInfo = () => {
-  const form = Form.useFormInstance();
+  const [imageUrl, setImageUrl] = useState("");
 
-  const photoValue = Form.useWatch(MembershipFields.Photo, form);
+  const form = Form.useFormInstance();
 
   const genderOptions = [
     { label: "Masculino", value: GenderEnum.Male },
@@ -47,13 +47,15 @@ export const PersonalInfo = () => {
 
   const handleChange: UploadProps["onChange"] = (info) => {
     getBase64(info.file.originFileObj as RcFile, (url) => {
-      form.setFieldValue(MembershipFields.Photo, url);
+      setImageUrl(url);
+      form.setFieldValue(MembershipFields.Photo, info.file.originFileObj);
     });
   };
 
   const onRemove: ButtonProps["onClick"] = (e) => {
     e.stopPropagation();
-    form.setFieldValue(MembershipFields.Photo, "");
+    setImageUrl("");
+    form.setFieldValue(MembershipFields.Photo, undefined);
   };
 
   const uploadButton = (
@@ -73,11 +75,7 @@ export const PersonalInfo = () => {
               label="Código"
               rules={requiredRules}
             >
-              <InputNumber
-                min={0}
-                placeholder="2020"
-                style={{ width: "100%" }}
-              />
+              <Input placeholder="" style={{ width: "100%" }} />
             </Form.Item>
           </Col>
 
@@ -87,7 +85,7 @@ export const PersonalInfo = () => {
               label="Nome"
               rules={requiredRules}
             >
-              <Input placeholder="Digite seu nome completo..." />
+              <Input placeholder="Nome completo..." />
             </Form.Item>
           </Col>
 
@@ -134,10 +132,10 @@ export const PersonalInfo = () => {
               beforeUpload={beforeUpload}
               onChange={handleChange}
             >
-              {photoValue ? (
+              {imageUrl ? (
                 <Row className="float-btn-container">
                   <Avatar
-                    src={photoValue}
+                    src={imageUrl}
                     size="small"
                     alt="userProfile"
                     style={{

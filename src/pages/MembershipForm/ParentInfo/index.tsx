@@ -12,19 +12,19 @@ export const ParentInfo = () => {
       <Row gutter={10}>
         <Col xs={24} md={12}>
           <Form.Item name={MembershipFields.MotherName} label="Nome da mãe">
-            <Input placeholder="Digite o nome completo da mãe..." />
+            <Input placeholder="Nome completo da mãe..." />
           </Form.Item>
         </Col>
 
         <Col xs={24} md={12}>
-          <Form.Item name={MembershipFields.FeatherName} label="Nome do pai">
-            <Input placeholder="Digite o nome completo do pai..." />
+          <Form.Item name={MembershipFields.FatherName} label="Nome do pai">
+            <Input placeholder="Nome completo do pai..." />
           </Form.Item>
         </Col>
 
         <Col xs={24} sm={16} md={18}>
-          <Form.Item name={MembershipFields.Spouse} label="Nome do cônjuge">
-            <Input placeholder="Digite o nome completo do conjuge..." />
+          <Form.Item name={MembershipFields.SpouseName} label="Nome do cônjuge">
+            <Input placeholder="Nome completo do conjuge..." />
           </Form.Item>
         </Col>
 
