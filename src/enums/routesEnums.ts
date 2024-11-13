@@ -6,7 +6,6 @@ export enum RoutesEnums {
 }
 
 export enum ManagementRoutesEnums {
-  AllPhotos = "all-photos",
   Albums = "albums",
   Presentation = "presentation",
   Events = "events",

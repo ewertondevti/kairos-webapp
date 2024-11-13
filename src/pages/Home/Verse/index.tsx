@@ -81,13 +81,22 @@ export const Verse = () => {
 
   return (
     <Col span={24}>
-      <Divider />
+      <Divider>
+        <Title level={3} style={{ margin: 0, textTransform: "uppercase" }}>
+          Para Meditação
+        </Title>
+      </Divider>
 
-      <Flex justify="center" align="center" gap={32} className="verse" vertical>
+      <Flex
+        justify="center"
+        align="center"
+        vertical
+        className="home__content-container"
+      >
         <div className="verse__bible-icon" />
 
-        <Space className="verse__content" direction="vertical">
-          <Title level={3}>{verse?.text}</Title>
+        <Space className="verse__content" size="small" direction="vertical">
+          <Title level={5}>{verse?.text}</Title>
 
           <Space size="small">
             <Text strong>{verse?.book.name}</Text>
@@ -115,8 +124,6 @@ export const Verse = () => {
           </Flex>
         </Space>
       </Flex>
-
-      <Divider />
     </Col>
   );
 };

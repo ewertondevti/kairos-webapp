@@ -1,10 +1,10 @@
 import { useAppState } from "@/store";
-import { ImageResult } from "@/types/store";
+import { IImageDTO } from "@/types/store";
 import { Checkbox, Flex, Image, Skeleton } from "antd";
 import { FC } from "react";
 import { useInView } from "react-intersection-observer";
 
-type Props = ImageResult & {
+type Props = IImageDTO & {
   isLoading: boolean;
 };
 
@@ -37,7 +37,7 @@ export const LazyImage: FC<Props> = ({ id, name, url, isLoading }) => {
   };
 
   return (
-    <Flex key={id} onClick={onSelect} ref={ref}>
+    <Flex key={id} onClick={onSelect} ref={ref} style={{ width: "100%" }}>
       {renderImage()}
 
       {mode === "select" && (

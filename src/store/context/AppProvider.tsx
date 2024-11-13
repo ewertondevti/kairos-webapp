@@ -1,5 +1,5 @@
 import { AppState } from "@/types/state";
-import { ImageResult } from "@/types/store";
+import { IImageDTO } from "@/types/store";
 import { createContext, FC, ReactNode, useState } from "react";
 
 type Props = {
@@ -23,7 +23,7 @@ export const AppContext = createContext<AppState>(initialState);
 const AppProvider: FC<Props> = ({ children }) => {
   const [imageId, setImageId] = useState("");
   const [editAlbumOpen, setEditAlbumModalOpen] = useState(false);
-  const [selectedImages, setSelectedImages] = useState<ImageResult[]>([]);
+  const [selectedImages, setSelectedImages] = useState<IImageDTO[]>([]);
   const [mode, setMode] = useState<AppState["mode"]>("default");
   const [view, setView] = useState<AppState["view"]>("default");
 

@@ -2,13 +2,13 @@ import { CustomFooter } from "@/components/CustomFooter";
 import { Row } from "antd";
 import { Events } from "./Events";
 import "./Home.scss";
-import { Presentation } from "./Presentation";
+import { Slider } from "./Slider";
 import { Verse } from "./Verse";
 
 export const Home = () => {
   return (
     <Row className="home__content">
-      <Presentation />
+      <Slider />
 
       <Events />
 

@@ -1,7 +1,7 @@
 import { EditAlbumModal } from "@/components/EditAlbumModal";
 import { TopBar } from "@/components/TopBar";
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
-import { useGetAlbums, useGetImages } from "@/react-query";
+import { useGetAlbums } from "@/react-query";
 import api from "@/services/httpClient";
 import { useAppState } from "@/store";
 import {
@@ -28,32 +28,30 @@ import {
 import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
 import { saveAs } from "file-saver";
-import { useState } from "react";
 import { isMobile } from "react-device-detect";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Management.scss";
 import { managementTabs } from "./tabs/management.tabs";
 
 const Management = () => {
-  const [current, setCurrent] = useState(0);
-
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const { data } = useGetImages();
   const { data: albums } = useGetAlbums();
 
   const { updateMode, updateSelectedImages } = useAppState();
 
   const defaultKey = pathname.split("/").filter(Boolean)[1];
 
-  const onDownload = () => {
-    if (data) {
-      const img = data[current];
+  const onDownload = (url: string) => () => {
+    const strings = url.split("/");
+    const lastString = strings[strings.length - 1].split("?")[0];
+    const filename = decodeURIComponent(lastString.split("%2F")[1]);
 
+    if (url) {
       api
-        .get<Blob>(img.url, { responseType: "blob" })
-        .then(({ data }) => saveAs(data, img.name));
+        .get<Blob>(url, { responseType: "blob" })
+        .then(({ data }) => saveAs(data, filename));
     }
   };
 
@@ -71,8 +69,6 @@ const Management = () => {
     switch (key) {
       case RoutesEnums.Management:
         return "Gerenciamento";
-      case ManagementRoutesEnums.AllPhotos:
-        return "Todas as fotos";
       case ManagementRoutesEnums.Albums:
         return "Álbuns";
       case ManagementRoutesEnums.Presentation:
@@ -117,6 +113,7 @@ const Management = () => {
             toolbarRender: (
               _,
               {
+                image,
                 transform: { scale },
                 actions: {
                   onActive,
@@ -129,47 +126,48 @@ const Management = () => {
                   onReset,
                 },
               }
-            ) => (
-              <Space size={12} className="toolbar-wrapper">
-                <LeftOutlined onClick={() => onActive?.(-1)} title="Voltar" />
-                <RightOutlined onClick={() => onActive?.(1)} title="Próxima" />
-                <DownloadOutlined
-                  onClick={onDownload}
-                  title="Fazer download da imagem"
-                />
-                <SwapOutlined
-                  rotate={90}
-                  onClick={onFlipY}
-                  title="Inverter imagem de cima para baixo"
-                />
-                <SwapOutlined
-                  onClick={onFlipX}
-                  title="Inverter imagem da esquerda para a direita"
-                />
-                <RotateLeftOutlined
-                  onClick={onRotateLeft}
-                  title="Girar imagem para a esquerda"
-                />
-                <RotateRightOutlined
-                  onClick={onRotateRight}
-                  title="Girar imagem para a direita"
-                />
-                <ZoomOutOutlined
-                  disabled={scale === 1}
-                  onClick={onZoomOut}
-                  title="Diminuir zoom"
-                />
-                <ZoomInOutlined
-                  disabled={scale === 50}
-                  onClick={onZoomIn}
-                  title="Aumentar zoom"
-                />
-                <UndoOutlined onClick={onReset} title="Resetar tudo" />
-              </Space>
-            ),
-            onChange: (index) => setCurrent(index),
-            onVisibleChange(_value, _prevValue, current) {
-              setCurrent(current);
+            ) => {
+              return (
+                <Space size={12} className="toolbar-wrapper">
+                  <LeftOutlined onClick={() => onActive?.(-1)} title="Voltar" />
+                  <RightOutlined
+                    onClick={() => onActive?.(1)}
+                    title="Próxima"
+                  />
+                  <DownloadOutlined
+                    onClick={onDownload(image.url)}
+                    title="Fazer download da imagem"
+                  />
+                  <SwapOutlined
+                    rotate={90}
+                    onClick={onFlipY}
+                    title="Inverter imagem de cima para baixo"
+                  />
+                  <SwapOutlined
+                    onClick={onFlipX}
+                    title="Inverter imagem da esquerda para a direita"
+                  />
+                  <RotateLeftOutlined
+                    onClick={onRotateLeft}
+                    title="Girar imagem para a esquerda"
+                  />
+                  <RotateRightOutlined
+                    onClick={onRotateRight}
+                    title="Girar imagem para a direita"
+                  />
+                  <ZoomOutOutlined
+                    disabled={scale === 1}
+                    onClick={onZoomOut}
+                    title="Diminuir zoom"
+                  />
+                  <ZoomInOutlined
+                    disabled={scale === 50}
+                    onClick={onZoomIn}
+                    title="Aumentar zoom"
+                  />
+                  <UndoOutlined onClick={onReset} title="Resetar tudo" />
+                </Space>
+              );
             },
           }}
         >

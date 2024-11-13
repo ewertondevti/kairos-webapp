@@ -1,5 +1,6 @@
 import { useGetEvents } from "@/react-query";
 import { Col, Divider, Flex, Image, Row } from "antd";
+import Title from "antd/es/typography/Title";
 
 export const Events = () => {
   const { data: events } = useGetEvents();
@@ -8,18 +9,28 @@ export const Events = () => {
 
   return (
     <Col span={24}>
-      <Flex align="center" style={{ padding: 20 }}>
-        <Row gutter={[8, 8]} justify="center">
+      <Divider>
+        <Title level={3} style={{ margin: 0, textTransform: "uppercase" }}>
+          Próximos Eventos
+        </Title>
+      </Divider>
+
+      <Flex align="center" justify="center" className="home__content-container">
+        <Row gutter={[8, 8]} justify="center" style={{ width: "100%" }}>
           {events?.map(({ id, url }, idx) => (
             <>
-              {idx < events.length - 1 && (
-                <Col>
-                  <Divider />
-                </Col>
-              )}
+              <Col xs={0} sm={1}>
+                <Flex justify="center" style={{ height: "100%" }}>
+                  {idx !== 0 && (
+                    <Divider type="vertical" style={{ height: "100%" }} />
+                  )}
+                </Flex>
+              </Col>
 
               <Col key={id}>
-                <Image src={url} />
+                <Flex className="management__image--event-default-size">
+                  <Image src={url} />
+                </Flex>
               </Col>
             </>
           ))}

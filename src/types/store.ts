@@ -1,23 +1,23 @@
 import { MembershipFields } from "@/enums/membership";
 
-export type CommonType = {
+export interface ICommon {
   id?: string;
-};
+}
 
-export type ImageType = {
+export interface IImage {
   url: string;
   name: string;
-};
+}
 
-export type AlbumType = {
+export interface IAlbum {
   name: string;
-  images?: ImageResult[];
-};
+  images?: IImageDTO[];
+}
 
-export type ImageResult = ImageType & CommonType;
-export type AlbumResult = AlbumType & CommonType;
-export type PresentationResult = ImageType & CommonType;
-export type EventResult = ImageType & CommonType;
+export interface IImageDTO extends IImage, ICommon {}
+export interface IAlbumDTO extends IAlbum, ICommon {}
+export interface IPresentationDTO extends IImageDTO {}
+export interface IEventDTO extends IImageDTO {}
 
 export type MemberType = {
   [MembershipFields.Photo]?: string;

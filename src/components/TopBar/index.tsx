@@ -1,10 +1,14 @@
 import { DatabaseTableKeys } from "@/enums/app";
-import { ManagementRoutesEnums } from "@/enums/routesEnums";
+import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
 import firebaseDB, { firebaseStorage } from "@/firebase";
 import { CreateAlbumModal } from "@/pages/Management/CreateAlbumModal";
-import { useGetPresentations } from "@/react-query";
+import {
+  useGetAlbumById,
+  useGetEvents,
+  useGetPresentations,
+} from "@/react-query";
 import { useAppState, useAuth } from "@/store";
-import { ImageResult } from "@/types/store";
+import { IImageDTO } from "@/types/store";
 import {
   faImages,
   faObjectGroup,
@@ -26,7 +30,7 @@ import {
 } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import { useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { redirect, useLocation, useParams } from "react-router-dom";
 import { EventModal } from "../EventModal";
 
 export const TopBar = () => {
@@ -40,6 +44,8 @@ export const TopBar = () => {
 
   const { user } = useAuth();
   const { data: presentations } = useGetPresentations();
+  const { data: events } = useGetEvents();
+  const { data: album } = useGetAlbumById(albumId);
 
   const {
     mode,
@@ -50,6 +56,7 @@ export const TopBar = () => {
   } = useAppState();
 
   const isAlbums = pathname.includes(ManagementRoutesEnums.Albums);
+  const isPresentations = pathname.includes(ManagementRoutesEnums.Presentation);
   const isEvents = pathname.includes(ManagementRoutesEnums.Events);
 
   const showSelectBtn = !!user && mode === "default";
@@ -61,6 +68,22 @@ export const TopBar = () => {
   const hideEventModal = () => setIsEventOpen(false);
 
   const refresh = () => queryClient.refetchQueries();
+
+  const onDeleteAlbum = async () => {
+    if (albumId) {
+      try {
+        const albumRef = doc(firebaseDB, DatabaseTableKeys.Albums, albumId);
+        await deleteDoc(albumRef);
+
+        message.success("Álbum apagado com sucesso!");
+        redirect(`/${RoutesEnums.Management}/${ManagementRoutesEnums.Albums}`);
+        refresh();
+      } catch (error) {
+        console.error(error);
+        message.error("Não foi possível apagar o álbum!");
+      }
+    }
+  };
 
   const onDeleteFromAlbum = async () => {
     setIsLoading(true);
@@ -113,7 +136,9 @@ export const TopBar = () => {
   };
 
   const onDelete = () => {
-    if (isAlbums) onDeleteFromAlbum();
+    if (albumId && selectedImages.length === album?.images?.length) {
+      onDeleteAlbum();
+    } else if (isAlbums) onDeleteFromAlbum();
     else if (isEvents) onDeleteFrom(DatabaseTableKeys.Events);
   };
 
@@ -136,7 +161,7 @@ export const TopBar = () => {
 
     await Promise.all([
       ...newImages.map(async ({ name, url }) => {
-        const payload: ImageResult = { name, url };
+        const payload: IImageDTO = { name, url };
         return await addDoc(
           collection(firebaseDB, DatabaseTableKeys.Presentations),
           payload
@@ -159,6 +184,12 @@ export const TopBar = () => {
         );
       })
       .finally(() => setIsLoading(false));
+  };
+
+  const onSelectAll = () => {
+    if (albumId && album) updateSelectedImages(album.images ?? []);
+    else if (isPresentations) updateSelectedImages(presentations ?? []);
+    else if (isEvents) updateSelectedImages(events ?? []);
   };
 
   const getConfirmMessage = () => {
@@ -239,6 +270,15 @@ export const TopBar = () => {
             )}
 
             {mode === "select" && (
+              <Button
+                icon={<FontAwesomeIcon icon={faObjectGroup} />}
+                onClick={onSelectAll}
+              >
+                Selecionar todos
+              </Button>
+            )}
+
+            {mode === "select" && !!selectedImages.length && (
               <Button
                 type="primary"
                 icon={<FontAwesomeIcon icon={faPlus} />}

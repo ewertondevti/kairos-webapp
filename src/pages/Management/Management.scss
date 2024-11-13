@@ -16,19 +16,43 @@
   &__image {
     @include object-fit-cover;
 
+    &--default-size {
+      @include default-size;
+    }
+
+    &--event {
+      &-default-size {
+        .ant-image-img {
+          &.image__size-default {
+            @include default-size-event;
+          }
+        }
+      }
+    }
+
     &-container {
       height: 100%;
 
-      & > div > div {
-        display: flex;
-        justify-content: center;
+      &--auto-sizer {
+        height: 100%;
 
-        & > div {
-          position: absolute;
+        & > div > div {
+          display: flex;
+          justify-content: center;
+
+          & > div {
+            position: absolute;
+          }
         }
       }
 
       &--photos {
+        width: 60dvw;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      &--events {
         width: 60dvw;
         flex-wrap: wrap;
         justify-content: center;

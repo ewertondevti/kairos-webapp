@@ -1,7 +1,7 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import firebaseDB, { firebaseStorage } from "@/firebase";
 import { QueryNames } from "@/react-query/queryNames";
-import { ImageResult } from "@/types/store";
+import { IImageDTO } from "@/types/store";
 import { InboxOutlined } from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { message, Modal, Upload, UploadFile, UploadProps } from "antd";
@@ -70,7 +70,7 @@ export const EventModal: FC<Props> = ({ isOpen, onCancel }) => {
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
-          const payload: ImageResult = {
+          const payload: IImageDTO = {
             name: file.name,
             url: downloadURL,
           };

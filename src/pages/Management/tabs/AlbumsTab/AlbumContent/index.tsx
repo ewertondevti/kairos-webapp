@@ -1,11 +1,11 @@
-import { AlbumResult } from "@/types/store";
+import { IAlbumDTO } from "@/types/store";
 import { Flex, Image, Typography } from "antd";
 import { FC } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 
 const { Text } = Typography;
 
-type Props = AlbumResult;
+type Props = IAlbumDTO;
 
 export const AlbumContent: FC<Props> = ({ id, name, images }) => {
   const navigate = useNavigate();

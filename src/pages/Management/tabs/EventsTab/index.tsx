@@ -1,82 +1,23 @@
 import { LazyImage } from "@/components/LazyImage";
 import { useGetEvents } from "@/react-query";
-import { useAppState } from "@/store";
-import { ImageResult } from "@/types/store";
-import { Col, Empty, Flex, Row, Skeleton } from "antd";
-import { useCallback, useEffect, useState } from "react";
-import InfiniteScroll from "react-infinite-scroll-component";
-
-const viewDefault = 30;
-const viewSmall = 50;
-const viewLarge = 10;
+import { Col, Empty, Flex, Row } from "antd";
 
 export const EventsTab = () => {
-  const [images, setImages] = useState<ImageResult[]>([]);
-
   const { data, isLoading } = useGetEvents();
 
-  const { view } = useAppState();
-
-  const count = useCallback(() => {
-    switch (view) {
-      case "small":
-        return viewSmall;
-      case "large":
-        return viewLarge;
-
-      default:
-        return viewDefault;
-    }
-  }, [view]);
-
-  useEffect(() => {
-    if (data) {
-      setImages((state) => data.slice(0, state.length + count()));
-    }
-
-    return () => {
-      setImages([]);
-    };
-  }, [data, count]);
-
-  const getMoreImages = () =>
-    data && setImages((state) => data.slice(0, state.length + count()));
-
-  if (!images.length) return <Empty style={{ marginTop: 50 }} />;
+  if (!data?.length) return <Empty style={{ marginTop: 50 }} />;
 
   return (
-    <div
-      id="scrollableDiv"
-      className="events__container"
-      style={{
-        height: "100%",
-        overflow: "auto",
-      }}
-    >
-      <InfiniteScroll
-        dataLength={images.length}
-        next={getMoreImages}
-        hasMore={images.length < (data?.length ?? 0) && !isLoading}
-        loader={
-          <Flex gap={8} justify="center" align="center" style={{ padding: 10 }}>
-            <Skeleton.Image active />
-            <Skeleton.Image active />
-            <Skeleton.Image active />
-            <Skeleton.Image active />
-          </Flex>
-        }
-        scrollableTarget="scrollableDiv"
-      >
-        <Flex gap={8} justify="center" className="management__image-container">
-          <Row className="management__image-container--photos">
-            {data?.map((image) => (
-              <Col key={image.id}>
-                <LazyImage {...image} key={image.id} isLoading={isLoading} />
-              </Col>
-            ))}
-          </Row>
-        </Flex>
-      </InfiniteScroll>
-    </div>
+    <Flex gap={8} justify="center" className="management__image-container">
+      <Row gutter={[8, 8]} className="management__image-container--events">
+        {data.map((image) => (
+          <Col key={image.id}>
+            <Flex className="management__image--event-default-size">
+              <LazyImage {...image} key={image.id} isLoading={isLoading} />
+            </Flex>
+          </Col>
+        ))}
+      </Row>
+    </Flex>
   );
 };

@@ -3,7 +3,7 @@ import firebaseDB from "@/firebase";
 import { useGetAlbums } from "@/react-query";
 import { useAppState } from "@/store";
 import { AlbumValuesType } from "@/types/album";
-import { AlbumResult } from "@/types/store";
+import { IAlbumDTO } from "@/types/store";
 import { requiredRules } from "@/utils/app";
 import { useQueryClient } from "@tanstack/react-query";
 import { Form, Input, message, Modal, Select, SelectProps } from "antd";
@@ -58,7 +58,7 @@ export const EditAlbumModal = () => {
   const onUpdate = async (values: AlbumValuesType) => {
     setIsLoading(true);
 
-    const payload: AlbumResult = {
+    const payload: IAlbumDTO = {
       name: values.name,
     };
 

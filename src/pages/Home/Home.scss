@@ -4,6 +4,9 @@
   overflow-y: auto;
 
   &__content {
+    &-container {
+      margin: 100px 0;
+    }
 
     &-presentation {
       .ant-carousel {
@@ -20,6 +23,46 @@
     &-image {
       &.ant-image-img {
         @include carousel-image-xl;
+      }
+    }
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  .home {
+    &__content {
+      &-container {
+        margin: 50px 0;
+      }
+    }
+  }
+}
+
+@media only screen and (min-width: 481px) and (max-width: 767px) {
+  .home {
+    &__content {
+      &-container {
+        margin: 50px 0;
+      }
+    }
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 1024px) {
+  .home {
+    &__content {
+      &-container {
+        margin: 75px 0;
+      }
+    }
+  }
+}
+
+@media only screen and (min-width: 1025px) and (max-width: 1366px) {
+  .home {
+    &__content {
+      &-container {
+        margin: 75px 0;
       }
     }
   }

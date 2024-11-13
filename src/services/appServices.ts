@@ -1,55 +1,54 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import firebaseDB from "@/firebase";
 import {
-  AlbumResult,
-  AlbumType,
-  EventResult,
-  ImageResult,
-  ImageType,
-  PresentationResult,
+  IAlbum,
+  IAlbumDTO,
+  IEventDTO,
+  IImage,
+  IPresentationDTO,
 } from "@/types/store";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 
-export const getImages = async (): Promise<ImageResult[]> => {
-  const querySnapshot = await getDocs(
-    collection(firebaseDB, DatabaseTableKeys.AllPhotos)
-  );
-
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as ImageType),
-  }));
-};
-
-export const getAlbums = async (): Promise<AlbumResult[]> => {
+export const getAlbums = async (): Promise<IAlbumDTO[]> => {
   const querySnapshot = await getDocs(
     collection(firebaseDB, DatabaseTableKeys.Albums)
   );
 
   return querySnapshot.docs.map((doc) => ({
     id: doc.id,
-    ...(doc.data() as AlbumType),
+    ...(doc.data() as IAlbum),
   }));
 };
 
-export const getPresentations = async (): Promise<PresentationResult[]> => {
+export const getAlbumById = async (
+  id: string
+): Promise<IAlbumDTO | undefined> => {
+  const docSnap = await getDoc(doc(firebaseDB, "albums", id));
+
+  if (docSnap.exists())
+    return { id: docSnap.id, ...(docSnap.data() as IAlbum) };
+
+  return;
+};
+
+export const getPresentations = async (): Promise<IPresentationDTO[]> => {
   const querySnapshot = await getDocs(
     collection(firebaseDB, DatabaseTableKeys.Presentations)
   );
 
   return querySnapshot.docs.map((doc) => ({
     id: doc.id,
-    ...(doc.data() as ImageType),
+    ...(doc.data() as IImage),
   }));
 };
 
-export const getEvents = async (): Promise<EventResult[]> => {
+export const getEvents = async (): Promise<IEventDTO[]> => {
   const querySnapshot = await getDocs(
     collection(firebaseDB, DatabaseTableKeys.Events)
   );
 
   return querySnapshot.docs.map((doc) => ({
     id: doc.id,
-    ...(doc.data() as ImageType),
+    ...(doc.data() as IImage),
   }));
 };

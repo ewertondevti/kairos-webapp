@@ -1,7 +1,7 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import firebaseDB, { firebaseStorage } from "@/firebase";
 import { QueryNames } from "@/react-query/queryNames";
-import { AlbumResult, ImageResult } from "@/types/store";
+import { IAlbumDTO, IImageDTO } from "@/types/store";
 import { requiredRules } from "@/utils/app";
 import { InboxOutlined, PaperClipOutlined } from "@ant-design/icons";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
@@ -67,7 +67,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
       state.map((file) => ({ ...file, status: "uploading", percent: 0 }))
     );
 
-    const images: ImageResult[] = [];
+    const images: IImageDTO[] = [];
     const newProgress: number[] = new Array(fileList.length).fill(0);
 
     fileList.forEach((file, idx) => {
@@ -112,7 +112,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
           });
 
           if (idx === fileList.length - 1) {
-            const payload: AlbumResult = {
+            const payload: IAlbumDTO = {
               name: values.name,
               images,
             };

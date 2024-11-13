@@ -9,10 +9,12 @@ export const PresentationTab = () => {
 
   return (
     <Flex gap={8} justify="center" className="management__image-container">
-      <Row className="management__image-container--photos">
+      <Row gutter={[8, 8]} className="management__image-container--photos">
         {images?.map((image) => (
           <Col key={image.id}>
-            <LazyImage {...image} key={image.id} isLoading={isLoading} />
+            <Flex className="management__image--default-size">
+              <LazyImage {...image} key={image.id} isLoading={isLoading} />
+            </Flex>
           </Col>
         ))}
       </Row>
