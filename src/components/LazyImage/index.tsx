@@ -2,13 +2,16 @@ import { useAppState } from "@/store";
 import { ImageResult } from "@/types/store";
 import { Checkbox, Flex, Image, Skeleton } from "antd";
 import { FC } from "react";
+import { useInView } from "react-intersection-observer";
 
 type Props = ImageResult & {
   isLoading: boolean;
 };
 
-export const CustomImage: FC<Props> = ({ id, name, url, isLoading }) => {
-  const { view, mode, selectedImages, updateSelectedImages } = useAppState();
+export const LazyImage: FC<Props> = ({ id, name, url, isLoading }) => {
+  const { ref, inView } = useInView({ threshold: 0, triggerOnce: false });
+
+  const { mode, selectedImages, updateSelectedImages } = useAppState();
 
   const onSelect = () => {
     if (selectedImages.some((img) => img.url === url)) {
@@ -17,15 +20,16 @@ export const CustomImage: FC<Props> = ({ id, name, url, isLoading }) => {
   };
 
   const renderImage = () => {
-    if (isLoading) return <Skeleton.Image active />;
+    if (isLoading || !inView) {
+      return <Skeleton.Image active className="image-skeleton" />;
+    }
 
     return (
       <>
         <Image
           src={url}
-          className={`management__image image__size-${view}`}
+          className="management__image image__size-default"
           alt={name}
-          loading="lazy"
           preview={mode === "default"}
         />
 
@@ -42,7 +46,7 @@ export const CustomImage: FC<Props> = ({ id, name, url, isLoading }) => {
   };
 
   return (
-    <Flex className="management__image-content" key={id} onClick={onSelect}>
+    <Flex key={id} onClick={onSelect} ref={ref}>
       {renderImage()}
     </Flex>
   );

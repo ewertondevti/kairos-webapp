@@ -29,6 +29,7 @@ import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
 import { saveAs } from "file-saver";
 import { useState } from "react";
+import { isMobile } from "react-device-detect";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Management.scss";
 import { managementTabs } from "./tabs/management.tabs";
@@ -101,7 +102,7 @@ const Management = () => {
   }));
 
   return (
-    <Layout style={{ height: "100%", padding: 20 }}>
+    <Layout style={{ height: "100%", padding: isMobile ? 8 : 20 }}>
       <Flex gap={16} vertical>
         <Breadcrumb style={{ textTransform: "capitalize" }} items={items} />
 

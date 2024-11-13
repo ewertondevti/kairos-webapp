@@ -17,8 +17,19 @@
     @include object-fit-cover;
 
     &-container {
+      height: 100%;
+
+      & > div > div {
+        display: flex;
+        justify-content: center;
+
+        & > div {
+          position: absolute;
+        }
+      }
+
       &--photos {
-        width: 100dvw;
+        width: 60dvw;
         flex-wrap: wrap;
         justify-content: center;
       }
@@ -28,6 +39,12 @@
       position: relative;
       padding: 3px;
       border-radius: 10px;
+      height: 100%;
+      width: 100%;
+
+      & > div {
+        @include view-default;
+      }
     }
 
     &-options {
@@ -43,15 +60,7 @@
 
     &.image__size {
       &-default {
-        @include view-default-desktop;
-      }
-
-      &-small {
-        @include view-small-desktop;
-      }
-
-      &-large {
-        @include view-large-desktop;
+        @include view-default;
       }
     }
 
@@ -176,15 +185,7 @@
 
       &.image__size {
         &-default {
-          @include view-default-smartphone-portrait;
-        }
-
-        &-small {
-          @include view-small-smartphone-portrait;
-        }
-
-        &-large {
-          @include view-large-smartphone-portrait;
+          @include view-default;
         }
       }
 
@@ -251,15 +252,7 @@
 
       &.image__size {
         &-default {
-          @include view-default-smartphone-landscape;
-        }
-
-        &-small {
-          @include view-small-smartphone-landscape;
-        }
-
-        &-large {
-          @include view-large-smartphone-landscape;
+          @include view-default;
         }
       }
 
@@ -327,15 +320,7 @@
 
       &.image__size {
         &-default {
-          @include view-default-tablet-portrait;
-        }
-
-        &-small {
-          @include view-small-tablet-portrait;
-        }
-
-        &-large {
-          @include view-large-tablet-portrait;
+          @include view-default;
         }
       }
 
@@ -398,15 +383,7 @@
 
       &.image__size {
         &-default {
-          @include view-default-tablet-landscape;
-        }
-
-        &-small {
-          @include view-small-tablet-landscape;
-        }
-
-        &-large {
-          @include view-large-tablet-landscape;
+          @include view-default;
         }
       }
 

@@ -1,4 +1,4 @@
-import { CustomImage } from "@/components/CustomImage";
+import { LazyImage } from "@/components/LazyImage";
 import { useGetEvents } from "@/react-query";
 import { useAppState } from "@/store";
 import { ImageResult } from "@/types/store";
@@ -71,7 +71,7 @@ export const EventsTab = () => {
           <Row className="management__image-container--photos">
             {data?.map((image) => (
               <Col key={image.id}>
-                <CustomImage {...image} key={image.id} isLoading={isLoading} />
+                <LazyImage {...image} key={image.id} isLoading={isLoading} />
               </Col>
             ))}
           </Row>

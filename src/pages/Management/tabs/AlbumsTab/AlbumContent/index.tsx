@@ -11,13 +11,11 @@ export const AlbumContent: FC<Props> = ({ id, name, images }) => {
   const navigate = useNavigate();
   const { id: albumId } = useParams();
 
-  if (albumId) {
-    return <Outlet />;
-  }
-
   const coverImages = images?.filter((_, idx) => idx < 3) ?? [];
 
   const onRedirect = () => navigate(id!);
+
+  if (albumId) return <Outlet />;
 
   return (
     <Flex className="management__album-content" key={id} onClick={onRedirect}>

@@ -1,4 +1,4 @@
-import { CustomImage } from "@/components/CustomImage";
+import { LazyImage } from "@/components/LazyImage";
 import { useGetPresentations } from "@/react-query";
 import { Col, Empty, Flex, Row } from "antd";
 
@@ -12,7 +12,7 @@ export const PresentationTab = () => {
       <Row className="management__image-container--photos">
         {images?.map((image) => (
           <Col key={image.id}>
-            <CustomImage {...image} key={image.id} isLoading={isLoading} />
+            <LazyImage {...image} key={image.id} isLoading={isLoading} />
           </Col>
         ))}
       </Row>

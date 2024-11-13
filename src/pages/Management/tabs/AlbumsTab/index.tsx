@@ -8,7 +8,7 @@ export const AlbumsTab = () => {
   if (!albums?.length) return <Empty style={{ marginTop: 50 }} />;
 
   return (
-    <Flex gap={32} justify="center">
+    <Flex gap={32} justify="center" style={{ height: "100%" }}>
       {albums?.map((album) => (
         <AlbumContent {...album} key={album.id} />
       ))}

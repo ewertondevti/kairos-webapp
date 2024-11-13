@@ -3,9 +3,7 @@ import { ManagementRoutesEnums } from "@/enums/routesEnums";
 import firebaseDB, { firebaseStorage } from "@/firebase";
 import { CreateAlbumModal } from "@/pages/Management/CreateAlbumModal";
 import { useAppState, useAuth } from "@/store";
-import { AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
 import {
-  faGrip,
   faImages,
   faObjectGroup,
   faTrash,
@@ -14,16 +12,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Button,
-  Col,
-  Flex,
-  message,
-  Popconfirm,
-  Row,
-  Segmented,
-  Tooltip,
-} from "antd";
+import { Button, Col, Flex, message, Popconfirm, Row, Tooltip } from "antd";
 import { arrayRemove, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import { useState } from "react";
@@ -44,10 +33,8 @@ export const TopBar = () => {
   const { user } = useAuth();
 
   const {
-    view,
     mode,
     selectedImages,
-    updateView,
     updateMode,
     updateSelectedImages,
     toogleEditAlbumModal: toogleAlbumModal,
@@ -177,30 +164,6 @@ export const TopBar = () => {
       <Row gutter={[0, 16]}>
         <Col flex="auto">
           <Flex gap={8}>
-            {(!isAlbums || !!albumId) && (
-              <Segmented
-                value={view}
-                onChange={updateView}
-                options={[
-                  {
-                    value: "small",
-                    icon: <BarsOutlined />,
-                    title: "Imagens pequenas",
-                  },
-                  {
-                    value: "default",
-                    icon: <FontAwesomeIcon icon={faGrip} />,
-                    title: "Imagens médias",
-                  },
-                  {
-                    value: "large",
-                    icon: <AppstoreOutlined />,
-                    title: "Imagens grandes",
-                  },
-                ]}
-              />
-            )}
-
             {!!selectedImages.length && isAllPhotos && (
               <Button
                 type="primary"

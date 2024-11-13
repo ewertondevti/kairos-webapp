@@ -11,7 +11,7 @@ export type ImageType = {
 
 export type AlbumType = {
   name: string;
-  images?: ImageResult[];
+  images: ImageResult[];
 };
 
 export type ImageResult = ImageType & CommonType;
