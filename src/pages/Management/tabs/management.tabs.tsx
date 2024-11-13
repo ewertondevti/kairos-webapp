@@ -4,11 +4,6 @@ import { Outlet } from "react-router-dom";
 
 export const managementTabs: TabsProps["items"] = [
   {
-    key: ManagementRoutesEnums.AllPhotos,
-    label: "Todas as fotos",
-    children: <Outlet />,
-  },
-  {
     key: ManagementRoutesEnums.Albums,
     label: "Álbuns",
     children: <Outlet />,

@@ -44,7 +44,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
           type="text"
           icon={<FontAwesomeIcon icon={faImages} />}
           className="align-left"
-          onClick={() => navigate(`/${RoutesEnums.Gallery}`)}
+          onClick={() => onRedirect(`/${RoutesEnums.Gallery}`)}
           block
         >
           Galeria de fotos

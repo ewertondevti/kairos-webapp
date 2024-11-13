@@ -6,7 +6,6 @@ import { Home } from "./pages/Home";
 import Management from "./pages/Management";
 import { AlbumsTab } from "./pages/Management/tabs/AlbumsTab";
 import { AlbumDetails } from "./pages/Management/tabs/AlbumsTab/AlbumDetails";
-import { AllPhotosTab } from "./pages/Management/tabs/AllPhotosTab";
 import { EventsTab } from "./pages/Management/tabs/EventsTab";
 import { PresentationTab } from "./pages/Management/tabs/PresentationTab";
 import { MembershipForm } from "./pages/MembershipForm";
@@ -19,17 +18,15 @@ function App() {
           <Route index element={<Home />} />
 
           <Route path={RoutesEnums.Gallery} element={<Gallery />} />
-          <Route path={RoutesEnums.MembershipForm} element={<MembershipForm />} />
+          <Route
+            path={RoutesEnums.MembershipForm}
+            element={<MembershipForm />}
+          />
 
           <Route path={RoutesEnums.Management} element={<Management />}>
             <Route
               index
-              element={<Navigate to={ManagementRoutesEnums.AllPhotos} />}
-            />
-
-            <Route
-              path={ManagementRoutesEnums.AllPhotos}
-              element={<AllPhotosTab />}
+              element={<Navigate to={ManagementRoutesEnums.Albums} />}
             />
 
             <Route path={ManagementRoutesEnums.Albums} element={<AlbumsTab />}>

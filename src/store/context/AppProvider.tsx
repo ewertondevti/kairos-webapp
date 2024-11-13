@@ -7,12 +7,12 @@ type Props = {
 };
 
 const initialState: AppState = {
-  albumModalOpen: false,
+  editAlbumOpen: false,
   selectedImages: [],
   mode: "default",
   view: "default",
   updateImageUrl: () => {},
-  toogleAlbumModal: () => {},
+  toogleEditAlbumModal: () => {},
   updateSelectedImages: () => {},
   updateMode: () => {},
   updateView: () => {},
@@ -22,15 +22,15 @@ export const AppContext = createContext<AppState>(initialState);
 
 const AppProvider: FC<Props> = ({ children }) => {
   const [imageId, setImageId] = useState("");
-  const [albumModalOpen, setAlbumModalOpen] = useState(false);
+  const [editAlbumOpen, setEditAlbumModalOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageResult[]>([]);
   const [mode, setMode] = useState<AppState["mode"]>("default");
   const [view, setView] = useState<AppState["view"]>("default");
 
   const updateImageUrl: AppState["updateImageUrl"] = (id) => setImageId(id);
 
-  const toogleAlbumModal: AppState["toogleAlbumModal"] = (open) =>
-    setAlbumModalOpen(open);
+  const toogleEditAlbumModal: AppState["toogleEditAlbumModal"] = (open) =>
+    setEditAlbumModalOpen(open);
 
   const updateSelectedImages: AppState["updateSelectedImages"] = (urls) =>
     setSelectedImages(urls);
@@ -42,12 +42,12 @@ const AppProvider: FC<Props> = ({ children }) => {
     <AppContext.Provider
       value={{
         imageUrl: imageId,
-        albumModalOpen,
+        editAlbumOpen,
         selectedImages,
         mode,
         view,
         updateImageUrl,
-        toogleAlbumModal,
+        toogleEditAlbumModal,
         updateSelectedImages,
         updateMode,
         updateView,

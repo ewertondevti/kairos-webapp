@@ -1,4 +1,4 @@
-import { AlbumModal } from "@/components/AlbumModal";
+import { EditAlbumModal } from "@/components/EditAlbumModal";
 import { TopBar } from "@/components/TopBar";
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
 import { useGetAlbums, useGetImages } from "@/react-query";
@@ -182,7 +182,7 @@ const Management = () => {
         </Image.PreviewGroup>
       </Content>
 
-      <AlbumModal />
+      <EditAlbumModal />
     </Layout>
   );
 };

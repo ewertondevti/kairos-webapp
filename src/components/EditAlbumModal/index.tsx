@@ -7,12 +7,12 @@ import { AlbumResult } from "@/types/store";
 import { requiredRules } from "@/utils/app";
 import { useQueryClient } from "@tanstack/react-query";
 import { Form, Input, message, Modal, Select, SelectProps } from "antd";
-import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import "./AlbumModal.scss";
+import "./EditAlbumModal.scss";
 
-export const AlbumModal = () => {
+export const EditAlbumModal = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [form] = Form.useForm();
@@ -31,9 +31,9 @@ export const AlbumModal = () => {
   const album = albums?.find((a) => a.id === albumId);
 
   const {
-    albumModalOpen,
+    editAlbumOpen,
     selectedImages,
-    toogleAlbumModal,
+    toogleEditAlbumModal,
     updateSelectedImages,
     updateMode,
   } = useAppState();
@@ -91,51 +91,25 @@ export const AlbumModal = () => {
     queryClient.refetchQueries();
   };
 
-  const onCreate = async (values: AlbumValuesType) => {
-    setIsLoading(true);
-
-    const payload: AlbumResult = {
-      name: values.name,
-      images: selectedImages,
-    };
-
-    try {
-      await addDoc(collection(firebaseDB, DatabaseTableKeys.Albums), payload);
-
-      message.success("Álbum criado com sucesso!");
-    } catch (error) {
-      console.error(error);
-      message.error("Houve um erro ao tentar criar o álbum.");
-    }
-
-    setIsLoading(false);
-    onCancel();
-    queryClient.refetchQueries();
-  };
-
   const onCancel = () => {
     form.resetFields();
-    toogleAlbumModal(false);
+    toogleEditAlbumModal(false);
     updateSelectedImages([]);
     updateMode("default");
   };
 
   return (
     <Modal
-      open={albumModalOpen}
+      open={editAlbumOpen}
       onOk={() => form.submit()}
       onCancel={onCancel}
-      title={album || albumIdValue ? "Editar álbum" : "Criar álbum"}
+      title="Editar álbum"
       okText="Gravar"
       className="album__modal"
       zIndex={1300}
       okButtonProps={{ loading: isLoading }}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={album || albumIdValue ? onUpdate : onCreate}
-      >
+      <Form form={form} layout="vertical" onFinish={onUpdate}>
         <Form.Item name="name" label="Nome do álbum" rules={requiredRules}>
           <Input placeholder="Digite o nome do álbum..." />
         </Form.Item>

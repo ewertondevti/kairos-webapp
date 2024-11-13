@@ -126,7 +126,6 @@ export const PresentationModal: FC<Props> = ({ isOpen, onCancel }) => {
 
       <div
         id="scrollableDiv"
-        className="events__container"
         style={{
           height: "100%",
           overflow: "auto",

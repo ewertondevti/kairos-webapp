@@ -1,7 +1,7 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import { ManagementRoutesEnums } from "@/enums/routesEnums";
 import firebaseDB, { firebaseStorage } from "@/firebase";
-import { AddImagesModal } from "@/pages/Management/AddImagesModal";
+import { CreateAlbumModal } from "@/pages/Management/CreateAlbumModal";
 import { useAppState, useAuth } from "@/store";
 import { AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
 import {
@@ -50,7 +50,7 @@ export const TopBar = () => {
     updateView,
     updateMode,
     updateSelectedImages,
-    toogleAlbumModal,
+    toogleEditAlbumModal: toogleAlbumModal,
   } = useAppState();
 
   const isAllPhotos = pathname.includes(ManagementRoutesEnums.AllPhotos);
@@ -280,20 +280,20 @@ export const TopBar = () => {
               </Button>
             )}
 
-            {!!user && isAllPhotos && (
+            {!!user && isAlbums && !albumId && (
               <Button
                 type="primary"
                 icon={<FontAwesomeIcon icon={faUpload} />}
                 onClick={showModal}
               >
-                Upload
+                Criar álbum
               </Button>
             )}
           </Flex>
         </Col>
       </Row>
 
-      <AddImagesModal isOpen={isOpen} onCancel={hideModal} />
+      <CreateAlbumModal isOpen={isOpen} onCancel={hideModal} />
       <PresentationModal isOpen={isPresentOpen} onCancel={hidePresentModal} />
       <EventModal isOpen={isEventOpen} onCancel={hideEventModal} />
     </>
