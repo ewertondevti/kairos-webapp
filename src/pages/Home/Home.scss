@@ -25,6 +25,12 @@
         @include carousel-image-xl;
       }
     }
+
+    &--event-default-size {
+      .ant-image-img {
+        @include default-size-event;
+      }
+    }
   }
 }
 
@@ -43,6 +49,12 @@
     &__content {
       &-container {
         margin: 50px 0;
+      }
+    }
+
+    &--event-default-size {
+      .ant-image-img {
+        @include default-size-event;
       }
     }
   }

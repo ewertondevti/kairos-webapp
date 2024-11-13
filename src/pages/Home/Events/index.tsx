@@ -1,6 +1,7 @@
 import { useGetEvents } from "@/react-query";
 import { Col, Divider, Flex, Image, Row } from "antd";
 import Title from "antd/es/typography/Title";
+import { Fragment } from "react/jsx-runtime";
 
 export const Events = () => {
   const { data: events } = useGetEvents();
@@ -18,8 +19,8 @@ export const Events = () => {
       <Flex align="center" justify="center" className="home__content-container">
         <Row gutter={[8, 8]} justify="center" style={{ width: "100%" }}>
           {events?.map(({ id, url }, idx) => (
-            <>
-              <Col xs={0} sm={1}>
+            <Fragment key={id}>
+              <Col xs={0} lg={1}>
                 <Flex justify="center" style={{ height: "100%" }}>
                   {idx !== 0 && (
                     <Divider type="vertical" style={{ height: "100%" }} />
@@ -27,12 +28,12 @@ export const Events = () => {
                 </Flex>
               </Col>
 
-              <Col key={id}>
-                <Flex className="management__image--event-default-size">
+              <Col>
+                <Flex className="home__content--event-default-size">
                   <Image src={url} />
                 </Flex>
               </Col>
-            </>
+            </Fragment>
           ))}
         </Row>
       </Flex>
