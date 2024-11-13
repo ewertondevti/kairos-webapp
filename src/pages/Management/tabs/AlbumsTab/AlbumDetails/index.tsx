@@ -29,25 +29,24 @@ export const AlbumDetails = () => {
                   height={height}
                   columnCount={columnCount}
                   columnWidth={COLUMN_WIDTH}
-                  rowCount={Math.ceil(album.images.length / columnCount)}
+                  rowCount={Math.ceil(album.images!.length / columnCount)}
                   rowHeight={ROW_HEIGHT}
                   width={width}
                 >
                   {({ columnIndex, rowIndex, style }) => {
-                    const index =
-                      rowIndex *
-                        Math.floor(Number(style.width) / COLUMN_WIDTH) +
-                      columnIndex;
+                    const index = rowIndex * columnCount + columnIndex;
 
-                    if (index >= album.images.length) return null;
+                    if (index >= album.images!.length) return null;
+
+                    const image = album.images![index];
 
                     return (
-                      <Flex style={style} className="management__image-content">
-                        <LazyImage
-                          {...album.images[index]}
-                          key={index}
-                          isLoading={isLoading}
-                        />
+                      <Flex
+                        style={style}
+                        className="management__image-content"
+                        key={image.id}
+                      >
+                        <LazyImage {...image} isLoading={isLoading} />
                       </Flex>
                     );
                   }}

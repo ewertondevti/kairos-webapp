@@ -40,7 +40,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
   const queryClient = useQueryClient();
 
   const refresh = () =>
-    queryClient.refetchQueries({ queryKey: [QueryNames.GetImages] });
+    queryClient.refetchQueries({ queryKey: [QueryNames.GetAlbums] });
 
   const getMoreImages = () => setData(fileList.slice(0, data.length + 10));
 
@@ -123,15 +123,15 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
                 payload
               );
 
+              refresh();
+              handleCancel();
               message.success("Álbum criado com sucesso!");
             } catch (error) {
               console.error(error);
               message.error("Houve um erro ao tentar criar o álbum.");
+            } finally {
+              setIsLoading(false);
             }
-
-            setIsLoading(false);
-            refresh();
-            handleCancel();
           }
         }
       );
@@ -148,6 +148,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
       okText="Gravar"
       okButtonProps={{ loading: isLoading }}
       className="album__modal-create"
+      loading={isLoading}
     >
       <Form form={form} layout="vertical" onFinish={onSave}>
         <Form.Item name="name" label="Nome do álbum" rules={requiredRules}>

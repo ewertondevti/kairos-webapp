@@ -32,15 +32,6 @@ export const LazyImage: FC<Props> = ({ id, name, url, isLoading }) => {
           alt={name}
           preview={mode === "default"}
         />
-
-        {mode === "select" && (
-          <div className="management__image-select">
-            <Checkbox
-              onClick={onSelect}
-              checked={selectedImages.some((img) => img.url === url)}
-            />
-          </div>
-        )}
       </>
     );
   };
@@ -48,6 +39,15 @@ export const LazyImage: FC<Props> = ({ id, name, url, isLoading }) => {
   return (
     <Flex key={id} onClick={onSelect} ref={ref}>
       {renderImage()}
+
+      {mode === "select" && (
+        <div className="management__image-select">
+          <Checkbox
+            onClick={onSelect}
+            checked={selectedImages.some((img) => img.url === url)}
+          />
+        </div>
+      )}
     </Flex>
   );
 };

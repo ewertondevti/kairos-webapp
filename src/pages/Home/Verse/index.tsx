@@ -25,8 +25,12 @@ export const Verse = () => {
     const verse = search.get("verse");
 
     const updateVerse = (verse: IVerse) => {
-      setVerse(verse);
-      setIsLoading(false);
+      if (verse.text.length < 50) {
+        getRandomVerse().then(updateVerse);
+      } else {
+        setVerse(verse);
+        setIsLoading(false);
+      }
     };
 
     setIsLoading(true);
@@ -61,14 +65,30 @@ export const Verse = () => {
     }
   };
 
-  if (isLoading) return <Skeleton active />;
+  if (isLoading) {
+    return (
+      <Col span={24}>
+        <Divider />
+
+        <Flex justify="center">
+          <Skeleton active className="skeleton-verse" />
+        </Flex>
+
+        <Divider />
+      </Col>
+    );
+  }
 
   return (
     <Col span={24}>
+      <Divider />
 
-      <Flex justify="center" align="center" className="verse" vertical>
+      <Flex justify="center" align="center" gap={32} className="verse" vertical>
+        <div className="verse__bible-icon" />
+
         <Space className="verse__content" direction="vertical">
-          <Title level={5}>{verse?.text}</Title>
+          <Title level={3}>{verse?.text}</Title>
+
           <Space size="small">
             <Text strong>{verse?.book.name}</Text>
             <Text strong>

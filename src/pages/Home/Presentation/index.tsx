@@ -18,12 +18,10 @@ export const Presentation = () => {
       <Carousel
         className="home__content-carousel"
         infinite
-        dotPosition="left"
         arrows
         autoplay
         speed={2000}
         autoplaySpeed={5000}
-        style={{ height: "100%" }}
         adaptiveHeight
       >
         {images?.map(({ id, url }) => (

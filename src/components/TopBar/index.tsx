@@ -2,10 +2,13 @@ import { DatabaseTableKeys } from "@/enums/app";
 import { ManagementRoutesEnums } from "@/enums/routesEnums";
 import firebaseDB, { firebaseStorage } from "@/firebase";
 import { CreateAlbumModal } from "@/pages/Management/CreateAlbumModal";
+import { useGetPresentations } from "@/react-query";
 import { useAppState, useAuth } from "@/store";
+import { ImageResult } from "@/types/store";
 import {
   faImages,
   faObjectGroup,
+  faPlus,
   faTrash,
   faUpload,
   faXmark,
@@ -13,16 +16,21 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Col, Flex, message, Popconfirm, Row, Tooltip } from "antd";
-import { arrayRemove, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  arrayRemove,
+  collection,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import { useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { EventModal } from "../EventModal";
-import { PresentationModal } from "../PresentationModal";
 
 export const TopBar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPresentOpen, setIsPresentOpen] = useState(false);
   const [isEventOpen, setIsEventOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,27 +39,23 @@ export const TopBar = () => {
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
+  const { data: presentations } = useGetPresentations();
 
   const {
     mode,
     selectedImages,
     updateMode,
     updateSelectedImages,
-    toogleEditAlbumModal: toogleAlbumModal,
+    toogleEditAlbumModal,
   } = useAppState();
 
-  const isAllPhotos = pathname.includes(ManagementRoutesEnums.AllPhotos);
   const isAlbums = pathname.includes(ManagementRoutesEnums.Albums);
-  const isPresentations = pathname.includes(ManagementRoutesEnums.Presentation);
   const isEvents = pathname.includes(ManagementRoutesEnums.Events);
 
   const showSelectBtn = !!user && mode === "default";
 
   const showModal = () => setIsOpen(true);
   const hideModal = () => setIsOpen(false);
-
-  const showPresentModal = () => setIsPresentOpen(true);
-  const hidePresentModal = () => setIsPresentOpen(false);
 
   const showEventModal = () => setIsEventOpen(true);
   const hideEventModal = () => setIsEventOpen(false);
@@ -76,32 +80,6 @@ export const TopBar = () => {
       .catch(() =>
         message.error("Houve um erro ao tentar remover fotos deste álbum!")
       )
-      .finally(() => setIsLoading(false));
-  };
-
-  const onDeleteFromPresentations = async () => {
-    setIsLoading(true);
-
-    await Promise.all(
-      selectedImages.map(async ({ id }) => {
-        try {
-          // 2. Apagar a URL correspondente do Firestore
-          await deleteDoc(
-            doc(firebaseDB, DatabaseTableKeys.Presentations, id!)
-          );
-
-          return true;
-        } catch (error: any) {
-          message.error("Erro ao deletar a imagem: " + error.message);
-          return false;
-        }
-      })
-    )
-      .then((res) => {
-        refresh();
-        if (res.every((bool) => bool))
-          message.success("Foto(s) apagada(s) com sucesso!");
-      })
       .finally(() => setIsLoading(false));
   };
 
@@ -135,15 +113,52 @@ export const TopBar = () => {
   };
 
   const onDelete = () => {
-    if (isAllPhotos) onDeleteFrom(DatabaseTableKeys.AllPhotos);
-    else if (isAlbums) onDeleteFromAlbum();
-    else if (isPresentations) onDeleteFromPresentations();
+    if (isAlbums) onDeleteFromAlbum();
     else if (isEvents) onDeleteFrom(DatabaseTableKeys.Events);
   };
 
   const onCancelSelection = () => {
     updateSelectedImages([]);
     updateMode("default");
+  };
+
+  const onAddPresentation = async () => {
+    setIsLoading(true);
+
+    const images2delete =
+      presentations?.filter((img) =>
+        selectedImages.every((i) => i.id !== img.id)
+      ) ?? [];
+
+    const newImages = selectedImages.filter((img) =>
+      presentations?.every((i) => i.id !== img.id)
+    );
+
+    await Promise.all([
+      ...newImages.map(async ({ name, url }) => {
+        const payload: ImageResult = { name, url };
+        return await addDoc(
+          collection(firebaseDB, DatabaseTableKeys.Presentations),
+          payload
+        );
+      }),
+      ...images2delete.map(
+        async ({ id }) =>
+          await deleteDoc(doc(firebaseDB, DatabaseTableKeys.Presentations, id!))
+      ),
+    ])
+      .then(() => {
+        message.success("Foto(s) adicionada(s) a apresentação!");
+        queryClient.refetchQueries();
+        onCancelSelection();
+      })
+      .catch((error) => {
+        console.error(error);
+        message.error(
+          "Houve um erro ao tentar adicionar fotos a apresentação."
+        );
+      })
+      .finally(() => setIsLoading(false));
   };
 
   const getConfirmMessage = () => {
@@ -164,33 +179,13 @@ export const TopBar = () => {
       <Row gutter={[0, 16]}>
         <Col flex="auto">
           <Flex gap={8}>
-            {!!selectedImages.length && isAllPhotos && (
-              <Button
-                type="primary"
-                icon={<FontAwesomeIcon icon={faImages} />}
-                onClick={() => toogleAlbumModal(true)}
-              >
-                Adicionar a álbum
-              </Button>
-            )}
-
             {!!albumId && (
               <Button
                 type="primary"
                 icon={<FontAwesomeIcon icon={faImages} />}
-                onClick={() => toogleAlbumModal(true)}
+                onClick={() => toogleEditAlbumModal(true)}
               >
                 Editar álbum
-              </Button>
-            )}
-
-            {isPresentations && (
-              <Button
-                type="primary"
-                icon={<FontAwesomeIcon icon={faImages} />}
-                onClick={showPresentModal}
-              >
-                Adicionar imagens
               </Button>
             )}
 
@@ -243,7 +238,18 @@ export const TopBar = () => {
               </Button>
             )}
 
-            {!!user && isAlbums && !albumId && (
+            {mode === "select" && (
+              <Button
+                type="primary"
+                icon={<FontAwesomeIcon icon={faPlus} />}
+                onClick={onAddPresentation}
+                loading={isLoading}
+              >
+                Apresentação
+              </Button>
+            )}
+
+            {!!user && !albumId && (
               <Button
                 type="primary"
                 icon={<FontAwesomeIcon icon={faUpload} />}
@@ -257,7 +263,6 @@ export const TopBar = () => {
       </Row>
 
       <CreateAlbumModal isOpen={isOpen} onCancel={hideModal} />
-      <PresentationModal isOpen={isPresentOpen} onCancel={hidePresentModal} />
       <EventModal isOpen={isEventOpen} onCancel={hideEventModal} />
     </>
   );
