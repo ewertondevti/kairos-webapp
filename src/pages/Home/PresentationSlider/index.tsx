@@ -1,7 +1,7 @@
 import { useGetPresentations } from "@/react-query";
 import { Carousel, Col, Flex, Image } from "antd";
 
-export const Slider = () => {
+export const PresentationSlider = () => {
   const { data: images } = useGetPresentations();
 
   if (!images?.length) return null;

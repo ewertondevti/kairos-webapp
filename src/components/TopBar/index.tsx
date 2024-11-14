@@ -195,6 +195,7 @@ export const TopBar = () => {
 
   const getSelectLabel = () => {
     if (
+      selectedImages.length &&
       [presentations?.length, events?.length, album?.images.length].includes(
         selectedImages.length
       )
