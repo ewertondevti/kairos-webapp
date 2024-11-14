@@ -278,16 +278,18 @@ export const TopBar = () => {
               </Button>
             )}
 
-            {mode === "select" && !!selectedImages.length && (
-              <Button
-                type="primary"
-                icon={<FontAwesomeIcon icon={faPlus} />}
-                onClick={onAddPresentation}
-                loading={isLoading}
-              >
-                Apresentação
-              </Button>
-            )}
+            {mode === "select" &&
+              !isPresentations &&
+              !!selectedImages.length && (
+                <Button
+                  type="primary"
+                  icon={<FontAwesomeIcon icon={faPlus} />}
+                  onClick={onAddPresentation}
+                  loading={isLoading}
+                >
+                  Apresentação
+                </Button>
+              )}
 
             {!!user && !albumId && (
               <Button
