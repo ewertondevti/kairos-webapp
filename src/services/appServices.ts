@@ -1,12 +1,6 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import firebaseDB from "@/firebase";
-import {
-  IAlbum,
-  IAlbumDTO,
-  IEventDTO,
-  IImage,
-  IPresentationDTO,
-} from "@/types/store";
+import { IAlbum, IAlbumDTO, ICommonDTO, IImageDTO } from "@/types/store";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 
 export const getAlbums = async (): Promise<IAlbumDTO[]> => {
@@ -31,24 +25,24 @@ export const getAlbumById = async (
   return;
 };
 
-export const getPresentations = async (): Promise<IPresentationDTO[]> => {
+export const getPresentations = async (): Promise<ICommonDTO[]> => {
   const querySnapshot = await getDocs(
     collection(firebaseDB, DatabaseTableKeys.Presentations)
   );
 
   return querySnapshot.docs.map((doc) => ({
     id: doc.id,
-    ...(doc.data() as IImage),
+    ...(doc.data() as IImageDTO),
   }));
 };
 
-export const getEvents = async (): Promise<IEventDTO[]> => {
+export const getEvents = async (): Promise<ICommonDTO[]> => {
   const querySnapshot = await getDocs(
     collection(firebaseDB, DatabaseTableKeys.Events)
   );
 
   return querySnapshot.docs.map((doc) => ({
     id: doc.id,
-    ...(doc.data() as IImage),
+    ...(doc.data() as IImageDTO),
   }));
 };

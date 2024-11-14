@@ -1,9 +1,9 @@
 import { IAlbumDTO } from "@/types/store";
-import { Flex, Image, Typography } from "antd";
+import { Flex, Typography } from "antd";
 import { FC } from "react";
 import { useNavigate } from "react-router-dom";
 
-const { Text } = Typography;
+const { Paragraph } = Typography;
 
 type Props = IAlbumDTO;
 
@@ -16,16 +16,20 @@ export const AlbumContent: FC<Props> = ({ id, name, images }) => {
 
   return (
     <Flex className="management__album-content" key={id} onClick={onRedirect}>
-      {coverImages.map(({ id, url }, idx) => (
-        <Image
+      {coverImages.map(({ url }, idx) => (
+        <img
           src={url}
-          key={id}
+          key={url}
           className={`management__album-content--cover${idx + 1}`}
-          preview={false}
         />
       ))}
 
-      <Text style={{ textAlign: "center" }}>{name}</Text>
+      <Paragraph
+        style={{ textAlign: "center" }}
+        ellipsis={{ suffix: "...", rows: 2 }}
+      >
+        {name}
+      </Paragraph>
     </Flex>
   );
 };

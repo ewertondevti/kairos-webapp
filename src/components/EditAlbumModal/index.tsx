@@ -71,7 +71,7 @@ export const EditAlbumModal = () => {
     if (values.albumId) {
       const album = albums?.find((a) => a.id === albumIdValue)!;
       const images = album.images!.filter((img) =>
-        selectedImages.every((i) => i.id !== img.id)
+        selectedImages.every((i) => i.url !== img.url)
       );
 
       payload.images = [...images, ...selectedImages];

@@ -4,7 +4,7 @@ export interface ICommon {
   id?: string;
 }
 
-export interface IImage {
+export interface IImageDTO {
   url: string;
   name: string;
 }
@@ -14,10 +14,8 @@ export interface IAlbum {
   images: IImageDTO[];
 }
 
-export interface IImageDTO extends IImage, ICommon {}
 export interface IAlbumDTO extends IAlbum, ICommon {}
-export interface IPresentationDTO extends IImageDTO {}
-export interface IEventDTO extends IImageDTO {}
+export interface ICommonDTO extends IImageDTO, ICommon {}
 
 export type MemberType = {
   [MembershipFields.Photo]?: string;

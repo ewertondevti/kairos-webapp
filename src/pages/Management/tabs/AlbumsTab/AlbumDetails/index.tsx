@@ -9,7 +9,11 @@ import { FixedSizeGrid } from "react-window";
 export const AlbumDetails = () => {
   const { id } = useParams();
 
-  const { height: ROW_HEIGHT, width: COLUMN_WIDTH } = useGetImageSize();
+  const {
+    height: ROW_HEIGHT,
+    width: COLUMN_WIDTH,
+    columns,
+  } = useGetImageSize();
 
   const { data: album, isLoading } = useGetAlbumById(id);
 
@@ -32,7 +36,7 @@ export const AlbumDetails = () => {
         <Flex className="management__image-container--auto-sizer">
           <AutoSizer>
             {({ height, width }) => {
-              const columnCount = Math.max(1, Math.floor(width / COLUMN_WIDTH));
+              const columnCount = Math.min(columns, album.images.length);
 
               return (
                 <FixedSizeGrid
@@ -54,7 +58,7 @@ export const AlbumDetails = () => {
                       <Flex
                         style={style}
                         className="management__image-content"
-                        key={image.id}
+                        key={image.url}
                       >
                         <LazyImage {...image} isLoading={isLoading} />
                       </Flex>

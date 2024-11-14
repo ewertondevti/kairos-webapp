@@ -17,7 +17,10 @@ function App() {
         <Route path={RoutesEnums.Home} element={<AppLayout />}>
           <Route index element={<Home />} />
 
-          <Route path={RoutesEnums.Gallery} element={<Gallery />} />
+          <Route path={RoutesEnums.Gallery} element={<Gallery />}>
+            <Route path=":id" element={<AlbumDetails />} />
+          </Route>
+
           <Route
             path={RoutesEnums.MembershipForm}
             element={<MembershipForm />}

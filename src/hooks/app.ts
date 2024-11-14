@@ -1,4 +1,4 @@
-import { SCREEN_VALUES } from "@/utils/app";
+import { LIST_ITEM_VALUES, SCREEN_VALUES } from "@/utils/app";
 import { useWindowSize } from "@uidotdev/usehooks";
 import { isDesktop, isMobile, isTablet } from "react-device-detect";
 
@@ -28,4 +28,20 @@ export const useGetImageSize = () => {
   if (isTabletLandscape) return SCREEN_VALUES["tablet-landscape"];
 
   return SCREEN_VALUES.desktop;
+};
+
+export const useGetListItemSize = () => {
+  const {
+    isMobilePortrait,
+    isMobileLandscape,
+    isTabletPortrait,
+    isTabletLandscape,
+  } = useCheckDevice();
+
+  if (isMobilePortrait) return LIST_ITEM_VALUES["mobile-portrait"];
+  if (isMobileLandscape) return LIST_ITEM_VALUES["mobile-landscape"];
+  if (isTabletPortrait) return LIST_ITEM_VALUES["tablet-portrait"];
+  if (isTabletLandscape) return LIST_ITEM_VALUES["tablet-landscape"];
+
+  return LIST_ITEM_VALUES.desktop;
 };

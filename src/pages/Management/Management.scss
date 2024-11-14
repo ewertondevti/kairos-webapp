@@ -100,7 +100,8 @@
       position: relative;
       transition: transform 1s ease;
       width: 200px;
-      height: 200px;
+      height: 220px;
+      margin-top: 50px;
 
       &-create {
         padding: 3px;
@@ -112,7 +113,8 @@
         }
       }
 
-      span {
+      span,
+      .ant-typography {
         width: 100%;
         display: flex;
         justify-content: center;
@@ -120,46 +122,42 @@
       }
 
       &--cover1 {
-        &.ant-image-img {
-          @include album-desktop;
+        @include album-desktop;
 
-          position: absolute;
-          transform: translateX(0);
-          top: 10px;
-          left: 48px;
-          z-index: 3;
-          transition: transform 1s ease;
-        }
+        position: absolute;
+        transform: translateX(0);
+        top: 10px;
+        left: 48px;
+        z-index: 3;
+        transition: transform 1s ease;
       }
 
       &--cover2 {
-        &.ant-image-img {
-          @include album-desktop;
+        @include album-desktop;
 
-          position: absolute;
-          transform: translateX(10px);
-          top: 5px;
-          left: 48px;
-          z-index: 2;
-          transition: transform 1s ease;
-        }
+        position: absolute;
+        transform: translateX(10px);
+        top: 5px;
+        left: 48px;
+        z-index: 2;
+        transition: transform 1s ease;
       }
 
       &--cover3 {
-        &.ant-image-img {
-          @include album-desktop;
+        @include album-desktop;
 
-          position: absolute;
-          transform: translateX(20px);
-          top: 0;
-          left: 48px;
-          z-index: 1;
-          transition: transform 1s ease;
-        }
+        position: absolute;
+        transform: translateX(20px);
+        top: 0;
+        left: 48px;
+        z-index: 1;
+        transition: transform 1s ease;
       }
 
       &:hover {
         @include hover-scale(1.1);
+
+        z-index: 20;
 
         .management__album-content--cover1 {
           transform: scale(1.25) rotate(-15deg) rotateX(-3deg)
@@ -226,37 +224,32 @@
 
     &__album {
       &-content {
-        width: 100px;
-        height: 106px;
+        width: 150px;
+        height: 180px;
+        margin: 0;
 
         &--cover1 {
-          &.ant-image-img {
-            @include album-mobile;
+          @include album-mobile;
 
-            transform: translateX(0);
-            top: 10px;
-            left: 15px;
-          }
+          transform: translateX(0);
+          top: 10px;
+          left: 27px;
         }
 
         &--cover2 {
-          &.ant-image-img {
-            @include album-mobile;
+          @include album-mobile;
 
-            transform: translateX(10px);
-            top: 5px;
-            left: 15px;
-          }
+          transform: translateX(10px);
+          top: 5px;
+          left: 27px;
         }
 
         &--cover3 {
-          &.ant-image-img {
-            @include album-mobile;
+          @include album-mobile;
 
-            transform: translateX(20px);
-            top: 0;
-            left: 15px;
-          }
+          transform: translateX(20px);
+          top: 0;
+          left: 27px;
         }
       }
     }
@@ -294,37 +287,32 @@
 
     &__album {
       &-content {
-        width: 100px;
-        height: 106px;
+        width: 150px;
+        height: 180px;
+        margin: 0;
 
         &--cover1 {
-          &.ant-image-img {
-            @include album-mobile;
+          @include album-mobile;
 
-            transform: translateX(0);
-            top: 10px;
-            left: 15px;
-          }
+          transform: translateX(0);
+          top: 10px;
+          left: 27px;
         }
 
         &--cover2 {
-          &.ant-image-img {
-            @include album-mobile;
+          @include album-mobile;
 
-            transform: translateX(10px);
-            top: 5px;
-            left: 15px;
-          }
+          transform: translateX(10px);
+          top: 5px;
+          left: 27px;
         }
 
         &--cover3 {
-          &.ant-image-img {
-            @include album-mobile;
+          @include album-mobile;
 
-            transform: translateX(20px);
-            top: 0;
-            left: 15px;
-          }
+          transform: translateX(20px);
+          top: 0;
+          left: 27px;
         }
       }
     }
@@ -357,37 +345,32 @@
 
     &__album {
       &-content {
-        width: 150px;
-        height: 140px;
+        width: 166px;
+        height: 190px;
+        margin: 0;
 
         &--cover1 {
-          &.ant-image-img {
-            @include album-tablet;
+          @include album-tablet;
 
-            transform: translateX(0);
-            top: 10px;
-            left: 30px;
-          }
+          transform: translateX(0);
+          top: 10px;
+          left: 30px;
         }
 
         &--cover2 {
-          &.ant-image-img {
-            @include album-tablet;
+          @include album-tablet;
 
-            transform: translateX(10px);
-            top: 5px;
-            left: 30px;
-          }
+          transform: translateX(10px);
+          top: 5px;
+          left: 30px;
         }
 
         &--cover3 {
-          &.ant-image-img {
-            @include album-tablet;
+          @include album-tablet;
 
-            transform: translateX(20px);
-            top: 0;
-            left: 30px;
-          }
+          transform: translateX(20px);
+          top: 0;
+          left: 30px;
         }
       }
     }
@@ -420,37 +403,32 @@
 
     &__album {
       &-content {
-        width: 150px;
-        height: 140px;
+        width: 166px;
+        height: 190px;
+        margin: 0;
 
         &--cover1 {
-          &.ant-image-img {
-            @include album-tablet;
+          @include album-tablet;
 
-            transform: translateX(0);
-            top: 10px;
-            left: 30px;
-          }
+          transform: translateX(0);
+          top: 10px;
+          left: 30px;
         }
 
         &--cover2 {
-          &.ant-image-img {
-            @include album-tablet;
+          @include album-tablet;
 
-            transform: translateX(10px);
-            top: 5px;
-            left: 30px;
-          }
+          transform: translateX(10px);
+          top: 5px;
+          left: 30px;
         }
 
         &--cover3 {
-          &.ant-image-img {
-            @include album-tablet;
+          @include album-tablet;
 
-            transform: translateX(20px);
-            top: 0;
-            left: 30px;
-          }
+          transform: translateX(20px);
+          top: 0;
+          left: 30px;
         }
       }
     }

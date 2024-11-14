@@ -30,7 +30,7 @@ import {
 } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import { useState } from "react";
-import { redirect, useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EventModal } from "../EventModal";
 
 export const TopBar = () => {
@@ -41,6 +41,7 @@ export const TopBar = () => {
   const { pathname } = useLocation();
   const { id: albumId } = useParams();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { user } = useAuth();
   const { data: presentations } = useGetPresentations();
@@ -76,7 +77,7 @@ export const TopBar = () => {
         await deleteDoc(albumRef);
 
         message.success("Álbum apagado com sucesso!");
-        redirect(`/${RoutesEnums.Management}/${ManagementRoutesEnums.Albums}`);
+        navigate(`/${RoutesEnums.Management}/${ManagementRoutesEnums.Albums}`);
         refresh();
         onCancelSelection();
       } catch (error) {
@@ -159,11 +160,11 @@ export const TopBar = () => {
 
     const images2delete =
       presentations?.filter((img) =>
-        selectedImages.every((i) => i.id !== img.id)
+        selectedImages.every((i) => i.url !== img.url)
       ) ?? [];
 
     const newImages = selectedImages.filter((img) =>
-      presentations?.every((i) => i.id !== img.id)
+      presentations?.every((i) => i.url !== img.url)
     );
 
     await Promise.all([

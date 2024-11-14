@@ -1,7 +1,7 @@
 import { useGetAlbums } from "@/react-query";
 import { Empty, Flex } from "antd";
-import { AlbumContent } from "./AlbumContent";
 import { Outlet, useParams } from "react-router-dom";
+import { AlbumContent } from "./AlbumContent";
 
 export const AlbumsTab = () => {
   const { id: albumId } = useParams();
@@ -11,9 +11,14 @@ export const AlbumsTab = () => {
 
   if (albumId) return <Outlet />;
 
-
   return (
-    <Flex gap={32} justify="center" className="height-100perc">
+    <Flex
+      gap={32}
+      justify="center"
+      wrap
+      className="height-100perc"
+      style={{ overflowY: "auto" }}
+    >
       {albums?.map((album) => (
         <AlbumContent {...album} key={album.id} />
       ))}
