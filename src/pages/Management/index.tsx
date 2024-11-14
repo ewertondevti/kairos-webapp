@@ -39,7 +39,8 @@ const Management = () => {
 
   const { data: albums } = useGetAlbums();
 
-  const { updateMode, updateSelectedImages } = useAppState();
+  const { selectedImages, mode, updateMode, updateSelectedImages } =
+    useAppState();
 
   const defaultKey = pathname.split("/").filter(Boolean)[1];
 
@@ -102,7 +103,15 @@ const Management = () => {
       <Flex gap={16} vertical>
         <Breadcrumb style={{ textTransform: "capitalize" }} items={items} />
 
-        <Title style={{ margin: 0 }}>Gerenciamento</Title>
+        <Flex justify={mode === "select" ? "space-between" : "flex-start"}>
+          <Title style={{ margin: 0 }}>Gerenciamento</Title>
+
+          {mode === "select" && (
+            <small className="small-text">
+              Selecionados: {selectedImages.length}
+            </small>
+          )}
+        </Flex>
 
         <TopBar />
       </Flex>

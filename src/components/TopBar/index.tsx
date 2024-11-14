@@ -78,6 +78,7 @@ export const TopBar = () => {
         message.success("Álbum apagado com sucesso!");
         redirect(`/${RoutesEnums.Management}/${ManagementRoutesEnums.Albums}`);
         refresh();
+        onCancelSelection();
       } catch (error) {
         console.error(error);
         message.error("Não foi possível apagar o álbum!");
@@ -99,6 +100,7 @@ export const TopBar = () => {
       .then(() => {
         message.success("Fotos removidas do álbum com sucesso!");
         refresh();
+        onCancelSelection();
       })
       .catch(() =>
         message.error("Houve um erro ao tentar remover fotos deste álbum!")
@@ -130,6 +132,8 @@ export const TopBar = () => {
     )
       .then((res) => {
         refresh();
+        onCancelSelection();
+
         if (res.every((bool) => bool))
           message.success("Fotos apagadas com sucesso!");
         else message.error("Houve um erro ao tentar apagar foto(s)!");
@@ -146,7 +150,7 @@ export const TopBar = () => {
   };
 
   const onCancelSelection = () => {
-    updateSelectedImages([]);
+    onUnselectAll();
     updateMode("default");
   };
 
@@ -201,17 +205,19 @@ export const TopBar = () => {
     return "Selecionar todas";
   };
 
+  const onUnselectAll = () => updateSelectedImages([]);
+
   const onSelectAll = () => {
     if (albumId && album) {
       if (selectedImages.length === album.images.length) {
-        updateSelectedImages([]);
+        onUnselectAll();
       } else updateSelectedImages(album.images ?? []);
     } else if (isPresentations) {
       if (selectedImages.length === presentations?.length) {
-        updateSelectedImages([]);
+        onUnselectAll();
       } else updateSelectedImages(presentations ?? []);
     } else if (isEvents) {
-      if (selectedImages.length === events?.length) updateSelectedImages([]);
+      if (selectedImages.length === events?.length) onUnselectAll();
       else updateSelectedImages(events ?? []);
     }
   };
