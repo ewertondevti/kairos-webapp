@@ -11,7 +11,7 @@ export interface IImage {
 
 export interface IAlbum {
   name: string;
-  images?: IImageDTO[];
+  images: IImageDTO[];
 }
 
 export interface IImageDTO extends IImage, ICommon {}

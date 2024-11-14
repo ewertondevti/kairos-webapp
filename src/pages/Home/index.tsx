@@ -4,6 +4,7 @@ import { Events } from "./Events";
 import "./Home.scss";
 import { Slider } from "./Slider";
 import { Verse } from "./Verse";
+import { WorshipDays } from "./WorshipDays";
 
 export const Home = () => {
   return (
@@ -13,6 +14,8 @@ export const Home = () => {
       <Events />
 
       <Verse />
+
+      <WorshipDays />
 
       <CustomFooter />
     </Row>

@@ -119,6 +119,21 @@ html {
   }
 }
 
+h1,
+h2,
+h3,
+h4,
+h5 {
+  &.text-uppercase {
+    text-transform: uppercase;
+    margin: 0;
+  }
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
 #scrollableDiv {
   max-height: 400px;
   margin-top: 10px;

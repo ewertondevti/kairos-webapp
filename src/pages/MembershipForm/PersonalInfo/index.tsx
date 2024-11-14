@@ -17,6 +17,7 @@ import {
   ButtonProps,
   Col,
   DatePicker,
+  Divider,
   Flex,
   Form,
   Input,
@@ -25,6 +26,7 @@ import {
   Tooltip,
   Upload,
 } from "antd";
+import Title from "antd/es/typography/Title";
 import { RcFile, UploadProps } from "antd/es/upload";
 import { useState } from "react";
 
@@ -67,6 +69,12 @@ export const PersonalInfo = () => {
 
   return (
     <Row gutter={10}>
+      <Divider orientation="left">
+        <Title level={3} className="text-uppercase">
+          Informações Pessoais
+        </Title>
+      </Divider>
+
       <Col xs={{ order: 2, span: 24 }} md={{ order: 1, span: 20 }}>
         <Row gutter={10}>
           <Col xs={24} sm={6}>

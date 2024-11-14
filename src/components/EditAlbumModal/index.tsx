@@ -58,7 +58,7 @@ export const EditAlbumModal = () => {
   const onUpdate = async (values: AlbumValuesType) => {
     setIsLoading(true);
 
-    const payload: IAlbumDTO = {
+    const payload: Partial<IAlbumDTO> = {
       name: values.name,
     };
 

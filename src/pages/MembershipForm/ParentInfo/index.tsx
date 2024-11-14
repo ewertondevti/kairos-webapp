@@ -1,13 +1,17 @@
 import { MembershipFields } from "@/enums/membership";
 import { disabledDate } from "@/utils/app";
-import { Col, DatePicker, Form, Input, Row } from "antd";
+import { Col, DatePicker, Divider, Form, Input, Row } from "antd";
 import Title from "antd/es/typography/Title";
 import { SonFields } from "./SonFields";
 
 export const ParentInfo = () => {
   return (
     <>
-      <Title level={3}>Informações Familiares</Title>
+      <Divider orientation="left">
+        <Title level={3} className="text-uppercase">
+          Informações Familiares
+        </Title>
+      </Divider>
 
       <Row gutter={10}>
         <Col xs={24} md={12}>

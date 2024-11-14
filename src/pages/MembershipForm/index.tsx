@@ -5,16 +5,7 @@ import { getAddress } from "@/services/membershipServices";
 import { MembershipValues } from "@/types/membership";
 import { MemberType } from "@/types/store";
 import { postalCodeRegex } from "@/utils/app";
-import {
-  Button,
-  Card,
-  Divider,
-  Flex,
-  Form,
-  FormProps,
-  Layout,
-  message,
-} from "antd";
+import { Button, Card, Flex, Form, FormProps, Layout, message } from "antd";
 import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
 import { addDoc, collection } from "firebase/firestore";
@@ -129,15 +120,9 @@ export const MembershipForm = () => {
             onFinish={onSubmit}
           >
             <Card>
-              <Title level={3}>Informações Pessoais</Title>
-
               <PersonalInfo />
 
-              <Divider />
-
               <ParentInfo />
-
-              <Divider />
 
               <EcclesiasticalInfo />
 

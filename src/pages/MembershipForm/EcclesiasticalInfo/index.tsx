@@ -1,12 +1,16 @@
 import { MembershipFields } from "@/enums/membership";
 import { disabledDate } from "@/utils/app";
-import { Col, DatePicker, Form, Input, Row, Select } from "antd";
+import { Col, DatePicker, Divider, Form, Input, Row, Select } from "antd";
 import Title from "antd/es/typography/Title";
 
 export const EcclesiasticalInfo = () => {
   return (
     <>
-      <Title level={3}>Informações Eclasiásticas</Title>
+      <Divider orientation="left">
+        <Title level={3} className="text-uppercase">
+          Informações Eclasiásticas
+        </Title>
+      </Divider>
 
       <Row gutter={10}>
         <Col xs={24} sm={12} md={8}>
