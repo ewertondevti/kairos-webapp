@@ -112,9 +112,11 @@ export const TopBar = () => {
     await Promise.all(
       selectedImages.map(async ({ id, url }) => {
         try {
-          // 1. Apagar a imagem do Firebase Storage
-          const storageRef = ref(firebaseStorage, url);
-          await deleteObject(storageRef);
+          if (!isPresentations) {
+            // 1. Apagar a imagem do Firebase Storage
+            const storageRef = ref(firebaseStorage, url);
+            await deleteObject(storageRef);
+          }
 
           // 2. Apagar a URL correspondente do Firestore
           await deleteDoc(doc(firebaseDB, tableKey, id!));
@@ -139,6 +141,7 @@ export const TopBar = () => {
     if (albumId && selectedImages.length === album?.images?.length) {
       onDeleteAlbum();
     } else if (isAlbums) onDeleteFromAlbum();
+    else if (isPresentations) onDeleteFrom(DatabaseTableKeys.Presentations);
     else if (isEvents) onDeleteFrom(DatabaseTableKeys.Events);
   };
 
