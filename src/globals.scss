@@ -140,6 +140,14 @@ h5 {
   justify-content: center;
 }
 
+.width-100perc {
+  @include width-100perc;
+}
+
+.height-100perc {
+  @include height-100perc;
+}
+
 #scrollableDiv {
   max-height: 400px;
   margin-top: 10px;

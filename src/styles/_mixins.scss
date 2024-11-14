@@ -1,3 +1,11 @@
+@mixin width-100perc {
+  width: 100%;
+}
+
+@mixin height-100perc {
+  height: 100%;
+}
+
 @mixin flex-center {
   display: flex;
   align-items: center;

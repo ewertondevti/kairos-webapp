@@ -99,7 +99,7 @@ const Management = () => {
   }));
 
   return (
-    <Layout style={{ height: "100%", padding: isMobile ? 8 : 20 }}>
+    <Layout style={{ padding: isMobile ? 8 : 20 }} className="height-100perc">
       <Flex gap={16} vertical>
         <Breadcrumb style={{ textTransform: "capitalize" }} items={items} />
 

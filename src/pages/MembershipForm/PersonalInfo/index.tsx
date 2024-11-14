@@ -83,7 +83,7 @@ export const PersonalInfo = () => {
               label="Código"
               rules={requiredRules}
             >
-              <Input placeholder="" style={{ width: "100%" }} />
+              <Input placeholder="" className="width-100perc" />
             </Form.Item>
           </Col>
 
@@ -105,7 +105,7 @@ export const PersonalInfo = () => {
               <DatePicker
                 disabledDate={disabledDate}
                 format={dateFormat}
-                style={{ width: "100%" }}
+                className="width-100perc"
               />
             </Form.Item>
           </Col>
@@ -132,7 +132,7 @@ export const PersonalInfo = () => {
 
       <Col xs={{ order: 1, span: 24 }} md={{ order: 2, span: 4 }}>
         <Form.Item name={MembershipFields.Photo} noStyle>
-          <Flex justify="center" align="center" style={{ height: "100%" }}>
+          <Flex justify="center" align="center" className="height-100perc">
             <Upload
               listType="picture-circle"
               className="avatar-uploader"
@@ -146,10 +146,7 @@ export const PersonalInfo = () => {
                     src={imageUrl}
                     size="small"
                     alt="userProfile"
-                    style={{
-                      height: "100%",
-                      width: "100%",
-                    }}
+                    className="width-100perc height-100perc"
                   />
 
                   <Tooltip title="Remover" placement="bottom">

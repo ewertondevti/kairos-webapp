@@ -27,7 +27,7 @@ export const AlbumDetails = () => {
   }
 
   return (
-    <Row style={{ width: "100%" }}>
+    <Row className="width-100perc height-100perc">
       <Col span={24}>
         <Flex className="management__image-container--auto-sizer">
           <AutoSizer>

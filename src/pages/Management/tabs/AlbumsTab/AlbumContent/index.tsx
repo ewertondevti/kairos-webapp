@@ -1,7 +1,7 @@
 import { IAlbumDTO } from "@/types/store";
 import { Flex, Image, Typography } from "antd";
 import { FC } from "react";
-import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const { Text } = Typography;
 
@@ -9,13 +9,10 @@ type Props = IAlbumDTO;
 
 export const AlbumContent: FC<Props> = ({ id, name, images }) => {
   const navigate = useNavigate();
-  const { id: albumId } = useParams();
 
   const coverImages = images?.filter((_, idx) => idx < 3) ?? [];
 
   const onRedirect = () => navigate(id!);
-
-  if (albumId) return <Outlet />;
 
   return (
     <Flex className="management__album-content" key={id} onClick={onRedirect}>
@@ -28,7 +25,7 @@ export const AlbumContent: FC<Props> = ({ id, name, images }) => {
         />
       ))}
 
-      <Text>{name}</Text>
+      <Text style={{ textAlign: "center" }}>{name}</Text>
     </Flex>
   );
 };

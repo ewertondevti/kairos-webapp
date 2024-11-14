@@ -17,13 +17,13 @@ export const Events = () => {
       </Divider>
 
       <Flex align="center" justify="center" className="home__content-container">
-        <Row gutter={[8, 8]} justify="center" style={{ width: "100%" }}>
+        <Row gutter={[8, 8]} justify="center" className="width-100perc">
           {events?.map(({ id, url }, idx) => (
             <Fragment key={id}>
               <Col xs={0} lg={1}>
-                <Flex justify="center" style={{ height: "100%" }}>
+                <Flex justify="center" className="height-100perc">
                   {idx !== 0 && (
-                    <Divider type="vertical" style={{ height: "100%" }} />
+                    <Divider type="vertical" className="height-100perc" />
                   )}
                 </Flex>
               </Col>

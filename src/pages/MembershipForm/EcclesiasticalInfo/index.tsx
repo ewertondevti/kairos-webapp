@@ -27,7 +27,7 @@ export const EcclesiasticalInfo = () => {
             name={MembershipFields.BaptismDate}
             label="Data de batismo"
           >
-            <DatePicker disabledDate={disabledDate} style={{ width: "100%" }} />
+            <DatePicker disabledDate={disabledDate} className="width-100perc" />
           </Form.Item>
         </Col>
 
@@ -54,7 +54,7 @@ export const EcclesiasticalInfo = () => {
             name={MembershipFields.AdmissionDate}
             label="Data de admissão"
           >
-            <DatePicker disabledDate={disabledDate} style={{ width: "100%" }} />
+            <DatePicker disabledDate={disabledDate} className="width-100perc" />
           </Form.Item>
         </Col>
 

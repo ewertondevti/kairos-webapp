@@ -37,7 +37,7 @@ export const ParentInfo = () => {
             name={MembershipFields.WeddingDate}
             label="Data de casamento"
           >
-            <DatePicker disabledDate={disabledDate} style={{ width: "100%" }} />
+            <DatePicker disabledDate={disabledDate} className="width-100perc" />
           </Form.Item>
         </Col>
 

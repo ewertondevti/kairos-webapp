@@ -16,6 +16,7 @@ import {
   message,
   Modal,
   Skeleton,
+  Spin,
   Upload,
   UploadFile,
   UploadProps,
@@ -148,71 +149,72 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
       okText="Gravar"
       okButtonProps={{ loading: isLoading }}
       className="album__modal-create"
-      loading={isLoading}
     >
-      <Form form={form} layout="vertical" onFinish={onSave}>
-        <Form.Item name="name" label="Nome do álbum" rules={requiredRules}>
-          <Input placeholder="Digite o nome do álbum..." />
-        </Form.Item>
+      <Spin spinning={isLoading}>
+        <Form form={form} layout="vertical" onFinish={onSave}>
+          <Form.Item name="name" label="Nome do álbum" rules={requiredRules}>
+            <Input placeholder="Digite o nome do álbum..." />
+          </Form.Item>
 
-        <Form.Item>
-          <Upload
-            type="drag"
-            showUploadList={false}
-            onChange={handleChange}
-            beforeUpload={() => false}
-            multiple
-            className="upload-images"
-            accept="image/png, image/jpeg"
-          >
-            <p className="ant-upload-drag-icon">
-              <InboxOutlined />
-            </p>
-            <p className="ant-upload-text">
-              Clique ou arraste a(s) imagen(s) para esta área
-            </p>
-            <p className="ant-upload-hint">
-              Pode selecionar uma ou várias imagens ao mesmo tempo.
-            </p>
-            <p className="ant-upload-hint">
-              (Suporta apenas imagens do tipo PNG, JPG, JPEG)
-            </p>
-          </Upload>
+          <Form.Item>
+            <Upload
+              type="drag"
+              showUploadList={false}
+              onChange={handleChange}
+              beforeUpload={() => false}
+              multiple
+              className="upload-images"
+              accept="image/png, image/jpeg"
+            >
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">
+                Clique ou arraste a(s) imagen(s) para esta área
+              </p>
+              <p className="ant-upload-hint">
+                Pode selecionar uma ou várias imagens ao mesmo tempo.
+              </p>
+              <p className="ant-upload-hint">
+                (Suporta apenas imagens do tipo PNG, JPG, JPEG)
+              </p>
+            </Upload>
 
-          {!!data.length && (
-            <div id="scrollableDiv">
-              <InfiniteScroll
-                dataLength={data.length}
-                next={getMoreImages}
-                hasMore={data.length < fileList.length && !isLoading}
-                loader={<Skeleton.Input active block />}
-                scrollableTarget="scrollableDiv"
-              >
-                <List
-                  dataSource={data}
-                  size="small"
-                  renderItem={(item) => (
-                    <List.Item key={item.uid}>
-                      <Flex justify="space-between" flex={1}>
-                        <Flex gap={8} align="center">
-                          <PaperClipOutlined />
-                          {item.name}
+            {!!data.length && (
+              <div id="scrollableDiv">
+                <InfiniteScroll
+                  dataLength={data.length}
+                  next={getMoreImages}
+                  hasMore={data.length < fileList.length && !isLoading}
+                  loader={<Skeleton.Input active block />}
+                  scrollableTarget="scrollableDiv"
+                >
+                  <List
+                    dataSource={data}
+                    size="small"
+                    renderItem={(item) => (
+                      <List.Item key={item.uid}>
+                        <Flex justify="space-between" flex={1}>
+                          <Flex gap={8} align="center">
+                            <PaperClipOutlined />
+                            {item.name}
+                          </Flex>
+
+                          <Button
+                            type="text"
+                            icon={<FontAwesomeIcon icon={faTrash} />}
+                            onClick={() => onRemove(item.uid)}
+                          />
                         </Flex>
-
-                        <Button
-                          type="text"
-                          icon={<FontAwesomeIcon icon={faTrash} />}
-                          onClick={() => onRemove(item.uid)}
-                        />
-                      </Flex>
-                    </List.Item>
-                  )}
-                />
-              </InfiniteScroll>
-            </div>
-          )}
-        </Form.Item>
-      </Form>
+                      </List.Item>
+                    )}
+                  />
+                </InfiniteScroll>
+              </div>
+            )}
+          </Form.Item>
+        </Form>
+      </Spin>
     </Modal>
   );
 };

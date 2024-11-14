@@ -38,7 +38,7 @@ export const SonFields = () => {
                 <Flex
                   align="center"
                   justify="center"
-                  style={{ height: "100%" }}
+                  className="height-100perc"
                 >
                   <MinusCircleOutlined
                     className="dynamic-delete-button"

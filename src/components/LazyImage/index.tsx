@@ -37,7 +37,7 @@ export const LazyImage: FC<Props> = ({ id, name, url, isLoading }) => {
   };
 
   return (
-    <Flex key={id} onClick={onSelect} ref={ref} style={{ width: "100%" }}>
+    <Flex key={id} onClick={onSelect} ref={ref} className="width-100perc">
       {renderImage()}
 
       {mode === "select" && (

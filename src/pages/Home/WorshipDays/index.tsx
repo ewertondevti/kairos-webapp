@@ -22,7 +22,7 @@ export const WorshipDays = () => {
           </Col>
 
           <Col>
-            <Divider type="vertical" style={{ height: "100%" }} />
+            <Divider type="vertical" className="height-100perc" />
           </Col>
 
           <Col>

@@ -34,7 +34,7 @@ export const CustomHeader = () => {
 
   return (
     <Header className="layout__app-header">
-      <Flex align="center" justify="space-between" style={{ height: "100%" }}>
+      <Flex align="center" justify="space-between" className="height-100perc">
         <img src={AppLogo} height={50} width={50} onClick={onRedirect} />
 
         <Flex gap={16} align="center">
