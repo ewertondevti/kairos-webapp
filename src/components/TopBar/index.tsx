@@ -189,10 +189,31 @@ export const TopBar = () => {
       .finally(() => setIsLoading(false));
   };
 
+  const getSelectLabel = () => {
+    if (
+      [presentations?.length, events?.length, album?.images.length].includes(
+        selectedImages.length
+      )
+    ) {
+      return "Desselecionar todas";
+    }
+
+    return "Selecionar todas";
+  };
+
   const onSelectAll = () => {
-    if (albumId && album) updateSelectedImages(album.images ?? []);
-    else if (isPresentations) updateSelectedImages(presentations ?? []);
-    else if (isEvents) updateSelectedImages(events ?? []);
+    if (albumId && album) {
+      if (selectedImages.length === album.images.length) {
+        updateSelectedImages([]);
+      } else updateSelectedImages(album.images ?? []);
+    } else if (isPresentations) {
+      if (selectedImages.length === presentations?.length) {
+        updateSelectedImages([]);
+      } else updateSelectedImages(presentations ?? []);
+    } else if (isEvents) {
+      if (selectedImages.length === events?.length) updateSelectedImages([]);
+      else updateSelectedImages(events ?? []);
+    }
   };
 
   const getConfirmMessage = () => {
@@ -277,7 +298,7 @@ export const TopBar = () => {
                 icon={<FontAwesomeIcon icon={faObjectGroup} />}
                 onClick={onSelectAll}
               >
-                Selecionar todos
+                {getSelectLabel()}
               </Button>
             )}
 
