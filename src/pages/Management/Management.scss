@@ -226,7 +226,6 @@
       &-content {
         width: 150px;
         height: 180px;
-        margin: 0;
 
         &--cover1 {
           @include album-mobile;
@@ -289,7 +288,6 @@
       &-content {
         width: 150px;
         height: 180px;
-        margin: 0;
 
         &--cover1 {
           @include album-mobile;
@@ -347,7 +345,6 @@
       &-content {
         width: 166px;
         height: 190px;
-        margin: 0;
 
         &--cover1 {
           @include album-tablet;
@@ -405,7 +402,6 @@
       &-content {
         width: 166px;
         height: 190px;
-        margin: 0;
 
         &--cover1 {
           @include album-tablet;

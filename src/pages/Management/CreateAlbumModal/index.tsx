@@ -111,7 +111,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
             url: downloadURL,
           });
 
-          if (idx === fileList.length - 1) {
+          if (images.length === fileList.length) {
             const payload: Partial<IAlbumDTO> = {
               name: values.name,
               images,
