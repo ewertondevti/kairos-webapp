@@ -62,25 +62,30 @@ export const getAlbumById = onRequest((request, response) => {
 
 export const createAlbum = onRequest((request, response) => {
   corsHandler(request, response, async () => {
-    try {
-      const body = request.body as CreateAlbumPayload;
+    if (request.method === "POST") {
+      try {
+        const body = request.body as CreateAlbumPayload;
 
-      if (!body || !body.name || !body.images?.length) {
-        response.status(400).send("Dados incompletos ou inválidos!");
-        return;
+        if (!body || !body.name || !body.images?.length) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        const newAlbum = {
+          ...body,
+          creationDate: admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        await db.collection(DatabaseTableKeys.Albums).add(newAlbum);
+
+        response.status(201);
+      } catch (error) {
+        console.error(error);
+        response.status(500).send("Houve um erro ao tentar criar o álbum.");
       }
-
-      const newAlbum = {
-        ...body,
-        creationDate: admin.firestore.FieldValue.serverTimestamp(),
-      };
-
-      await db.collection(DatabaseTableKeys.Albums).add(newAlbum);
-
-      response.status(201);
-    } catch (error) {
-      console.error(error);
-      response.status(500).send("Houve um erro ao tentar criar o álbum.");
+    } else {
+      response.set("Allow", "POST");
+      response.status(405).send("Método não permitido. Use POST.");
     }
   });
 });
