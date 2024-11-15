@@ -1,20 +1,14 @@
 import axios, { AxiosError } from "axios";
 
+const projectId = import.meta.env.VITE_PROJECT_ID;
+
 const api = axios.create({
-  baseURL: "https://www.abibliadigital.com.br/api",
+  baseURL: `https://us-central1-${projectId}.cloudfunctions.net`,
   timeout: 20000, // 20s
-  withCredentials: true,
 });
 
 api.interceptors.request.use(
   (config) => {
-    if (config.withCredentials) {
-      config.withCredentials = false;
-      config.headers.Authorization = `Bearer ${
-        import.meta.env.VITE_DEFAULT_USER_TOKEN
-      }`;
-    }
-
     return config;
   },
   (error: AxiosError) => Promise.reject(error)

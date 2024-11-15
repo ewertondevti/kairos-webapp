@@ -8,8 +8,6 @@ type Props = IImageDTO & {
 };
 
 export const LazyImage: FC<Props> = ({ name, url, isLoading }) => {
-  // const { ref, inView } = useInView({ threshold: 0, triggerOnce: false });
-
   const { mode, selectedImages, updateSelectedImages } = useAppState();
 
   const onSelect = () => {

@@ -1,7 +1,8 @@
 import { DatabaseTableKeys } from "@/enums/app";
-import firebaseDB, { firebaseStorage } from "@/firebase";
+import { firebaseStorage } from "@/firebase";
 import { useGetListItemSize } from "@/hooks/app";
 import { QueryNames } from "@/react-query/queryNames";
+import { createAlbum } from "@/services/appServices";
 import { IAlbumDTO, IImageDTO } from "@/types/store";
 import { requiredRules } from "@/utils/app";
 import {
@@ -24,7 +25,6 @@ import {
   UploadFile,
   UploadProps,
 } from "antd";
-import { addDoc, collection } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { FC, useState } from "react";
 import { FixedSizeList } from "react-window";
@@ -61,7 +61,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
     onCancel();
   };
 
-  const onSave = async (values: { name: string }) => {
+  const onSave = (values: { name: string }) => {
     setIsLoading(true);
     setFileList((state) =>
       state.map((file) => ({ ...file, status: "uploading", percent: 0 }))
@@ -73,7 +73,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
     fileList.forEach((file, idx) => {
       const storageRef = ref(
         firebaseStorage,
-        `${DatabaseTableKeys.AllPhotos}/${file.name}`
+        `${DatabaseTableKeys.Images}/${file.name}`
       );
 
       const uploadTask = uploadBytesResumable(
@@ -117,21 +117,17 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
               images,
             };
 
-            try {
-              await addDoc(
-                collection(firebaseDB, DatabaseTableKeys.Albums),
-                payload
-              );
-
-              refresh();
-              handleCancel();
-              message.success("Álbum criado com sucesso!");
-            } catch (error) {
-              console.error(error);
-              message.error("Houve um erro ao tentar criar o álbum.");
-            } finally {
-              setIsLoading(false);
-            }
+            createAlbum(payload)
+              .then(() => {
+                refresh();
+                handleCancel();
+                message.success("Álbum criado com sucesso!");
+              })
+              .catch((error) => {
+                console.error(error);
+                message.error(error);
+              })
+              .finally(() => setIsLoading(false));
           }
         }
       );
@@ -142,11 +138,12 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
     <Modal
       title="Criar álbum"
       open={isOpen}
-      onCancel={handleCancel}
+      onCancel={isLoading ? handleCancel : undefined}
       onOk={() => form.submit()}
       destroyOnClose
       okText="Gravar"
       okButtonProps={{ loading: isLoading }}
+      cancelButtonProps={{ disabled: isLoading }}
       className="album__modal-create"
     >
       <Form form={form} layout="vertical" onFinish={onSave}>

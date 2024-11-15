@@ -1,3 +1,9 @@
+declare global {
+  interface Window {
+    baseUrl: string;
+  }
+}
+
 export interface User {
   name: string;
   email: string;

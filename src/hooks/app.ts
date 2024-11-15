@@ -1,15 +1,15 @@
 import { LIST_ITEM_VALUES, SCREEN_VALUES } from "@/utils/app";
 import { useWindowSize } from "@uidotdev/usehooks";
-import { isDesktop, isMobile, isTablet } from "react-device-detect";
+import { isDesktop } from "react-device-detect";
 
 export const useCheckDevice = () => {
   const { width } = useWindowSize();
 
   return {
-    isMobilePortrait: isMobile && width! <= 480,
-    isMobileLandscape: isMobile && width! > 480 && width! < 768,
-    isTabletPortrait: isTablet && width! >= 768 && width! <= 1024,
-    isTabletLandscape: isTablet && width! > 1024 && width! <= 1366,
+    isMobilePortrait: width! <= 480,
+    isMobileLandscape: width! > 480 && width! < 768,
+    isTabletPortrait: width! >= 768 && width! <= 1024,
+    isTabletLandscape: width! > 1024 && width! <= 1366,
     isDesktop,
   };
 };

@@ -84,7 +84,7 @@
 
     &.image__size {
       &-default {
-        @include view-default;
+        @include image-desktop;
       }
     }
 
@@ -207,7 +207,7 @@
 
       &.image__size {
         &-default {
-          @include view-default;
+          @include image-mobile-portrait;
         }
       }
 
@@ -268,7 +268,7 @@
 
       &.image__size {
         &-default {
-          @include view-default;
+          @include image-mobile-landscape;
         }
       }
 
@@ -330,7 +330,7 @@
 
       &.image__size {
         &-default {
-          @include view-default;
+          @include image-tablet-portrait;
         }
       }
 
@@ -387,7 +387,7 @@
 
       &.image__size {
         &-default {
-          @include view-default;
+          @include image-tablet-landscape;
         }
       }
 

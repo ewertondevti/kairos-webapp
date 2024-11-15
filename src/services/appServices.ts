@@ -1,48 +1,45 @@
-import { DatabaseTableKeys } from "@/enums/app";
-import firebaseDB from "@/firebase";
-import { IAlbum, IAlbumDTO, ICommonDTO, IImageDTO } from "@/types/store";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { IAlbumDTO, ICommonDTO } from "@/types/store";
+import api from "./httpClient";
 
-export const getAlbums = async (): Promise<IAlbumDTO[]> => {
-  const querySnapshot = await getDocs(
-    collection(firebaseDB, DatabaseTableKeys.Albums)
-  );
+export const convertHeicToJpeg = async (imageUrl: string) => {
+  const { data } = await api.get("/convertHeicToJpeg", {
+    params: { url: imageUrl },
+    responseType: "blob",
+  });
 
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as IAlbum),
-  }));
+  return URL.createObjectURL(data);
+};
+
+export const getAlbums = async () => {
+  const { data } = await api.get<IAlbumDTO[]>("/getAlbums");
+
+  return data;
 };
 
 export const getAlbumById = async (
   id: string
 ): Promise<IAlbumDTO | undefined> => {
-  const docSnap = await getDoc(doc(firebaseDB, "albums", id));
+  const { data } = await api.get<IAlbumDTO>("/getAlbumById", {
+    params: { id },
+  });
 
-  if (docSnap.exists())
-    return { id: docSnap.id, ...(docSnap.data() as IAlbum) };
-
-  return;
+  return data;
 };
 
-export const getPresentations = async (): Promise<ICommonDTO[]> => {
-  const querySnapshot = await getDocs(
-    collection(firebaseDB, DatabaseTableKeys.Presentations)
-  );
+export const createAlbum = async (payload: Partial<IAlbumDTO>) => {
+  const { data } = await api.post("/createAlbum", payload);
 
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as IImageDTO),
-  }));
+  return data;
 };
 
-export const getEvents = async (): Promise<ICommonDTO[]> => {
-  const querySnapshot = await getDocs(
-    collection(firebaseDB, DatabaseTableKeys.Events)
-  );
+export const getPresentations = async () => {
+  const { data } = await api.get<ICommonDTO[]>("/getPresentations");
 
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as IImageDTO),
-  }));
+  return data;
+};
+
+export const getEvents = async () => {
+  const { data } = await api.get<ICommonDTO[]>("/getEvents");
+
+  return data;
 };

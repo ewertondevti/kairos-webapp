@@ -41,6 +41,46 @@
   height: 315px;
 }
 
+@mixin image-desktop {
+  @include object-fit-cover;
+  @include border-radius(5px);
+
+  width: 231px;
+  height: 309px;
+}
+
+@mixin image-mobile-portrait {
+  @include object-fit-cover;
+  @include border-radius(5px);
+
+  width: 172px;
+  height: 231px;
+}
+
+@mixin image-mobile-landscape {
+  @include object-fit-cover;
+  @include border-radius(5px);
+
+  width: 168px;
+  height: 225px;
+}
+
+@mixin image-tablet-portrait {
+  @include object-fit-cover;
+  @include border-radius(5px);
+
+  width: 180px;
+  height: 243px;
+}
+
+@mixin image-tablet-landscape {
+  @include object-fit-cover;
+  @include border-radius(5px);
+
+  width: 214px;
+  height: 288px;
+}
+
 @mixin default-size-event {
   @include object-fit-cover;
   @include border-radius(5px);

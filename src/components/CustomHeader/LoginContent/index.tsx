@@ -23,6 +23,7 @@ export const LoginContent: FC<Props> = ({ onClose }) => {
       message.success("Login feito com sucesso!");
       onClose();
     } catch (error) {
+      console.error(error);
       message.error("Email ou senha não correspondem!", 5);
     } finally {
       setIsLoading(false);
