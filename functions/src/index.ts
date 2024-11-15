@@ -1,13 +1,9 @@
 import * as cors from "cors";
 import * as admin from "firebase-admin";
-import * as functions from "firebase-functions";
 import { onRequest } from "firebase-functions/v2/https";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
-import * as sharp from "sharp";
 import { DatabaseTableKeys } from "./enums/app";
-import { CreateAlbumPayload } from "./models/image";
+import { CreateAlbumPayload, DeleteImgFromAlbumPayload } from "./models";
+import { IAlbum } from "./models/album";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -128,48 +124,90 @@ export const getEvents = onRequest((request, response) => {
   });
 });
 
-export const convertHeicToJpg = functions.storage.onObjectFinalized(
-  async (object) => {
-    const bucket = storage.bucket(object.bucket);
-    const filePath = object.data.name || "";
-    const tempFilePath = path.join(os.tmpdir(), path.basename(filePath));
-    const outputFilePath = path.join(
-      os.tmpdir(),
-      `${path.basename(filePath, ".heic")}.jpg`
-    );
+export const deleteImageFromAlbum = onRequest((request, response) => {
+  corsHandler(request, response, async () => {
+    if (request.method === "POST") {
+      try {
+        const body = request.body as DeleteImgFromAlbumPayload;
 
-    if (!filePath.endsWith(".heic")) {
-      console.log("O arquivo não é .heic. Ignorando...");
-      return null;
+        if (!body || !body.albumId || !body.images?.length) {
+          response
+            .status(400)
+            .send("ID do álbum ou imagens não foram fornecidos!");
+          return;
+        }
+
+        const { albumId, images } = body;
+
+        const albumRef = db.collection("albums").doc(albumId);
+        const albumSnap = await albumRef.get();
+
+        if (!albumSnap.exists) {
+          response.status(404).send("Álbum não encontrado!");
+          return;
+        }
+
+        const albumData = albumSnap.data() as IAlbum;
+
+        const updatedImages = albumData.images.filter((img) =>
+          images.every((i) => i.url !== img.url)
+        );
+
+        await albumRef.update({ images: updatedImages });
+        response.status(201);
+      } catch (error) {
+        console.error(error);
+        response.status(500).send("Houve um erro ao remover imagens.");
+      }
+    } else {
+      response.set("Allow", "POST");
+      response.status(405).send("Método não permitido. Use POST.");
     }
+  });
+});
 
-    try {
-      // Baixar o arquivo do Cloud Storage
-      await bucket.file(filePath).download({ destination: tempFilePath });
-      console.log("Arquivo HEIC baixado com sucesso:", tempFilePath);
+export const deleteAlbum = onRequest((request, response) => {
+  corsHandler(request, response, async () => {
+    if (request.method === "DELETE") {
+      try {
+        const id = request.params[0];
 
-      // Converter HEIC para JPG
-      await sharp(tempFilePath).toFormat("jpeg").toFile(outputFilePath);
-      console.log("Arquivo convertido para JPG:", outputFilePath);
+        if (!id) {
+          response.status(400).send("ID do álbum não foi fornecido!");
+          return;
+        }
 
-      // Fazer upload do arquivo convertido de volta ao bucket
-      const destination = filePath.replace(".heic", ".jpg");
-      await bucket.upload(outputFilePath, {
-        destination: destination,
-        metadata: {
-          contentType: "image/jpeg",
-        },
-      });
+        const albumRef = db.collection("albums").doc(id);
+        const albumSnap = await albumRef.get();
 
-      console.log("Arquivo convertido enviado para o bucket:", destination);
+        if (!albumSnap.exists) {
+          response.status(404).send("Álbum não encontrado!");
+          return;
+        }
 
-      // Remover arquivos temporários
-      fs.unlinkSync(tempFilePath);
-      fs.unlinkSync(outputFilePath);
-      return null;
-    } catch (error) {
-      console.error("Erro ao processar o arquivo HEIC:", error);
-      return null;
+        const data = albumSnap.data() as IAlbum;
+
+        if (!data.images.length) {
+          const promises = data.images.map(async ({ url }) => {
+            const filePath = new URL(url!).pathname.substring(1);
+            await storage
+              .bucket(DatabaseTableKeys.Images)
+              .file(filePath)
+              .delete();
+          });
+
+          await Promise.all(promises);
+        }
+
+        await albumRef.delete();
+        response.status(201);
+      } catch (error) {
+        console.error(error);
+        response.status(500).send("Houve um erro ao buscar eventos.");
+      }
+    } else {
+      response.set("Allow", "DELETE");
+      response.status(405).send("Método não permitido. Use DELETE.");
     }
-  }
-);
+  });
+});
