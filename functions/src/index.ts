@@ -1,20 +1,17 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
 import * as cors from "cors";
 import * as admin from "firebase-admin";
+import * as functions from "firebase-functions";
 import { onRequest } from "firebase-functions/v2/https";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import * as sharp from "sharp";
 import { DatabaseTableKeys } from "./enums/app";
 import { CreateAlbumPayload } from "./models/image";
 
 admin.initializeApp();
 const db = admin.firestore();
+const storage = admin.storage();
 
 const corsHandler = cors({ origin: true });
 
@@ -125,3 +122,49 @@ export const getEvents = onRequest((request, response) => {
     }
   });
 });
+
+export const convertHeicToJpg = functions.storage.onObjectFinalized(
+  async (object) => {
+    const bucket = storage.bucket(object.bucket);
+    const filePath = object.data.name || "";
+    const tempFilePath = path.join(os.tmpdir(), path.basename(filePath));
+    const outputFilePath = path.join(
+      os.tmpdir(),
+      `${path.basename(filePath, ".heic")}.jpg`
+    );
+
+    if (!filePath.endsWith(".heic")) {
+      console.log("O arquivo não é .heic. Ignorando...");
+      return null;
+    }
+
+    try {
+      // Baixar o arquivo do Cloud Storage
+      await bucket.file(filePath).download({ destination: tempFilePath });
+      console.log("Arquivo HEIC baixado com sucesso:", tempFilePath);
+
+      // Converter HEIC para JPG
+      await sharp(tempFilePath).toFormat("jpeg").toFile(outputFilePath);
+      console.log("Arquivo convertido para JPG:", outputFilePath);
+
+      // Fazer upload do arquivo convertido de volta ao bucket
+      const destination = filePath.replace(".heic", ".jpg");
+      await bucket.upload(outputFilePath, {
+        destination: destination,
+        metadata: {
+          contentType: "image/jpeg",
+        },
+      });
+
+      console.log("Arquivo convertido enviado para o bucket:", destination);
+
+      // Remover arquivos temporários
+      fs.unlinkSync(tempFilePath);
+      fs.unlinkSync(outputFilePath);
+      return null;
+    } catch (error) {
+      console.error("Erro ao processar o arquivo HEIC:", error);
+      return null;
+    }
+  }
+);
