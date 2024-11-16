@@ -10,7 +10,7 @@ export const SonFields = () => {
       {(fields, { add, remove }) => (
         <>
           {fields.map((field, index) => (
-            <Row gutter={[10, 10]} style={{ marginBottom: 10 }}>
+            <Row gutter={[10, 10]} style={{ marginBottom: 10 }} key={field.key}>
               {index === 0 && (
                 <Col span={24}>
                   <Text>Filhos</Text>
@@ -20,6 +20,7 @@ export const SonFields = () => {
               <Col flex="auto">
                 <Form.Item
                   {...field}
+                  key={field.key}
                   rules={[
                     {
                       required: true,

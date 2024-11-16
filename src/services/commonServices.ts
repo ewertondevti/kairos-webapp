@@ -37,6 +37,9 @@ export const onImageUpload =
         case DatabaseTableKeys.Images:
           return "/uploadImage";
 
+        case DatabaseTableKeys.Members:
+          return "uploadMemberPhoto";
+
         default:
           return "";
       }

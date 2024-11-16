@@ -17,17 +17,17 @@ export interface IAlbum {
 export interface IAlbumDTO extends IAlbum, ICommon {}
 export interface ICommonDTO extends IImageDTO, ICommon {}
 
-export type MemberType = {
-  [MembershipFields.Photo]?: string;
-  [MembershipFields.Code]: string;
+export type MemberPayload = {
+  [MembershipFields.Photo]?: IMemberPhoto;
+  [MembershipFields.Id]?: string;
   [MembershipFields.Fullname]: string;
-  [MembershipFields.Birthdate]?: string;
+  [MembershipFields.BirthDate]?: string;
   [MembershipFields.Gender]?: number;
   [MembershipFields.MaritalStatus]?: number;
   [MembershipFields.PostalCode]?: string;
   [MembershipFields.Address]?: string;
-  [MembershipFields.Neighborhood]?: string;
   [MembershipFields.City]?: string;
+  [MembershipFields.County]?: string;
   [MembershipFields.State]?: string;
   [MembershipFields.MotherName]?: string;
   [MembershipFields.FatherName]?: string;
@@ -43,6 +43,12 @@ export type MemberType = {
   [MembershipFields.ChurchRole]?: string;
   [MembershipFields.BelongsTo]?: string;
 };
+
+export interface IMemberPhoto {
+  file: string;
+  filename: string;
+  type: string;
+}
 
 export type DeleteImgFromAlbumPayload = {
   albumId: string;

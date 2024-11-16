@@ -13,6 +13,7 @@ import {
   getEvents,
   uploadEvent,
 } from "./controllers/eventController";
+import { createNewMember } from "./controllers/memberController";
 import {
   createPresentations,
   deletePresentations,
@@ -23,6 +24,7 @@ import {
 export {
   createAlbum,
   createEvents,
+  createNewMember,
   createPresentations,
   deleteAlbum,
   deleteEvents,

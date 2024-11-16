@@ -1,13 +1,13 @@
 export enum MembershipFields {
-  Code = "code",
+  Id = "id",
   Fullname = "fullname",
-  Birthdate = "birthdate",
+  BirthDate = "birthDate",
   Gender = "gender",
   MaritalStatus = "maritalStatus",
   Address = "address",
   State = "state",
+  County = "county",
   City = "city",
-  Neighborhood = "neighborhood",
   PostalCode = "postalCode",
   NativeOf = "nativeOf",
   NIF = "nif",
@@ -40,7 +40,7 @@ export enum GenderEnum {
 }
 
 export enum MaritalStatusEnum {
-  Married,
+  Married = 1,
   Single,
   Divorced,
   StableUnion,

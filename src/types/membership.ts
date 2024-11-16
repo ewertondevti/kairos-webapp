@@ -1,17 +1,18 @@
 import { MembershipFields } from "@/enums/membership";
 import { Dayjs } from "dayjs";
+import { IMemberPhoto } from "./store";
 
 export interface MembershipValues {
-  [MembershipFields.Photo]?: File;
-  [MembershipFields.Code]: string;
+  [MembershipFields.Photo]?: IMemberPhoto;
+  [MembershipFields.Id]?: string;
   [MembershipFields.Fullname]: string;
-  [MembershipFields.Birthdate]?: Dayjs;
+  [MembershipFields.BirthDate]?: Dayjs;
   [MembershipFields.Gender]?: number;
   [MembershipFields.MaritalStatus]?: number;
   [MembershipFields.PostalCode]?: string;
   [MembershipFields.Address]?: string;
-  [MembershipFields.Neighborhood]?: string;
   [MembershipFields.City]?: string;
+  [MembershipFields.County]?: string;
   [MembershipFields.State]?: string;
   [MembershipFields.MotherName]?: string;
   [MembershipFields.FatherName]?: string;

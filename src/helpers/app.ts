@@ -17,12 +17,6 @@ export const removeCookie = (key: string) => {
   cookies.remove(`kp-${key}`);
 };
 
-export const getBase64 = (img: RcFile, callback: (url: string) => void) => {
-  const reader = new FileReader();
-  reader.addEventListener("load", () => callback(reader.result as string));
-  reader.readAsDataURL(img);
-};
-
 export const beforeUpload = (file: RcFile) => {
   const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
   if (!isJpgOrPng) {
@@ -32,10 +26,10 @@ export const beforeUpload = (file: RcFile) => {
   if (!isLt2M) {
     message.error("Imagem tem que ser menor que 2MB!");
   }
-  return isJpgOrPng && isLt2M;
+  return false;
 };
 
-export const convertFileToBase64 = (file: File) => {
+export const convertFileToBase64 = (file: RcFile) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);

@@ -1,6 +1,6 @@
 import { MembershipFields } from "@/enums/membership";
-import { disabledDate } from "@/utils/app";
-import { Col, DatePicker, Divider, Form, Input, Row, Select } from "antd";
+import { dateFormat, disabledDate } from "@/utils/app";
+import { Col, DatePicker, Divider, Form, Input, Row } from "antd";
 import Title from "antd/es/typography/Title";
 
 export const EcclesiasticalInfo = () => {
@@ -27,7 +27,11 @@ export const EcclesiasticalInfo = () => {
             name={MembershipFields.BaptismDate}
             label="Data de batismo"
           >
-            <DatePicker disabledDate={disabledDate} className="width-100perc" />
+            <DatePicker
+              format={dateFormat}
+              disabledDate={disabledDate}
+              className="width-100perc"
+            />
           </Form.Item>
         </Col>
 
@@ -36,7 +40,7 @@ export const EcclesiasticalInfo = () => {
             name={MembershipFields.AdmissionType}
             label="Tipo de admissão"
           >
-            <Select placeholder="Selecione o tipo de admissão" />
+            <Input placeholder="Selecione o tipo de admissão" />
           </Form.Item>
         </Col>
 
@@ -54,7 +58,11 @@ export const EcclesiasticalInfo = () => {
             name={MembershipFields.AdmissionDate}
             label="Data de admissão"
           >
-            <DatePicker disabledDate={disabledDate} className="width-100perc" />
+            <DatePicker
+              format={dateFormat}
+              disabledDate={disabledDate}
+              className="width-100perc"
+            />
           </Form.Item>
         </Col>
 

@@ -3,7 +3,8 @@ import {
   MaritalStatusEnum,
   MembershipFields,
 } from "@/enums/membership";
-import { beforeUpload, getBase64 } from "@/helpers/app";
+import { beforeUpload, convertFileToBase64 } from "@/helpers/app";
+import { IMemberPhoto } from "@/types/store";
 import {
   dateFormat,
   disabledDate,
@@ -28,12 +29,11 @@ import {
 } from "antd";
 import Title from "antd/es/typography/Title";
 import { RcFile, UploadProps } from "antd/es/upload";
-import { useState } from "react";
 
 export const PersonalInfo = () => {
-  const [imageUrl, setImageUrl] = useState("");
-
   const form = Form.useFormInstance();
+
+  const imageUrl = Form.useWatch(MembershipFields.Photo, form);
 
   const genderOptions = [
     { label: "Masculino", value: GenderEnum.Male },
@@ -47,23 +47,29 @@ export const PersonalInfo = () => {
     { label: "Divorciado(a)", value: MaritalStatusEnum.Divorced },
   ];
 
-  const handleChange: UploadProps["onChange"] = (info) => {
-    getBase64(info.file.originFileObj as RcFile, (url) => {
-      setImageUrl(url);
-      form.setFieldValue(MembershipFields.Photo, info.file.originFileObj);
-    });
+  const handleChange: UploadProps["onChange"] = async ({ file }) => {
+    if (file) {
+      const url = (await convertFileToBase64(file as RcFile)) as string;
+
+      const value: IMemberPhoto = {
+        file: url,
+        filename: file.name,
+        type: file.type!,
+      };
+
+      form.setFieldValue(MembershipFields.Photo, value);
+    }
   };
 
   const onRemove: ButtonProps["onClick"] = (e) => {
     e.stopPropagation();
-    setImageUrl("");
     form.setFieldValue(MembershipFields.Photo, undefined);
   };
 
   const uploadButton = (
     <div>
       <PlusOutlined />
-      <div style={{ marginTop: 8 }}>Upload</div>
+      <div style={{ marginTop: 8 }}>Foto</div>
     </div>
   );
 
@@ -77,15 +83,9 @@ export const PersonalInfo = () => {
 
       <Col xs={{ order: 2, span: 24 }} md={{ order: 1, span: 20 }}>
         <Row gutter={10}>
-          <Col xs={24} sm={6}>
-            <Form.Item
-              name={MembershipFields.Code}
-              label="Código"
-              rules={requiredRules}
-            >
-              <Input placeholder="" className="width-100perc" />
-            </Form.Item>
-          </Col>
+          <Form.Item name={MembershipFields.Id} label="Código" hidden>
+            <Input placeholder="" className="width-100perc" />
+          </Form.Item>
 
           <Col xs={24} sm={18}>
             <Form.Item
@@ -97,10 +97,11 @@ export const PersonalInfo = () => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={6}>
             <Form.Item
-              name={MembershipFields.Birthdate}
+              name={MembershipFields.BirthDate}
               label="Data de nascimento"
+              rules={requiredRules}
             >
               <DatePicker
                 disabledDate={disabledDate}
@@ -111,7 +112,11 @@ export const PersonalInfo = () => {
           </Col>
 
           <Col xs={24} sm={8}>
-            <Form.Item name={MembershipFields.Gender} label="Sexo">
+            <Form.Item
+              name={MembershipFields.Gender}
+              label="Sexo"
+              rules={requiredRules}
+            >
               <Select placeholder="Selecione o sexo" options={genderOptions} />
             </Form.Item>
           </Col>
@@ -120,11 +125,34 @@ export const PersonalInfo = () => {
             <Form.Item
               name={MembershipFields.MaritalStatus}
               label="Estado civil"
+              rules={requiredRules}
             >
               <Select
                 placeholder="Selecione seu estado civil"
                 options={martitalOptions}
               />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} sm={8}>
+            <Form.Item
+              name={MembershipFields.PostalCode}
+              label="Código postal"
+              normalize={(value: string) =>
+                value.replace(/\s/, "-").replace(/-{2}/g, "-")
+              }
+              rules={[
+                () => ({
+                  validator(_, value: string) {
+                    if (value?.match(postalCodeRegex)) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject("XXXX-XXX");
+                  },
+                }),
+              ]}
+            >
+              <Input placeholder="XXXX-XXX" />
             </Form.Item>
           </Col>
         </Row>
@@ -167,48 +195,42 @@ export const PersonalInfo = () => {
         </Form.Item>
       </Col>
 
-      <Col xs={{ order: 3, span: 24 }} sm={8}>
+      <Col xs={{ order: 3, span: 24 }}>
         <Form.Item
-          name={MembershipFields.PostalCode}
-          label="Código postal"
-          normalize={(value: string) =>
-            value.replace(/\s/, "-").replace(/-{2}/g, "-")
-          }
-          rules={[
-            () => ({
-              validator(_, value: string) {
-                if (value?.match(postalCodeRegex)) {
-                  return Promise.resolve();
-                }
-                return Promise.reject("XXXX-XXX");
-              },
-            }),
-          ]}
+          name={MembershipFields.Address}
+          label="Morada"
+          rules={requiredRules}
         >
-          <Input placeholder="XXXX-XXX" />
-        </Form.Item>
-      </Col>
-
-      <Col xs={{ order: 3, span: 24 }} sm={16}>
-        <Form.Item name={MembershipFields.Address} label="Morada">
           <Input placeholder="Rua..." />
         </Form.Item>
       </Col>
 
       <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
-        <Form.Item name={MembershipFields.Neighborhood} label="Freguesia">
+        <Form.Item
+          name={MembershipFields.City}
+          label="Freguesia"
+          rules={requiredRules}
+        >
           <Input placeholder="Ex: Samora Correia" />
         </Form.Item>
       </Col>
 
       <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
-        <Form.Item name={MembershipFields.City} label="Concelho">
+        <Form.Item
+          name={MembershipFields.County}
+          label="Concelho"
+          rules={requiredRules}
+        >
           <Input placeholder="Ex: Benavente" />
         </Form.Item>
       </Col>
 
       <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
-        <Form.Item name={MembershipFields.State} label="Distrito">
+        <Form.Item
+          name={MembershipFields.State}
+          label="Distrito"
+          rules={requiredRules}
+        >
           <Input placeholder="Ex: Santarém" />
         </Form.Item>
       </Col>
