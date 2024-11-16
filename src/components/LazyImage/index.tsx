@@ -1,19 +1,19 @@
 import { useAppState } from "@/store";
-import { IImageDTO } from "@/types/store";
+import { ICommonDTO } from "@/types/store";
 import { Checkbox, Flex, Image, Skeleton } from "antd";
 import { FC } from "react";
 
-type Props = IImageDTO & {
+type Props = ICommonDTO & {
   isLoading: boolean;
 };
 
-export const LazyImage: FC<Props> = ({ name, url, isLoading }) => {
+export const LazyImage: FC<Props> = ({ id, name, url, isLoading }) => {
   const { mode, selectedImages, updateSelectedImages } = useAppState();
 
   const onSelect = () => {
     if (selectedImages.some((img) => img.url === url)) {
       updateSelectedImages(selectedImages.filter((img) => img.url !== url));
-    } else updateSelectedImages([...selectedImages, { url, name }]);
+    } else updateSelectedImages([...selectedImages, { url, name, id }]);
   };
 
   const renderImage = () => {
