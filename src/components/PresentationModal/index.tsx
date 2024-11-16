@@ -97,6 +97,7 @@ export const PresentationModal: FC<Props> = ({ isOpen, onCancel }) => {
         showUploadList={false}
         onChange={handleChange}
         onRemove={onRemoveImage(DatabaseTableKeys.Presentations)}
+        maxCount={100}
         multiple
         className="upload-images"
       >
@@ -107,7 +108,11 @@ export const PresentationModal: FC<Props> = ({ isOpen, onCancel }) => {
           Clique ou arraste a(s) imagen(s) para esta área
         </p>
         <p className="ant-upload-hint">
-          Pode selecionar uma ou várias imagens ao mesmo tempo.
+          Pode selecionar até&nbsp;
+          <i>
+            <b style={{ color: "green" }}>100</b>
+          </i>
+          &nbsp;imagens ao mesmo tempo.
         </p>
         <p className="ant-upload-hint">
           (Suporta apenas imagens do tipo PNG, JPG, JPEG)
