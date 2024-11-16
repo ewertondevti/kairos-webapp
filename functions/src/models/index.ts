@@ -9,3 +9,7 @@ export interface DeleteImgFromAlbumPayload {
   albumId: string;
   images: IImage[];
 }
+
+export interface DeleteCommonPayload {
+  images: IImage[];
+}

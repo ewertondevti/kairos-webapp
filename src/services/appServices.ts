@@ -1,4 +1,8 @@
-import { IAlbumDTO, ICommonDTO } from "@/types/store";
+import {
+  DeleteImgFromAlbumPayload,
+  IAlbumDTO,
+  ICommonDTO,
+} from "@/types/store";
 import api from "./httpClient";
 
 export const convertHeicToJpeg = async (imageUrl: string) => {
@@ -40,6 +44,14 @@ export const getPresentations = async () => {
 
 export const getEvents = async () => {
   const { data } = await api.get<ICommonDTO[]>("/getEvents");
+
+  return data;
+};
+
+export const deleteImageFromAlbum = async (
+  payload: DeleteImgFromAlbumPayload
+) => {
+  const { data } = await api.post("/deleteImageFromAlbum", payload);
 
   return data;
 };

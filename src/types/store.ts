@@ -43,3 +43,8 @@ export type MemberType = {
   [MembershipFields.ChurchRole]?: string;
   [MembershipFields.BelongsTo]?: string;
 };
+
+export type DeleteImgFromAlbumPayload = {
+  albumId: string;
+  images: IImageDTO[];
+};
