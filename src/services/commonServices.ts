@@ -32,7 +32,9 @@ export const onImageUpload =
       onError
     ) {
       onError(new Error("Tipo de imagem não suportada."));
-      message.error("Imagens do tipo .HEIC não são suportadas.");
+      message.error(
+        "Imagens do tipo (.HEIC, .HEIF) e vídeos não são suportados."
+      );
       return;
     }
 
