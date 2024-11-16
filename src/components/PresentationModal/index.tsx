@@ -84,7 +84,7 @@ export const PresentationModal: FC<Props> = ({ isOpen, onCancel }) => {
     <Modal
       title="Adicionar apresentação"
       open={isOpen}
-      onCancel={handleCancel}
+      onCancel={isLoading ? undefined : handleCancel}
       onOk={onUpload}
       destroyOnClose
       okText="Gravar"
@@ -97,7 +97,6 @@ export const PresentationModal: FC<Props> = ({ isOpen, onCancel }) => {
         showUploadList={false}
         onChange={handleChange}
         onRemove={onRemoveImage(DatabaseTableKeys.Presentations)}
-        maxCount={100}
         multiple
         className="upload-images"
       >
@@ -108,16 +107,19 @@ export const PresentationModal: FC<Props> = ({ isOpen, onCancel }) => {
           Clique ou arraste a(s) imagen(s) para esta área
         </p>
         <p className="ant-upload-hint">
-          Pode selecionar até&nbsp;
-          <i>
-            <b style={{ color: "green" }}>100</b>
-          </i>
-          &nbsp;imagens ao mesmo tempo.
+          Pode selecionar uma ou várias imagens ao mesmo tempo.
         </p>
         <p className="ant-upload-hint">
           (Suporta apenas imagens do tipo PNG, JPG, JPEG)
         </p>
       </Upload>
+
+      <Text>
+        Imagens selecionadas:&nbsp;
+        <i>
+          <b>{fileList.length}</b>
+        </i>
+      </Text>
 
       {!!fileList.length && (
         <Text className="ant-upload-wrapper upload-images">

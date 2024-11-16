@@ -8,61 +8,64 @@ import { deleteImageStorage } from "../helpers/common";
 import { CreateCommonPayload, DeleteCommonPayload } from "../models";
 import { corsHandler } from "../utils/corsHandler";
 
-export const uploadPresentation = onRequest((request, response) => {
-  corsHandler(request, response, async () => {
-    if (request.method !== "POST") {
-      response.set("Allow", "POST");
-      response.status(405).send("Método não permitido. Use POST.");
-      return;
-    }
-
-    const { file, fileName, mimeType } = request.body;
-
-    if (!file || !fileName || !mimeType) {
-      response.status(400).send("Dados incompletos!");
-      return;
-    }
-
-    try {
-      // Decodifica o arquivo base64
-      const base64Data = file.split(";base64,").pop();
-      const tempFilePath = path.join(os.tmpdir(), fileName);
-
-      // Salva o arquivo temporariamente
-      fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
-
-      // Faz o upload para o Firebase Storage
-      const destination = `${DatabaseTableKeys.Presentations}/${fileName}`;
-      await storage.bucket().upload(tempFilePath, {
-        destination,
-        metadata: {
-          contentType: mimeType,
-        },
-      });
-
-      // Obtém a URL pública do arquivo
-      const fileRef = storage.bucket().file(destination);
-      const [url] = await fileRef.getSignedUrl({
-        action: "read",
-        expires: "03-01-2500",
-      });
-
-      console.log("Arquivo enviado para:", url);
-
-      // Responde com a URL do arquivo
-      response.status(200).send({ url });
-    } catch (error) {
-      console.error("Erro ao processar o arquivo:", error);
-      response.status(500).send("Erro ao processar o arquivo.");
-    } finally {
-      // Remove o arquivo temporário
-      const tempFilePath = path.join(os.tmpdir(), fileName);
-      if (fs.existsSync(tempFilePath)) {
-        fs.unlinkSync(tempFilePath);
+export const uploadPresentation = onRequest(
+  { memory: "2GiB", timeoutSeconds: 300 },
+  (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method !== "POST") {
+        response.set("Allow", "POST");
+        response.status(405).send("Método não permitido. Use POST.");
+        return;
       }
-    }
-  });
-});
+
+      const { file, fileName, mimeType } = request.body;
+
+      if (!file || !fileName || !mimeType) {
+        response.status(400).send("Dados incompletos!");
+        return;
+      }
+
+      try {
+        // Decodifica o arquivo base64
+        const base64Data = file.split(";base64,").pop();
+        const tempFilePath = path.join(os.tmpdir(), fileName);
+
+        // Salva o arquivo temporariamente
+        fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
+
+        // Faz o upload para o Firebase Storage
+        const destination = `${DatabaseTableKeys.Presentations}/${fileName}`;
+        await storage.bucket().upload(tempFilePath, {
+          destination,
+          metadata: {
+            contentType: mimeType,
+          },
+        });
+
+        // Obtém a URL pública do arquivo
+        const fileRef = storage.bucket().file(destination);
+        const [url] = await fileRef.getSignedUrl({
+          action: "read",
+          expires: "03-01-2500",
+        });
+
+        console.log("Arquivo enviado para:", url);
+
+        // Responde com a URL do arquivo
+        response.status(200).send({ url });
+      } catch (error) {
+        console.error("Erro ao processar o arquivo:", error);
+        response.status(500).send("Erro ao processar o arquivo.");
+      } finally {
+        // Remove o arquivo temporário
+        const tempFilePath = path.join(os.tmpdir(), fileName);
+        if (fs.existsSync(tempFilePath)) {
+          fs.unlinkSync(tempFilePath);
+        }
+      }
+    });
+  }
+);
 
 export const createPresentations = onRequest((request, response) => {
   corsHandler(request, response, async () => {

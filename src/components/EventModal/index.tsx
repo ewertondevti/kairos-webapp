@@ -53,7 +53,7 @@ export const EventModal: FC<Props> = ({ isOpen, onCancel }) => {
     <Modal
       title="Apresentação"
       open={isOpen}
-      onCancel={onCancel}
+      onCancel={isLoading ? undefined : onCancel}
       onOk={onSave}
       destroyOnClose
       okText="Gravar"
@@ -67,7 +67,6 @@ export const EventModal: FC<Props> = ({ isOpen, onCancel }) => {
         onChange={handleChange}
         onRemove={onRemoveImage(DatabaseTableKeys.Events)}
         multiple
-        maxCount={100}
         className="upload-images"
         accept="image/png, image/jpeg"
       >
@@ -78,11 +77,7 @@ export const EventModal: FC<Props> = ({ isOpen, onCancel }) => {
           Clique ou arraste a(s) imagen(s) para esta área
         </p>
         <p className="ant-upload-hint">
-          Pode selecionar até&nbsp;
-          <i>
-            <b style={{ color: "green" }}>100</b>
-          </i>
-          &nbsp;imagens ao mesmo tempo.
+          Pode selecionar uma ou várias imagens ao mesmo tempo.
         </p>
         <p className="ant-upload-hint">
           (Suporta apenas imagens do tipo PNG, JPG, JPEG)
