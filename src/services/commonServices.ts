@@ -24,7 +24,7 @@ export const deleteUploadedImage = async (imagePath: string) => {
 export const onImageUpload =
   (dbKey: DatabaseTableKeys): UploadProps["customRequest"] =>
   async ({ file, onProgress, onSuccess, onError }) => {
-    const base64img = (await convertFileToBase64(file as File)) as string;
+    const base64img = (await convertFileToBase64(file as RcFile)) as string;
 
     const getUri = () => {
       switch (dbKey) {
@@ -36,9 +36,6 @@ export const onImageUpload =
 
         case DatabaseTableKeys.Images:
           return "/uploadImage";
-
-        case DatabaseTableKeys.Members:
-          return "uploadMemberPhoto";
 
         default:
           return "";

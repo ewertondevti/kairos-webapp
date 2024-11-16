@@ -3,7 +3,6 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as sharp from "sharp";
 import { DatabaseTableKeys } from "../enums/app";
 import { firestore, storage } from "../firebaseAdmin";
 import { deleteImageStorage } from "../helpers/common";
@@ -34,27 +33,12 @@ export const uploadImage = onRequest((request, response) => {
       // Salva o arquivo temporariamente
       fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
 
-      let finalPath = tempFilePath;
-
-      // Verifica se o tipo MIME é HEIC e realiza a conversão para JPEG
-      if (mimeType === "image/heic" || mimeType === "image/heif") {
-        const jpegFileName = `${path.parse(fileName).name}.jpeg`;
-        const convertedFilePath = path.join(os.tmpdir(), jpegFileName);
-
-        await sharp(tempFilePath).toFormat("jpeg").toFile(convertedFilePath);
-
-        console.log(
-          `Imagem convertida de HEIC para JPEG: ${convertedFilePath}`
-        );
-        finalPath = convertedFilePath;
-      }
-
       // Faz o upload para o Firebase Storage
       const destination = `${DatabaseTableKeys.Images}/${fileName}`;
-      await storage.bucket().upload(finalPath, {
+      await storage.bucket().upload(tempFilePath, {
         destination,
         metadata: {
-          contentType: mimeType === "image/heic" ? "image/jpeg" : mimeType,
+          contentType: mimeType,
         },
       });
 
@@ -206,6 +190,12 @@ export const deleteImageFromAlbum = onRequest((request, response) => {
         images: admin.firestore.FieldValue.arrayRemove(...images),
       });
 
+      const paths = images.map(
+        (img) => `${DatabaseTableKeys.Images}/${img.name}`
+      );
+
+      await deleteImageStorage(paths);
+
       response.status(200).send();
     } catch (error) {
       console.error(error);
@@ -241,8 +231,11 @@ export const deleteAlbum = onRequest((request, response) => {
       const data = albumSnap.data() as IAlbum;
 
       if (data.images.length) {
-        const urls = data.images.map((img) => img.url!);
-        await deleteImageStorage(urls);
+        const paths = data.images.map(
+          (img) => `${DatabaseTableKeys.Images}/${img.name}`
+        );
+
+        await deleteImageStorage(paths);
       }
 
       await albumRef.delete();

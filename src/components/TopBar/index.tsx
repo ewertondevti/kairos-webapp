@@ -6,9 +6,8 @@ import {
   useGetEvents,
   useGetPresentations,
 } from "@/react-query";
-import {
-  deleteEvents,
-} from "@/services/eventServices";
+import { deleteAlbum, deleteImageFromAlbum } from "@/services/albumServices";
+import { deleteEvents } from "@/services/eventServices";
 import { deletePresentations } from "@/services/presentationServices";
 import { useAppState, useAuth } from "@/store";
 import {
@@ -25,7 +24,6 @@ import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EventModal } from "../EventModal";
 import { PresentationModal } from "../PresentationModal";
-import { deleteAlbum, deleteImageFromAlbum } from "@/services/albumServices";
 
 export const TopBar = () => {
   const [isOpen, setIsOpen] = useState(false);

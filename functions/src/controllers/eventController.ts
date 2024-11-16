@@ -2,7 +2,6 @@ import { onRequest } from "firebase-functions/https";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as sharp from "sharp";
 import { DatabaseTableKeys } from "../enums/app";
 import { firestore, storage } from "../firebaseAdmin";
 import { deleteImageStorage } from "../helpers/common";
@@ -32,27 +31,12 @@ export const uploadEvent = onRequest((request, response) => {
       // Salva o arquivo temporariamente
       fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
 
-      let finalPath = tempFilePath;
-
-      // Verifica se o tipo MIME é HEIC e realiza a conversão para JPEG
-      if (mimeType === "image/heic" || mimeType === "image/heif") {
-        const jpegFileName = `${path.parse(fileName).name}.jpeg`;
-        const convertedFilePath = path.join(os.tmpdir(), jpegFileName);
-
-        await sharp(tempFilePath).toFormat("jpeg").toFile(convertedFilePath);
-
-        console.log(
-          `Imagem convertida de HEIC para JPEG: ${convertedFilePath}`
-        );
-        finalPath = convertedFilePath;
-      }
-
       // Faz o upload para o Firebase Storage
       const destination = `${DatabaseTableKeys.Events}/${fileName}`;
-      await storage.bucket().upload(finalPath, {
+      await storage.bucket().upload(tempFilePath, {
         destination,
         metadata: {
-          contentType: mimeType === "image/heic" ? "image/jpeg" : mimeType,
+          contentType: mimeType,
         },
       });
 
@@ -153,36 +137,35 @@ export const deleteEvents = onRequest((request, response) => {
 
       const { images } = body;
 
-      const deletePromises = images.map(async ({ id, url }) => {
-        if (!id || !url) {
-          console.warn(`Imagem com dados inválidos: id=${id}, url=${url}`);
-          return;
-        }
+      const firestoreDeletePromises = images.map(async ({ id, url }) => {
+        try {
+          const eventRef = firestore
+            .collection(DatabaseTableKeys.Events)
+            .doc(id);
 
-        const presRef = firestore
-          .collection(DatabaseTableKeys.Presentations)
-          .doc(id);
-        const presSnap = await presRef.get();
+          const eventSnap = await eventRef.get();
 
-        if (presSnap.exists) {
-          try {
-            await deleteImageStorage([url]);
-            console.log(`Imagem ${url} excluída do storage.`);
-
-            await presRef.delete();
-            console.log(`Evento com ID ${id} excluído com sucesso.`);
-          } catch (error) {
-            console.error(
-              `Erro ao excluir imagem ou evento (ID ${id}):`,
-              error
-            );
+          if (eventSnap.exists) {
+            await eventRef.delete();
+            console.log(`Documento excluído no Firestore com ID: ${id}`);
+          } else {
+            console.warn(`Documento com ID ${id} não encontrado.`);
           }
-        } else {
-          console.warn(`Evento com ID ${id} não encontrado.`);
+
+          return { id, url, status: "success" };
+        } catch (error) {
+          console.error(`Erro ao excluir documento com ID: ${id}`, error);
+          return { id, url, status: "error", error };
         }
       });
 
-      await Promise.all(deletePromises);
+      await Promise.allSettled(firestoreDeletePromises);
+
+      const paths = images.map(
+        (img) => `${DatabaseTableKeys.Events}/${img.name}`
+      );
+
+      await deleteImageStorage(paths);
 
       response.status(200).send();
     } catch (error) {

@@ -154,6 +154,18 @@ h5 {
   overflow-y: auto;
 }
 
+.ant-carousel {
+  .slick-slider {
+    .slick-list {
+      .slick-track {
+        .slick-slide {
+          margin: 0 10px 0 -4px;
+        }
+      }
+    }
+  }
+}
+
 @media only screen and (max-width: 768px) {
   .ant-skeleton {
     &.skeleton-verse {
