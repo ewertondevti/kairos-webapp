@@ -5,6 +5,8 @@ import { message, UploadProps } from "antd";
 import { RcFile } from "antd/es/upload";
 import api from "./httpClient";
 
+const unsupportedMimes = ["image/heic", "image/heif", "video/mp4"];
+
 export const onRemoveImage =
   (dbKey: DatabaseTableKeys): UploadProps["onRemove"] =>
   async ({ name }) => {
@@ -26,7 +28,7 @@ export const onImageUpload =
   async ({ file, onProgress, onSuccess, onError }) => {
     if (
       ((file as RcFile).name.toLowerCase().endsWith(".heic") ||
-        (file as RcFile).type === "image/heic") &&
+        unsupportedMimes.includes((file as RcFile).type)) &&
       onError
     ) {
       onError(new Error("Tipo de imagem não suportada."));
