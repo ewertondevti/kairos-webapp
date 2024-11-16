@@ -48,3 +48,11 @@ export type DeleteImgFromAlbumPayload = {
   albumId: string;
   images: IImageDTO[];
 };
+
+export type DeleteCommonPayload = {
+  images: ICommonDTO[];
+};
+
+export type CreateCommonPayload = {
+  images: IImageDTO[];
+};

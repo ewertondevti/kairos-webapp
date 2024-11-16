@@ -1,9 +1,6 @@
-import {
-  getAlbumById,
-  getAlbums,
-  getEvents,
-  getPresentations,
-} from "@/services/appServices";
+import { getAlbumById, getAlbums } from "@/services/albumServices";
+import { getEvents } from "@/services/eventServices";
+import { getPresentations } from "@/services/presentationServices";
 import { useQuery } from "@tanstack/react-query";
 import { QueryNames } from "./queryNames";
 
@@ -16,7 +13,7 @@ export const useGetAlbums = () => {
 
 export const useGetAlbumById = (id?: string) => {
   return useQuery({
-    queryKey: [QueryNames.GetAlbumById],
+    queryKey: [QueryNames.GetAlbumById, id],
     queryFn: async () => await getAlbumById(id!),
     enabled: !!id,
   });

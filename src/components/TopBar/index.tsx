@@ -1,18 +1,19 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
-import firebaseDB, { firebaseStorage } from "@/firebase";
 import { CreateAlbumModal } from "@/pages/Management/CreateAlbumModal";
 import {
   useGetAlbumById,
   useGetEvents,
   useGetPresentations,
 } from "@/react-query";
+import {
+  deleteEvents,
+} from "@/services/eventServices";
+import { deletePresentations } from "@/services/presentationServices";
 import { useAppState, useAuth } from "@/store";
-import { IImageDTO } from "@/types/store";
 import {
   faImages,
   faObjectGroup,
-  faPlus,
   faTrash,
   faUpload,
   faXmark,
@@ -20,22 +21,16 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Col, Flex, message, Popconfirm, Row, Tooltip } from "antd";
-import {
-  addDoc,
-  arrayRemove,
-  collection,
-  deleteDoc,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
-import { deleteObject, ref } from "firebase/storage";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EventModal } from "../EventModal";
+import { PresentationModal } from "../PresentationModal";
+import { deleteAlbum, deleteImageFromAlbum } from "@/services/albumServices";
 
 export const TopBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEventOpen, setIsEventOpen] = useState(false);
+  const [isPresOpen, setIsPresOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const { pathname } = useLocation();
@@ -68,36 +63,40 @@ export const TopBar = () => {
   const showEventModal = () => setIsEventOpen(true);
   const hideEventModal = () => setIsEventOpen(false);
 
+  const showPresModal = () => setIsPresOpen(true);
+  const hidePresModal = () => setIsPresOpen(false);
+
   const refresh = () => queryClient.refetchQueries();
 
-  const onDeleteAlbum = async () => {
-    if (albumId) {
-      try {
-        const albumRef = doc(firebaseDB, DatabaseTableKeys.Albums, albumId);
-        await deleteDoc(albumRef);
+  const onDeleteAlbum = () => {
+    setIsLoading(true);
 
-        message.success("Álbum apagado com sucesso!");
-        navigate(`/${RoutesEnums.Management}/${ManagementRoutesEnums.Albums}`);
-        refresh();
-        onCancelSelection();
-      } catch (error) {
-        console.error(error);
-        message.error("Não foi possível apagar o álbum!");
-      }
+    if (albumId) {
+      deleteAlbum(albumId)
+        .then(() => {
+          message.success("Álbum apagado com sucesso!");
+          navigate(
+            `/${RoutesEnums.Management}/${ManagementRoutesEnums.Albums}`
+          );
+          refresh();
+          onCancelSelection();
+        })
+        .catch((error) => {
+          console.error(error);
+          message.error("Não foi possível apagar o álbum!");
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
   };
 
   const onDeleteFromAlbum = async () => {
-    setIsLoading(true);
-    const albumRef = doc(firebaseDB, DatabaseTableKeys.Albums, albumId!);
+    if (!albumId) return;
 
-    // Atualize o campo "images" usando arrayRemove para remover a imagem específica
-    await Promise.all(
-      selectedImages.map(
-        async (image) =>
-          await updateDoc(albumRef, { images: arrayRemove(image) })
-      )
-    )
+    setIsLoading(true);
+
+    deleteImageFromAlbum({ albumId, images: selectedImages })
       .then(() => {
         message.success("Fotos removidas do álbum com sucesso!");
         refresh();
@@ -112,34 +111,30 @@ export const TopBar = () => {
   const onDeleteFrom = async (tableKey: DatabaseTableKeys) => {
     setIsLoading(true);
 
-    await Promise.all(
-      selectedImages.map(async ({ id, url }) => {
-        try {
-          if (!isPresentations) {
-            // 1. Apagar a imagem do Firebase Storage
-            const storageRef = ref(firebaseStorage, url);
-            await deleteObject(storageRef);
-          }
+    try {
+      switch (tableKey) {
+        case DatabaseTableKeys.Presentations:
+          await deletePresentations({ images: selectedImages });
+          break;
 
-          // 2. Apagar a URL correspondente do Firestore
-          await deleteDoc(doc(firebaseDB, tableKey, id!));
+        case DatabaseTableKeys.Events:
+          await deleteEvents({ images: selectedImages });
+          break;
 
-          return true;
-        } catch (error: any) {
-          message.error("Erro ao deletar a imagem: " + error.message);
-          return false;
-        }
-      })
-    )
-      .then((res) => {
-        refresh();
-        onCancelSelection();
+        default:
+          break;
+      }
 
-        if (res.every((bool) => bool))
-          message.success("Fotos apagadas com sucesso!");
-        else message.error("Houve um erro ao tentar apagar foto(s)!");
-      })
-      .finally(() => setIsLoading(false));
+      refresh();
+      onCancelSelection();
+
+      message.success("Fotos apagadas com sucesso!");
+    } catch (error) {
+      console.error(error);
+      message.error("Houve um erro ao tentar apagar foto(s)!");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onDelete = () => {
@@ -153,45 +148,6 @@ export const TopBar = () => {
   const onCancelSelection = () => {
     onUnselectAll();
     updateMode("default");
-  };
-
-  const onAddPresentation = async () => {
-    setIsLoading(true);
-
-    const images2delete =
-      presentations?.filter((img) =>
-        selectedImages.every((i) => i.url !== img.url)
-      ) ?? [];
-
-    const newImages = selectedImages.filter((img) =>
-      presentations?.every((i) => i.url !== img.url)
-    );
-
-    await Promise.all([
-      ...newImages.map(async ({ name, url }) => {
-        const payload: IImageDTO = { name, url };
-        return await addDoc(
-          collection(firebaseDB, DatabaseTableKeys.Presentations),
-          payload
-        );
-      }),
-      ...images2delete.map(
-        async ({ id }) =>
-          await deleteDoc(doc(firebaseDB, DatabaseTableKeys.Presentations, id!))
-      ),
-    ])
-      .then(() => {
-        message.success("Foto(s) adicionada(s) a apresentação!");
-        queryClient.refetchQueries();
-        onCancelSelection();
-      })
-      .catch((error) => {
-        console.error(error);
-        message.error(
-          "Houve um erro ao tentar adicionar fotos a apresentação."
-        );
-      })
-      .finally(() => setIsLoading(false));
   };
 
   const getSelectLabel = () => {
@@ -261,6 +217,17 @@ export const TopBar = () => {
                 Adicionar eventos
               </Button>
             )}
+
+            {isPresentations && (
+              <Button
+                type="primary"
+                icon={<FontAwesomeIcon icon={faImages} />}
+                onClick={showPresModal}
+                loading={isLoading}
+              >
+                Adicionar apresentação
+              </Button>
+            )}
           </Flex>
         </Col>
 
@@ -310,19 +277,6 @@ export const TopBar = () => {
               </Button>
             )}
 
-            {mode === "select" &&
-              !isPresentations &&
-              !!selectedImages.length && (
-                <Button
-                  type="primary"
-                  icon={<FontAwesomeIcon icon={faPlus} />}
-                  onClick={onAddPresentation}
-                  loading={isLoading}
-                >
-                  Apresentação
-                </Button>
-              )}
-
             {!!user && !albumId && (
               <Button
                 type="primary"
@@ -338,6 +292,7 @@ export const TopBar = () => {
 
       <CreateAlbumModal isOpen={isOpen} onCancel={hideModal} />
       <EventModal isOpen={isEventOpen} onCancel={hideEventModal} />
+      <PresentationModal isOpen={isPresOpen} onCancel={hidePresModal} />
     </>
   );
 };
