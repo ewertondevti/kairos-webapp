@@ -4,7 +4,7 @@ const projectId = import.meta.env.VITE_PROJECT_ID;
 
 const api = axios.create({
   baseURL: `https://us-central1-${projectId}.cloudfunctions.net`,
-  timeout: 60000, // 60s
+  timeout: 60000 * 5, // 5min
 });
 
 api.interceptors.request.use(

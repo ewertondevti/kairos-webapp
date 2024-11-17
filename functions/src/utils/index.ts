@@ -1,8 +1,6 @@
 import * as cors from "cors";
 import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
-import * as sharp from "sharp";
+import * as heicConvert from "heic-convert";
 
 export const corsHandler = cors({
   origin: ["https://localhost:3000", "https://kairos-portugal.com"],
@@ -10,25 +8,24 @@ export const corsHandler = cors({
 });
 
 export const processHeicToJpeg = async (
-  filePath: string,
-  outputFileName: string
+  inputPath: string,
+  outputPath: string
 ) => {
   try {
-    const tempDir = os.tmpdir();
-    const outputFilePath = path.join(os.tmpdir(), outputFileName);
+    const inputBuffer = fs.readFileSync(inputPath);
 
-    // Verifica se o diretório temporário existe
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
+    // Converte o buffer HEIC para JPEG usando heic-convert
+    const outputBuffer = await heicConvert({
+      buffer: inputBuffer as Uint8Array, // Buffer de entrada
+      format: "JPEG", // Formato de saída
+      quality: 1, // Qualidade máxima (1 = melhor qualidade)
+    });
 
-    // Use Sharp para converter HEIC para JPEG
-    await sharp(filePath)
-      .toFormat("jpeg")
-      .jpeg({ quality: 80 })
-      .toFile(outputFilePath);
+    // Salva o buffer JPEG no caminho de saída
+    fs.writeFileSync(outputPath, Buffer.from(outputBuffer));
 
-    return outputFilePath;
+    console.log("Conversão concluída:", outputPath);
+    return outputPath;
   } catch (error) {
     console.error("Erro ao converter HEIC para JPEG:", error);
     throw new Error("Erro na conversão de HEIC para JPEG.");
