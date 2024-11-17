@@ -1,4 +1,5 @@
 import * as cors from "cors";
+import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as sharp from "sharp";
@@ -13,7 +14,13 @@ export const processHeicToJpeg = async (
   outputFileName: string
 ) => {
   try {
+    const tempDir = os.tmpdir();
     const outputFilePath = path.join(os.tmpdir(), outputFileName);
+
+    // Verifica se o diretório temporário existe
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
 
     // Use Sharp para converter HEIC para JPEG
     await sharp(filePath)
