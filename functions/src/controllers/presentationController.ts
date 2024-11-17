@@ -2,10 +2,15 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import * as sharp from "sharp";
 import { DatabaseTableKeys } from "../enums/app";
 import { firestore, storage } from "../firebaseAdmin";
 import { deleteImageStorage } from "../helpers/common";
-import { CreateCommonPayload, DeleteCommonPayload } from "../models";
+import {
+  CreateCommonPayload,
+  DeleteCommonPayload,
+  UploadCommonRequest,
+} from "../models";
 import { corsHandler } from "../utils/corsHandler";
 
 export const uploadPresentation = onRequest(
@@ -18,7 +23,7 @@ export const uploadPresentation = onRequest(
         return;
       }
 
-      const { file, fileName, mimeType } = request.body;
+      const { file, fileName, mimeType } = request.body as UploadCommonRequest;
 
       if (!file || !fileName) {
         response.status(400).send("Dados incompletos!");
@@ -41,19 +46,36 @@ export const uploadPresentation = onRequest(
 
       try {
         // Decodifica o arquivo base64
-        const base64Data = file.split(";base64,").pop();
+        const base64Data = file.split(";base64,").pop()!;
         const tempFilePath = path.join(os.tmpdir(), fileName);
+        const convertedFilePath = path.join(
+          os.tmpdir(),
+          `${path.parse(fileName).name}.jpeg`
+        );
 
         // Salva o arquivo temporariamente
         fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
 
-        const type = `image/${fileName.split(".").pop()}`;
+        const type = `image/${fileName.split(".").pop()}`.toLowerCase();
+
+        // Verifica se o arquivo é HEIC e realiza a conversão
+        if ([mimeType, type].includes("image/heic")) {
+          await sharp(tempFilePath).toFormat("jpeg").toFile(convertedFilePath);
+          console.log(
+            `Arquivo convertido de HEIC para JPEG: ${convertedFilePath}`
+          );
+        }
+
+        // Define o caminho final para upload
+        const finalPath = [mimeType, type].includes("image/heic")
+          ? convertedFilePath
+          : tempFilePath;
 
         // Faz o upload para o Firebase Storage
-        await storage.bucket().upload(tempFilePath, {
+        await storage.bucket().upload(finalPath, {
           destination,
           metadata: {
-            contentType: mimeType ? mimeType : type,
+            contentType: type === "image/heic" ? "image/jpeg" : type,
           },
         });
 

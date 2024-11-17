@@ -1,11 +1,9 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import { convertFileToBase64 } from "@/helpers/app";
 import { UploadCommonResponse } from "@/types/event";
-import { message, UploadProps } from "antd";
+import { UploadProps } from "antd";
 import { RcFile } from "antd/es/upload";
 import api from "./httpClient";
-
-const unsupportedMimes = ["image/heic", "image/heif", "video/mp4"];
 
 export const onRemoveImage =
   (dbKey: DatabaseTableKeys): UploadProps["onRemove"] =>
@@ -26,18 +24,6 @@ export const deleteUploadedImage = async (imagePath: string) => {
 export const onImageUpload =
   (dbKey: DatabaseTableKeys): UploadProps["customRequest"] =>
   async ({ file, onProgress, onSuccess, onError }) => {
-    if (
-      ((file as RcFile).name.toLowerCase().endsWith(".heic") ||
-        unsupportedMimes.includes((file as RcFile).type)) &&
-      onError
-    ) {
-      onError(new Error("Tipo de imagem não suportada."));
-      message.error(
-        "Imagens do tipo (.HEIC, .HEIF) e vídeos não são suportados."
-      );
-      return;
-    }
-
     const base64img = (await convertFileToBase64(file as RcFile)) as string;
 
     const getUri = () => {

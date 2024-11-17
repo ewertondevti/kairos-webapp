@@ -17,3 +17,9 @@ export interface DeleteImgFromAlbumPayload {
 export interface DeleteCommonPayload {
   images: IImage[];
 }
+
+export interface UploadCommonRequest {
+  file: string;
+  fileName: string;
+  mimeType: string;
+}
