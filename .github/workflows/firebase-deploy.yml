@@ -26,6 +26,9 @@ jobs:
       - name: Install Firebase Admin and Functions dependencies
         run: npm install firebase-admin firebase-functions sharp
 
+      - name: Check credentials
+        run: cat ${{ secrets.FIREBASE_TOKEN }}, ${{ secrets.FIREBASE_PROJECT_ID }}
+
       - name: Build the project
         run: npm run build
 
