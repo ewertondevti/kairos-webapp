@@ -26,10 +26,8 @@ jobs:
       - name: Install Firebase Admin and Functions dependencies
         run: npm install firebase-admin firebase-functions
 
-      - name: Install additional dependencies
-        run: |
-          npm install -D @types/node
-          npm install firebase-functions/v2/https fs os path sharp cors
+      - name: Install Firebase Functions
+        run: npm install firebase-functions
 
       - name: Set up Google Service Account credentials
         env:
