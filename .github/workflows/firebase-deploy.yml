@@ -32,10 +32,9 @@ jobs:
       - name: Set up Google Service Account credentials
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $HOME/firebase-key.json
-
-      - name: Set GOOGLE_APPLICATION_CREDENTIALS
-        run: export GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-key.json
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $HOME/firebase-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-key.json
 
       - name: Build the project
         run: npm run build
