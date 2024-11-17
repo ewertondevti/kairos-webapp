@@ -26,7 +26,7 @@ jobs:
       - name: Build the project
         run: npm run build
 
-      - name: Deploy to Firebase Hosting
+      - name: Deploy to Firebase
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KAIROS_WEBAPP_4DE65 }}
         run: firebase deploy --project ${{ secrets.PROJECT_ID }}
