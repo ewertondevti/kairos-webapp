@@ -2,7 +2,7 @@ name: Firebase Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   deploy:
@@ -15,7 +15,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20' # ou a versão específica que seu projeto usa
+          node-version: "20"
 
       - name: Install dependencies
         run: npm install
@@ -23,10 +23,24 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      - name: Install Firebase Admin and Functions dependencies
+        run: npm install firebase-admin firebase-functions
+
+      - name: Install additional dependencies
+        run: |
+          npm install -D @types/node
+          npm install firebase-functions/v2/https fs os path sharp cors
+
+      - name: Set up Google Service Account credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $HOME/firebase-key.json
+
+      - name: Set GOOGLE_APPLICATION_CREDENTIALS
+        run: export GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-key.json
+
       - name: Build the project
         run: npm run build
 
       - name: Deploy to Firebase
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KAIROS_WEBAPP_4DE65 }}
-        run: firebase deploy --project ${{ secrets.PROJECT_ID }}
+        run: firebase deploy --project ${{ secrets.FIREBASE_PROJECT_ID }}
