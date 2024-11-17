@@ -87,7 +87,7 @@ export const uploadImage = onRequest(
         console.log("Arquivo enviado para:", url);
 
         // Responde com a URL do arquivo
-        response.status(200).send({ url });
+        response.status(200).send({ url, name: fileRef.name });
       } catch (error) {
         console.error("Erro ao processar o arquivo:", error);
         response.status(500).send("Erro ao processar o arquivo.");
