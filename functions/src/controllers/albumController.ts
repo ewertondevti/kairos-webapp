@@ -15,7 +15,7 @@ import { IAlbum } from "../models/album";
 import { corsHandler, processHeicToJpeg } from "../utils";
 
 export const uploadImage = onRequest(
-  { memory: "1GiB", timeoutSeconds: 300, maxInstances: 20 },
+  { memory: "2GiB", timeoutSeconds: 300 },
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method !== "POST") {

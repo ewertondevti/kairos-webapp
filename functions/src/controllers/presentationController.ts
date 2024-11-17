@@ -13,7 +13,7 @@ import {
 import { corsHandler, processHeicToJpeg } from "../utils";
 
 export const uploadPresentation = onRequest(
-  { memory: "1GiB", timeoutSeconds: 300, maxInstances: 20 },
+  { memory: "1GiB", timeoutSeconds: 300 },
   (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method !== "POST") {
