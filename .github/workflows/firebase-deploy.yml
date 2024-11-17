@@ -30,6 +30,7 @@ jobs:
         run: |
           echo "FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}"
           echo "FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}"
+          cat ${{ secrets.FIREBASE_TOKEN }}"
 
       - name: Build the project
         run: npm run build
