@@ -1,6 +1,6 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { deleteImageStorage } from "../helpers/common";
-import { corsHandler } from "../utils/corsHandler";
+import { corsHandler } from "../utils";
 
 export const deleteUploadedImage = onRequest((request, response) => {
   corsHandler(request, response, async () => {

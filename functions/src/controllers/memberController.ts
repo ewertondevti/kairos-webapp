@@ -5,7 +5,7 @@ import * as path from "path";
 import { DatabaseTableKeys } from "../enums/app";
 import { firestore, storage } from "../firebaseAdmin";
 import { IMember, IMemberPayload } from "../models/member";
-import { corsHandler } from "../utils/corsHandler";
+import { corsHandler } from "../utils";
 
 export const createNewMember = onRequest((request, response) => {
   corsHandler(request, response, async () => {

@@ -2,7 +2,6 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as sharp from "sharp";
 import { DatabaseTableKeys } from "../enums/app";
 import { firestore, storage } from "../firebaseAdmin";
 import { deleteImageStorage } from "../helpers/common";
@@ -11,7 +10,7 @@ import {
   DeleteCommonPayload,
   UploadCommonRequest,
 } from "../models";
-import { corsHandler } from "../utils/corsHandler";
+import { corsHandler, processHeicToJpeg } from "../utils";
 
 export const uploadPresentation = onRequest(
   { memory: "1GiB", timeoutSeconds: 300, maxInstances: 20 },
@@ -58,18 +57,14 @@ export const uploadPresentation = onRequest(
 
         const type = `image/${fileName.split(".").pop()}`.toLowerCase();
 
+        // Define o caminho final para upload
+        let finalPath = tempFilePath;
+
         // Verifica se o arquivo é HEIC e realiza a conversão
         if ([mimeType, type].includes("image/heic")) {
-          await sharp(tempFilePath).toFormat("jpeg").toFile(convertedFilePath);
-          console.log(
-            `Arquivo convertido de HEIC para JPEG: ${convertedFilePath}`
-          );
+          // Converte HEIC para JPEG
+          finalPath = await processHeicToJpeg(tempFilePath, convertedFilePath);
         }
-
-        // Define o caminho final para upload
-        const finalPath = [mimeType, type].includes("image/heic")
-          ? convertedFilePath
-          : tempFilePath;
 
         // Faz o upload para o Firebase Storage
         await storage.bucket().upload(finalPath, {
