@@ -27,7 +27,7 @@ jobs:
         run: npm install firebase-admin firebase-functions heic-convert
 
       - name: Install heic-convert type
-        run: npm i -D @types/heic-convert
+        run: npm install -D @types/heic-convert
 
       - name: Build the project
         run: npm run build
