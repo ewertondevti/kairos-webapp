@@ -11,8 +11,8 @@ import { IAlbum } from "../models/album";
 import { corsHandler } from "../utils/corsHandler";
 
 export const uploadImage = onRequest(
-  { memory: "2GiB", timeoutSeconds: 300 },
-  (request, response) => {
+  { memory: "1GiB", timeoutSeconds: 300, maxInstances: 20 },
+  async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method !== "POST") {
         response.set("Allow", "POST");
@@ -22,8 +22,23 @@ export const uploadImage = onRequest(
 
       const { file, fileName, mimeType } = request.body;
 
-      if (!file || !fileName || !mimeType) {
+      if (!file || !fileName) {
         response.status(400).send("Dados incompletos!");
+        return;
+      }
+
+      // Verifica se a imagem já existe
+      const destination = `${DatabaseTableKeys.Images}/${fileName}`;
+      const fileRef = storage.bucket().file(destination);
+      const isExists = await fileRef.exists();
+
+      if (isExists[0]) {
+        const url = await fileRef.getSignedUrl({
+          action: "read",
+          expires: "03-01-2500",
+        });
+
+        response.status(200).send({ url });
         return;
       }
 
@@ -35,12 +50,13 @@ export const uploadImage = onRequest(
         // Salva o arquivo temporariamente
         fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
 
+        const type = `image/${fileName.split(".").pop()}`;
+
         // Faz o upload para o Firebase Storage
-        const destination = `${DatabaseTableKeys.Images}/${fileName}`;
         await storage.bucket().upload(tempFilePath, {
           destination,
           metadata: {
-            contentType: mimeType,
+            contentType: mimeType ? mimeType : type,
           },
         });
 

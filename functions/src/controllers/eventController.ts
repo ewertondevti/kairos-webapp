@@ -18,8 +18,22 @@ export const uploadEvent = onRequest((request, response) => {
 
     const { file, fileName, mimeType } = request.body;
 
-    if (!file || !fileName || !mimeType) {
+    if (!file || !fileName) {
       response.status(400).send("Dados incompletos!");
+      return;
+    }
+
+    const destination = `${DatabaseTableKeys.Events}/${fileName}`;
+    const storedFile = storage.bucket().file(destination);
+    const isExists = await storedFile.exists();
+
+    if (isExists[0]) {
+      const url = await storedFile.getSignedUrl({
+        action: "read",
+        expires: "03-01-2500",
+      });
+
+      response.status(200).send({ url });
       return;
     }
 
@@ -31,12 +45,13 @@ export const uploadEvent = onRequest((request, response) => {
       // Salva o arquivo temporariamente
       fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
 
+      const type = `image/${fileName.split(".").pop()}`;
+
       // Faz o upload para o Firebase Storage
-      const destination = `${DatabaseTableKeys.Events}/${fileName}`;
       await storage.bucket().upload(tempFilePath, {
         destination,
         metadata: {
-          contentType: mimeType,
+          contentType: mimeType ? mimeType : type,
         },
       });
 

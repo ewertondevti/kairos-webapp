@@ -9,7 +9,7 @@ import { CreateCommonPayload, DeleteCommonPayload } from "../models";
 import { corsHandler } from "../utils/corsHandler";
 
 export const uploadPresentation = onRequest(
-  { memory: "2GiB", timeoutSeconds: 300 },
+  { memory: "1GiB", timeoutSeconds: 300, maxInstances: 20 },
   (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method !== "POST") {
@@ -20,8 +20,22 @@ export const uploadPresentation = onRequest(
 
       const { file, fileName, mimeType } = request.body;
 
-      if (!file || !fileName || !mimeType) {
+      if (!file || !fileName) {
         response.status(400).send("Dados incompletos!");
+        return;
+      }
+
+      const destination = `${DatabaseTableKeys.Presentations}/${fileName}`;
+      const storedFile = storage.bucket().file(destination);
+      const isExists = await storedFile.exists();
+
+      if (isExists[0]) {
+        const url = await storedFile.getSignedUrl({
+          action: "read",
+          expires: "03-01-2500",
+        });
+
+        response.status(200).send({ url });
         return;
       }
 
@@ -33,12 +47,13 @@ export const uploadPresentation = onRequest(
         // Salva o arquivo temporariamente
         fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
 
+        const type = `image/${fileName.split(".").pop()}`;
+
         // Faz o upload para o Firebase Storage
-        const destination = `${DatabaseTableKeys.Presentations}/${fileName}`;
         await storage.bucket().upload(tempFilePath, {
           destination,
           metadata: {
-            contentType: mimeType,
+            contentType: mimeType ? mimeType : type,
           },
         });
 
