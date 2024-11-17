@@ -36,6 +36,10 @@ jobs:
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $HOME/firebase-key.json
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-key.json
 
+      - name: Validate Google Service Account Key
+        run: |
+          cat $HOME/firebase-key.json
+
       - name: Build the project
         run: npm run build
 
