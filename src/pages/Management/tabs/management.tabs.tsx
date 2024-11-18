@@ -9,11 +9,6 @@ export const managementTabs: TabsProps["items"] = [
     children: <Outlet />,
   },
   {
-    key: ManagementRoutesEnums.Presentation,
-    label: "Apresentação",
-    children: <Outlet />,
-  },
-  {
     key: ManagementRoutesEnums.Events,
     label: "Próximos eventos",
     children: <Outlet />,

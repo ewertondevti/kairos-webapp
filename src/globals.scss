@@ -154,6 +154,18 @@ h5 {
   overflow-y: auto;
 }
 
+.skeleton-images {
+  width: 60dvw;
+
+  .ant-skeleton {
+    &.ant-skeleton-element {
+      &.image-skeleton {
+        height: 309px;
+      }
+    }
+  }
+}
+
 .ant-carousel {
   .slick-slider {
     .slick-list {
@@ -166,7 +178,33 @@ h5 {
   }
 }
 
+@media only screen and (max-width: 480px) {
+  .skeleton-images {
+    width: 100dvw;
+
+    .ant-skeleton {
+      &.ant-skeleton-element {
+        &.image-skeleton {
+          height: 231px;
+        }
+      }
+    }
+  }
+}
+
 @media only screen and (max-width: 768px) {
+  .skeleton-images {
+    width: 80dvw;
+
+    .ant-skeleton {
+      &.ant-skeleton-element {
+        &.image-skeleton {
+          height: 225px;
+        }
+      }
+    }
+  }
+
   .ant-skeleton {
     &.skeleton-verse {
       width: 80%;
@@ -196,6 +234,18 @@ h5 {
 }
 
 @media only screen and (min-width: 769px) and (max-width: 1024px) {
+  .skeleton-images {
+    width: 90dvw;
+
+    .ant-skeleton {
+      &.ant-skeleton-element {
+        &.image-skeleton {
+          height: 243px;
+        }
+      }
+    }
+  }
+
   h1 {
     font-size: 32px !important;
   }
@@ -214,5 +264,19 @@ h5 {
 
   h5 {
     font-size: 18px !important;
+  }
+}
+
+@media only screen and (min-width: 1025px) and (max-width: 1366px) {
+  .skeleton-images {
+    width: 80dvw;
+
+    .ant-skeleton {
+      &.ant-skeleton-element {
+        &.image-skeleton {
+          height: 288px;
+        }
+      }
+    }
   }
 }

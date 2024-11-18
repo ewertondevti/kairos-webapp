@@ -1,7 +1,8 @@
+import { ImagesSkeleton } from "@/components/ImagesSkeleton";
 import { LazyImage } from "@/components/LazyImage";
 import { useGetImageSize } from "@/hooks/app";
 import { useGetAlbumById } from "@/react-query";
-import { Col, Empty, Flex, Row, Skeleton } from "antd";
+import { Col, Empty, Flex, Row } from "antd";
 import { useParams } from "react-router-dom";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid } from "react-window";
@@ -17,18 +18,9 @@ export const AlbumDetails = () => {
 
   const { data: album, isLoading } = useGetAlbumById(id);
 
-  if (!album?.images?.length) return <Empty style={{ marginTop: 50 }} />;
+  if (isLoading) return <ImagesSkeleton />;
 
-  if (isLoading) {
-    return (
-      <Flex justify="center" style={{ minWidth: "50dvw" }}>
-        <Skeleton.Image active className="image-skeleton" />
-        <Skeleton.Image active className="image-skeleton" />
-        <Skeleton.Image active className="image-skeleton" />
-        <Skeleton.Image active className="image-skeleton" />
-      </Flex>
-    );
-  }
+  if (!album?.images?.length) return <Empty style={{ marginTop: 50 }} />;
 
   return (
     <Row className="width-100perc height-100perc">

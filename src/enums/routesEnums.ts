@@ -7,6 +7,5 @@ export enum RoutesEnums {
 
 export enum ManagementRoutesEnums {
   Albums = "albums",
-  Presentation = "presentation",
   Events = "events",
 }

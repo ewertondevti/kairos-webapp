@@ -1,14 +1,9 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
 import { CreateAlbumModal } from "@/pages/Management/CreateAlbumModal";
-import {
-  useGetAlbumById,
-  useGetEvents,
-  useGetPresentations,
-} from "@/react-query";
+import { useGetAlbumById, useGetEvents } from "@/react-query";
 import { deleteAlbum, deleteImageFromAlbum } from "@/services/albumServices";
 import { deleteEvents } from "@/services/eventServices";
-import { deletePresentations } from "@/services/presentationServices";
 import { useAppState, useAuth } from "@/store";
 import {
   faImages,
@@ -23,12 +18,10 @@ import { Button, Col, Flex, message, Popconfirm, Row, Tooltip } from "antd";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EventModal } from "../EventModal";
-import { PresentationModal } from "../PresentationModal";
 
 export const TopBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEventOpen, setIsEventOpen] = useState(false);
-  const [isPresOpen, setIsPresOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const { pathname } = useLocation();
@@ -37,7 +30,6 @@ export const TopBar = () => {
   const navigate = useNavigate();
 
   const { user } = useAuth();
-  const { data: presentations } = useGetPresentations();
   const { data: events } = useGetEvents();
   const { data: album } = useGetAlbumById(albumId);
 
@@ -50,7 +42,6 @@ export const TopBar = () => {
   } = useAppState();
 
   const isAlbums = pathname.includes(ManagementRoutesEnums.Albums);
-  const isPresentations = pathname.includes(ManagementRoutesEnums.Presentation);
   const isEvents = pathname.includes(ManagementRoutesEnums.Events);
 
   const showSelectBtn = !!user && mode === "default";
@@ -60,9 +51,6 @@ export const TopBar = () => {
 
   const showEventModal = () => setIsEventOpen(true);
   const hideEventModal = () => setIsEventOpen(false);
-
-  const showPresModal = () => setIsPresOpen(true);
-  const hidePresModal = () => setIsPresOpen(false);
 
   const refresh = () => queryClient.refetchQueries();
 
@@ -111,10 +99,6 @@ export const TopBar = () => {
 
     try {
       switch (tableKey) {
-        case DatabaseTableKeys.Presentations:
-          await deletePresentations({ images: selectedImages });
-          break;
-
         case DatabaseTableKeys.Events:
           await deleteEvents({ images: selectedImages });
           break;
@@ -139,7 +123,6 @@ export const TopBar = () => {
     if (albumId && selectedImages.length === album?.images?.length) {
       onDeleteAlbum();
     } else if (isAlbums) onDeleteFromAlbum();
-    else if (isPresentations) onDeleteFrom(DatabaseTableKeys.Presentations);
     else if (isEvents) onDeleteFrom(DatabaseTableKeys.Events);
   };
 
@@ -151,9 +134,7 @@ export const TopBar = () => {
   const getSelectLabel = () => {
     if (
       selectedImages.length &&
-      [presentations?.length, events?.length, album?.images.length].includes(
-        selectedImages.length
-      )
+      [events?.length, album?.images.length].includes(selectedImages.length)
     ) {
       return "Desselecionar todas";
     }
@@ -168,10 +149,6 @@ export const TopBar = () => {
       if (selectedImages.length === album.images.length) {
         onUnselectAll();
       } else updateSelectedImages(album.images ?? []);
-    } else if (isPresentations) {
-      if (selectedImages.length === presentations?.length) {
-        onUnselectAll();
-      } else updateSelectedImages(presentations ?? []);
     } else if (isEvents) {
       if (selectedImages.length === events?.length) onUnselectAll();
       else updateSelectedImages(events ?? []);
@@ -216,14 +193,13 @@ export const TopBar = () => {
               </Button>
             )}
 
-            {isPresentations && (
+            {isAlbums && !albumId && (
               <Button
                 type="primary"
-                icon={<FontAwesomeIcon icon={faImages} />}
-                onClick={showPresModal}
-                loading={isLoading}
+                icon={<FontAwesomeIcon icon={faUpload} />}
+                onClick={showModal}
               >
-                Adicionar apresentação
+                Criar álbum
               </Button>
             )}
           </Flex>
@@ -274,23 +250,12 @@ export const TopBar = () => {
                 {getSelectLabel()}
               </Button>
             )}
-
-            {!!user && !albumId && (
-              <Button
-                type="primary"
-                icon={<FontAwesomeIcon icon={faUpload} />}
-                onClick={showModal}
-              >
-                Criar álbum
-              </Button>
-            )}
           </Flex>
         </Col>
       </Row>
 
       <CreateAlbumModal isOpen={isOpen} onCancel={hideModal} />
       <EventModal isOpen={isEventOpen} onCancel={hideEventModal} />
-      <PresentationModal isOpen={isPresOpen} onCancel={hidePresModal} />
     </>
   );
 };

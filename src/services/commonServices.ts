@@ -31,9 +31,6 @@ export const onImageUpload =
         case DatabaseTableKeys.Events:
           return "/uploadEvent";
 
-        case DatabaseTableKeys.Presentations:
-          return "/uploadPresentation";
-
         case DatabaseTableKeys.Images:
           return "/uploadImage";
 

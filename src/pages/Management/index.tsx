@@ -1,16 +1,13 @@
 import { EditAlbumModal } from "@/components/EditAlbumModal";
 import { TopBar } from "@/components/TopBar";
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
+import { onDownload } from "@/helpers/app";
 import { useGetAlbums } from "@/react-query";
-import api from "@/services/httpClient";
 import { useAppState } from "@/store";
 import {
   DownloadOutlined,
   LeftOutlined,
   RightOutlined,
-  RotateLeftOutlined,
-  RotateRightOutlined,
-  SwapOutlined,
   UndoOutlined,
   ZoomInOutlined,
   ZoomOutOutlined,
@@ -27,7 +24,6 @@ import {
 } from "antd";
 import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
-import { saveAs } from "file-saver";
 import { isMobile } from "react-device-detect";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Management.scss";
@@ -43,18 +39,6 @@ const Management = () => {
     useAppState();
 
   const defaultKey = pathname.split("/").filter(Boolean)[1];
-
-  const onDownload = (url: string) => () => {
-    const strings = url.split("/");
-    const lastString = strings[strings.length - 1].split("?")[0];
-    const filename = decodeURIComponent(lastString.split("%2F")[1]);
-
-    if (url) {
-      api
-        .get<Blob>(url, { responseType: "blob" })
-        .then(({ data }) => saveAs(data, filename));
-    }
-  };
 
   const onChange: TabsProps["onChange"] = (key) => {
     updateMode("default");
@@ -72,8 +56,6 @@ const Management = () => {
         return "Gerenciamento";
       case ManagementRoutesEnums.Albums:
         return "Álbuns";
-      case ManagementRoutesEnums.Presentation:
-        return "Apresentação";
       case ManagementRoutesEnums.Events:
         return "Eventos";
 
@@ -124,16 +106,7 @@ const Management = () => {
               {
                 image,
                 transform: { scale },
-                actions: {
-                  onActive,
-                  onFlipY,
-                  onFlipX,
-                  onRotateLeft,
-                  onRotateRight,
-                  onZoomOut,
-                  onZoomIn,
-                  onReset,
-                },
+                actions: { onActive, onZoomOut, onZoomIn, onReset },
               }
             ) => {
               return (
@@ -146,23 +119,6 @@ const Management = () => {
                   <DownloadOutlined
                     onClick={onDownload(image.url)}
                     title="Fazer download da imagem"
-                  />
-                  <SwapOutlined
-                    rotate={90}
-                    onClick={onFlipY}
-                    title="Inverter imagem de cima para baixo"
-                  />
-                  <SwapOutlined
-                    onClick={onFlipX}
-                    title="Inverter imagem da esquerda para a direita"
-                  />
-                  <RotateLeftOutlined
-                    onClick={onRotateLeft}
-                    title="Girar imagem para a esquerda"
-                  />
-                  <RotateRightOutlined
-                    onClick={onRotateRight}
-                    title="Girar imagem para a direita"
                   />
                   <ZoomOutOutlined
                     disabled={scale === 1}

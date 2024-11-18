@@ -1,5 +1,7 @@
+import api from "@/services/httpClient";
 import { message } from "antd";
 import { RcFile } from "antd/es/upload";
+import { saveAs } from "file-saver";
 import Cookies from "universal-cookie";
 
 export function getCookie<T>(key: string) {
@@ -36,4 +38,16 @@ export const convertFileToBase64 = (file: RcFile) => {
     reader.onerror = (error) => reject(error);
     reader.readAsDataURL(file); // Converte o arquivo em base64
   });
+};
+
+export const onDownload = (url: string) => () => {
+  const lastString = url.split("/").filter(Boolean).pop();
+  const name = lastString?.split("?").shift() ?? "IMG_KAIROS";
+  const filename = decodeURIComponent(name);
+
+  if (url) {
+    api
+      .get<Blob>(url, { responseType: "blob" })
+      .then(({ data }) => saveAs(data, filename));
+  }
 };

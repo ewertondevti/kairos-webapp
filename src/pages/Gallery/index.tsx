@@ -1,6 +1,24 @@
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
+import { onDownload } from "@/helpers/app";
 import { useGetAlbums } from "@/react-query";
-import { Breadcrumb, BreadcrumbProps, Empty, Flex, Layout } from "antd";
+import {
+  DownloadOutlined,
+  LeftOutlined,
+  RightOutlined,
+  UndoOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+} from "@ant-design/icons";
+import {
+  Breadcrumb,
+  BreadcrumbProps,
+  Empty,
+  Flex,
+  Image,
+  Layout,
+  Space,
+  Spin,
+} from "antd";
 import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
 import { Outlet, useLocation, useParams } from "react-router-dom";
@@ -9,7 +27,7 @@ import { AlbumContent } from "../Management/tabs/AlbumsTab/AlbumContent";
 export const Gallery = () => {
   const { pathname } = useLocation();
   const { id: albumId } = useParams();
-  const { data: albums } = useGetAlbums();
+  const { data: albums, isLoading } = useGetAlbums();
 
   const keys = pathname.split("/").filter(Boolean);
 
@@ -23,8 +41,6 @@ export const Gallery = () => {
         return "Gerenciamento";
       case ManagementRoutesEnums.Albums:
         return "Álbuns";
-      case ManagementRoutesEnums.Presentation:
-        return "Apresentação";
       case ManagementRoutesEnums.Events:
         return "Eventos";
 
@@ -50,7 +66,7 @@ export const Gallery = () => {
   }));
 
   const getTitle = () => {
-    let title = "Galeria";
+    const title = "Galeria";
 
     if (albumId && albums) {
       const album = albums.find((a) => a.id === albumId);
@@ -61,8 +77,6 @@ export const Gallery = () => {
 
     return title;
   };
-
-  if (!albums?.length) return <Empty style={{ marginTop: 50 }} />;
 
   return (
     <Layout style={{ padding: 20 }} className="height-100perc">
@@ -75,7 +89,58 @@ export const Gallery = () => {
       </Flex>
 
       <Content>
-        {!!albumId && <Outlet />}
+        {!albums?.length && (
+          <Flex justify="center">
+            <Spin spinning={isLoading}>
+              <Empty />
+            </Spin>
+          </Flex>
+        )}
+
+        {!!albumId && (
+          <Image.PreviewGroup
+            preview={{
+              toolbarRender: (
+                _,
+                {
+                  image,
+                  transform: { scale },
+                  actions: { onActive, onZoomOut, onZoomIn, onReset },
+                }
+              ) => {
+                return (
+                  <Space size={12} className="toolbar-wrapper">
+                    <LeftOutlined
+                      onClick={() => onActive?.(-1)}
+                      title="Voltar"
+                    />
+                    <RightOutlined
+                      onClick={() => onActive?.(1)}
+                      title="Próxima"
+                    />
+                    <DownloadOutlined
+                      onClick={onDownload(image.url)}
+                      title="Fazer download da imagem"
+                    />
+                    <ZoomOutOutlined
+                      disabled={scale === 1}
+                      onClick={onZoomOut}
+                      title="Diminuir zoom"
+                    />
+                    <ZoomInOutlined
+                      disabled={scale === 50}
+                      onClick={onZoomIn}
+                      title="Aumentar zoom"
+                    />
+                    <UndoOutlined onClick={onReset} title="Resetar tudo" />
+                  </Space>
+                );
+              },
+            }}
+          >
+            <Outlet />
+          </Image.PreviewGroup>
+        )}
 
         {!albumId && (
           <Flex
