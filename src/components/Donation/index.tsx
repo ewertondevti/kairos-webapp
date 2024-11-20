@@ -17,7 +17,7 @@ export const Donation = () => {
     <Col span={24}>
       <Divider>
         <Title level={3} className="text-uppercase">
-          Ajude
+          Faça uma doação
         </Title>
       </Divider>
 
@@ -47,7 +47,7 @@ export const Donation = () => {
           )}
 
           <Button type="primary" size="large" onClick={showModal}>
-            Faça uma doação
+            Fazer doação
           </Button>
         </Flex>
 
