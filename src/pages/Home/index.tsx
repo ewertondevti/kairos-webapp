@@ -1,4 +1,5 @@
 import { CustomFooter } from "@/components/CustomFooter";
+import { Donation } from "@/components/Donation";
 import { Row } from "antd";
 import { Events } from "./Events";
 import "./Home.scss";
@@ -13,6 +14,8 @@ export const Home = () => {
       <Verse />
 
       <WorshipDays />
+
+      <Donation />
 
       <CustomFooter />
     </Row>

@@ -53,7 +53,7 @@ export const EditAlbumModal = () => {
       const album = albums.find((a) => a.id === albumIdValue)!;
       form.setFieldValue("name", album.name);
     }
-  }, [albumIdValue]);
+  }, [albumIdValue, albums]);
 
   const onUpdate = async (values: AlbumValuesType) => {
     setIsLoading(true);
@@ -69,10 +69,11 @@ export const EditAlbumModal = () => {
     );
 
     if (values.albumId) {
-      const album = albums?.find((a) => a.id === albumIdValue)!;
-      const images = album.images!.filter((img) =>
-        selectedImages.every((i) => i.url !== img.url)
-      );
+      const album = albums?.find((a) => a.id === albumIdValue);
+      const images =
+        album?.images!.filter((img) =>
+          selectedImages.every((i) => i.url !== img.url)
+        ) ?? [];
 
       payload.images = [...images, ...selectedImages];
     }

@@ -44,7 +44,8 @@ export const Verse = () => {
     try {
       await navigator.clipboard.writeText(verse!.text);
       setCopySuccess(true);
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       setCopySuccess(false);
     }
   };
@@ -95,8 +96,15 @@ export const Verse = () => {
       >
         <div className="verse__bible-icon" />
 
-        <Space className="verse__content" size="small" direction="vertical">
-          <Title level={5}>{verse?.text}</Title>
+        <Flex
+          vertical
+          align="center"
+          justify="center"
+          style={{ maxWidth: 600, textAlign: "center" }}
+        >
+          <Title level={5} italic>
+            "{verse?.text}"
+          </Title>
 
           <Space size="small">
             <Text strong>{verse?.book.name}</Text>
@@ -122,7 +130,7 @@ export const Verse = () => {
               Compartilhar
             </Button>
           </Flex>
-        </Space>
+        </Flex>
       </Flex>
     </Col>
   );
