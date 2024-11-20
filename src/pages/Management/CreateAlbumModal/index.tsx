@@ -2,7 +2,7 @@ import { DatabaseTableKeys } from "@/enums/app";
 import { useGetListItemSize } from "@/hooks/app";
 import { QueryNames } from "@/react-query/queryNames";
 import { createAlbum } from "@/services/albumServices";
-import { onImageUpload, onRemoveImage } from "@/services/commonServices";
+import { deleteUploadedImage, onImageUpload } from "@/services/commonServices";
 import { UploadCommonResponse } from "@/types/event";
 import { IAlbum } from "@/types/store";
 import { requiredRules } from "@/utils/app";
@@ -49,8 +49,13 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
   const refresh = () =>
     queryClient.refetchQueries({ queryKey: [QueryNames.GetAlbums] });
 
-  const onRemove = (uid: string) =>
-    setFileList((state) => state.filter((file) => file.uid !== uid));
+  const onRemove = (file: UploadFile) => {
+    setFileList((state) => state.filter((f) => f.uid !== file.uid));
+
+    deleteUploadedImage(`${DatabaseTableKeys.Images}/${file.name}`).catch(
+      (error) => console.error(error)
+    );
+  };
 
   const handleChange: UploadProps["onChange"] = ({ fileList: newFileList }) =>
     setFileList(newFileList);
@@ -108,7 +113,6 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
             showUploadList={false}
             customRequest={onImageUpload(DatabaseTableKeys.Images)}
             onChange={handleChange}
-            onRemove={onRemoveImage(DatabaseTableKeys.Images)}
             multiple
             className="upload-images"
             accept="image/x-adobe-dng"
@@ -178,7 +182,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
                             type="text"
                             size="small"
                             icon={<DeleteOutlined />}
-                            onClick={() => onRemove(item.uid)}
+                            onClick={() => onRemove(item)}
                             className="ant-upload-list-item-action"
                           />
                         </Text>
