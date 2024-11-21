@@ -149,6 +149,7 @@ export const EditAlbumModal = () => {
             customRequest={onImageUpload(DatabaseTableKeys.Images)}
             onChange={handleChange}
             multiple
+            maxCount={30}
             className="upload-images"
             accept="image/x-adobe-dng"
           >
@@ -159,7 +160,7 @@ export const EditAlbumModal = () => {
               Clique ou arraste a(s) imagen(s) para esta área
             </p>
             <p className="ant-upload-hint">
-              Pode selecionar uma ou várias imagens ao mesmo tempo.
+              Pode selecionar até 30 imagens ao mesmo tempo.
             </p>
             <p className="ant-upload-hint">
               (Suporta apenas imagens do tipo PNG, JPG, JPEG)
