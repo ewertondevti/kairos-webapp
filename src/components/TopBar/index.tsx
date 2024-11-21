@@ -156,7 +156,7 @@ export const TopBar = () => {
   };
 
   const getConfirmMessage = () => {
-    let message = "Tens certeza que deseja apagar ";
+    let message = "Tens a certeza que deseja apagar ";
 
     if (selectedImages.length) {
       if (selectedImages.length > 1) message += "as imagens";
