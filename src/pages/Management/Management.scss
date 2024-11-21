@@ -121,6 +121,10 @@
         align-items: flex-end;
       }
 
+      &-title {
+        transition: transform 1s ease;
+      }
+
       &--cover1 {
         @include album-desktop;
 
@@ -158,6 +162,10 @@
         @include hover-scale(1.1);
 
         z-index: 20;
+
+        .management__album-content-title {
+          transform: translateY(25px) scale(1.1);
+        }
 
         .management__album-content--cover1 {
           transform: scale(1.25) rotate(-15deg) rotateX(-3deg)

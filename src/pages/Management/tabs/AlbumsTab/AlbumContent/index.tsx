@@ -27,6 +27,7 @@ export const AlbumContent: FC<Props> = ({ id, name, images }) => {
       <Paragraph
         style={{ textAlign: "center" }}
         ellipsis={{ suffix: "...", rows: 2 }}
+        className="management__album-content-title"
       >
         {name}
       </Paragraph>
