@@ -1,6 +1,8 @@
 import MbWayLogo from "@/assets/mb-way.svg";
-import { Descriptions, Flex, Modal } from "antd";
+import { Descriptions, Flex, Modal, Typography } from "antd";
 import { FC } from "react";
+
+const { Text } = Typography;
 
 type Props = {
   isOpen: boolean;
@@ -23,7 +25,10 @@ export const DonationModal: FC<Props> = ({ isOpen, onCancel }) => {
         <Descriptions column={1} bordered>
           <Descriptions.Item label="Nome">Kairós Portugal</Descriptions.Item>
           <Descriptions.Item label="Telemóvel">
-            +351 966 524 967
+            <Flex gap={4}>
+              <Text>+351</Text>
+              <Text copyable>966 524 967</Text>
+            </Flex>
           </Descriptions.Item>
         </Descriptions>
       </Flex>
