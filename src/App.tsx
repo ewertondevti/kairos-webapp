@@ -8,11 +8,8 @@ import { AlbumsTab } from "./pages/Management/tabs/AlbumsTab";
 import { AlbumDetails } from "./pages/Management/tabs/AlbumsTab/AlbumDetails";
 import { EventsTab } from "./pages/Management/tabs/EventsTab";
 import { MembershipForm } from "./pages/MembershipForm";
-import { useAuth } from "./store";
 
 function App() {
-  const { user } = useAuth();
-
   return (
     <BrowserRouter>
       <Routes>
@@ -28,26 +25,21 @@ function App() {
             element={<MembershipForm />}
           />
 
-          {!!user && (
-            <Route path={RoutesEnums.Management} element={<Management />}>
-              <Route
-                index
-                element={<Navigate to={ManagementRoutesEnums.Albums} />}
-              />
+          <Route path={RoutesEnums.Management} element={<Management />}>
+            <Route
+              index
+              element={<Navigate to={ManagementRoutesEnums.Albums} />}
+            />
 
-              <Route
-                path={ManagementRoutesEnums.Albums}
-                element={<AlbumsTab />}
-              >
-                <Route path=":id" element={<AlbumDetails />} />
-              </Route>
-
-              <Route
-                path={ManagementRoutesEnums.Events}
-                element={<EventsTab />}
-              />
+            <Route path={ManagementRoutesEnums.Albums} element={<AlbumsTab />}>
+              <Route path=":id" element={<AlbumDetails />} />
             </Route>
-          )}
+
+            <Route
+              path={ManagementRoutesEnums.Events}
+              element={<EventsTab />}
+            />
+          </Route>
         </Route>
 
         <Route path="*" element={<Navigate to={RoutesEnums.Home} />} />
