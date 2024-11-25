@@ -1,7 +1,8 @@
 import { DatabaseTableKeys } from "@/enums/app";
-import firebaseDB from "@/firebase";
 import { useGetListItemSize } from "@/hooks/app";
 import { useGetAlbums } from "@/react-query";
+import { QueryNames } from "@/react-query/queryNames";
+import { updateAlbum } from "@/services/albumServices";
 import { deleteUploadedImage, onImageUpload } from "@/services/commonServices";
 import { useAppState } from "@/store";
 import { AlbumValuesType } from "@/types/album";
@@ -27,7 +28,6 @@ import {
   UploadFile,
   UploadProps,
 } from "antd";
-import { doc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FixedSizeList } from "react-window";
@@ -52,7 +52,6 @@ export const EditAlbumModal = () => {
 
   const {
     editAlbumOpen,
-    selectedImages,
     toogleEditAlbumModal,
     updateSelectedImages,
     updateMode,
@@ -86,34 +85,22 @@ export const EditAlbumModal = () => {
   const onUpdate = async (values: AlbumValuesType) => {
     setIsLoading(true);
 
-    const payload: Partial<IAlbumDTO> = {
+    const payload: IAlbumDTO = {
+      id: albumId,
       name: values.name,
-      images: values.images,
+      images: values.images!,
     };
 
-    if (albumId) {
-      const albumRef = doc(firebaseDB, DatabaseTableKeys.Albums, albumId!);
-
-      const album = albums?.find((a) => a.id === albumIdValue);
-      const images =
-        album?.images!.filter((img) =>
-          selectedImages.every((i) => i.url !== img.url)
-        ) ?? [];
-
-      payload.images = [...images, ...selectedImages];
-
-      try {
-        await updateDoc(albumRef, payload);
+    updateAlbum(payload)
+      .then(() => {
         onCancel();
-        queryClient.refetchQueries();
+        queryClient.refetchQueries({ queryKey: [QueryNames.GetAlbumById] });
         message.success("Álbum atualizado com sucesso!");
-      } catch (error) {
+      })
+      .catch((error) => {
         console.error(error);
-        message.error("Houve um erro ao tentar atualizar o álbum.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
+        message.error("Erro ao tentar atualizar álbum!");
+      });
   };
 
   const handleChange: UploadProps["onChange"] = ({ fileList: newFileList }) =>
@@ -149,7 +136,6 @@ export const EditAlbumModal = () => {
             customRequest={onImageUpload(DatabaseTableKeys.Images)}
             onChange={handleChange}
             multiple
-            maxCount={30}
             className="upload-images"
             accept="image/x-adobe-dng"
           >

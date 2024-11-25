@@ -9,6 +9,10 @@ export interface CreateAlbumPayload {
   images: Partial<IImage>[];
 }
 
+export interface UpdateAlbumPayload extends CreateAlbumPayload {
+  id: string;
+}
+
 export interface DeleteImgFromAlbumPayload {
   albumId: string;
   images: IImage[];
