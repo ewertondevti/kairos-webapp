@@ -48,7 +48,7 @@ export const uploadImage = onRequest(
       }
 
       try {
-        await firestore.runTransaction(async (transaction) => {
+        await firestore.runTransaction(async () => {
           // Decodifica o arquivo base64
           const base64Data = file.split(";base64,").pop()!;
           const tempFilePath = path.join(os.tmpdir(), fileName);
