@@ -114,9 +114,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
             customRequest={onImageUpload(DatabaseTableKeys.Images)}
             onChange={handleChange}
             multiple
-            maxCount={30}
             className="upload-images"
-            accept="image/x-adobe-dng"
           >
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
