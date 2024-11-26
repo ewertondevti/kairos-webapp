@@ -123,7 +123,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
               Clique ou arraste a(s) imagen(s) para esta área
             </p>
             <p className="ant-upload-hint">
-              Pode selecionar até 30 imagens ao mesmo tempo.
+              Pode selecionar até 50 imagens por vez.
             </p>
             <p className="ant-upload-hint">
               (Suporta apenas imagens do tipo PNG, JPG, JPEG)
