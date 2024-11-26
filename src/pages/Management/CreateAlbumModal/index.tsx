@@ -77,12 +77,11 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
       })),
     };
 
-    createAlbum(payload)
+    await createAlbum(payload)
       .then(() => {
         message.success("Álbum criado com sucesso!", 3);
-        setFileList([]);
         refresh();
-        onCancel();
+        handleCancel();
       })
       .catch(() => {
         message.error("Houve um erro ao tentar criar álbum.");
@@ -98,9 +97,10 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
       onOk={() => form.submit()}
       destroyOnClose
       okText="Gravar"
-      okButtonProps={{ loading: isLoading }}
+      confirmLoading={isLoading}
       cancelButtonProps={{ disabled: isLoading }}
       className="album__modal-create"
+      maskClosable={false}
     >
       <Form form={form} layout="vertical" onFinish={onSave}>
         <Form.Item name="name" label="Nome do álbum" rules={requiredRules}>
