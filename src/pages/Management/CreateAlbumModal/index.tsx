@@ -83,7 +83,8 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
         refresh();
         handleCancel();
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error(error);
         message.error("Houve um erro ao tentar criar álbum.");
       })
       .finally(() => setIsLoading(false));
