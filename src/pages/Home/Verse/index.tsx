@@ -20,6 +20,14 @@ export const Verse = () => {
   const [search] = useSearchParams();
 
   useEffect(() => {
+    if (copySuccess) {
+      setTimeout(() => {
+        setCopySuccess(false);
+      }, 5000);
+    }
+  }, [copySuccess]);
+
+  useEffect(() => {
     const abbrev = search.get("abbrev");
     const chapter = search.get("chapter");
     const verse = search.get("verse");
