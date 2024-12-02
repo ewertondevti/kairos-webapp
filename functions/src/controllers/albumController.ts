@@ -150,7 +150,7 @@ export const updateAlbum = onRequest((request, response) => {
     try {
       const body = request.body as UpdateAlbumPayload;
 
-      if (!body || !body.id || !body.name || !body.images?.length) {
+      if (!body || !body.id || !body.name) {
         response.status(400).send("Dados incompletos ou inválidos!");
         return;
       }
@@ -169,11 +169,14 @@ export const updateAlbum = onRequest((request, response) => {
 
         const album = albumSnap.data() as IAlbum;
 
-        const updatedAlbum = {
+        const updatedAlbum: Partial<IAlbum> = {
           name: body.name,
-          images: [...album.images, ...body.images],
           updatedDate: admin.firestore.FieldValue.serverTimestamp(),
         };
+
+        if (body.images.length) {
+          updatedAlbum.images = [...album.images, ...body.images];
+        }
 
         transaction.update(albumRef, updatedAlbum);
       });

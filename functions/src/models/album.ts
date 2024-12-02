@@ -1,3 +1,5 @@
+import * as admin from "firebase-admin";
+
 export interface IImage {
   id: string;
   url: string;
@@ -8,4 +10,6 @@ export interface IAlbum {
   id: string;
   name: string;
   images: Partial<IImage>[];
+  creationDate?: admin.firestore.FieldValue;
+  updatedDate?: admin.firestore.FieldValue;
 }

@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as heicConvert from "heic-convert";
 
 export const corsHandler = cors({
-  origin: ["https://localhost:3000", "https://kairos-portugal.com"],
+  origin: ["http://localhost:3000", "https://kairos-portugal.com"],
   methods: ["GET", "POST", "DELETE", "OPTIONS"],
 });
 
