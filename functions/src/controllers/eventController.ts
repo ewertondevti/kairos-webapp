@@ -11,6 +11,7 @@ import {
   UploadCommonRequest,
 } from "../models";
 import { corsHandler, processHeicToJpeg } from "../utils";
+import { ICommonDTO } from "./../../../src/types/store";
 
 export const uploadEvent = onRequest((request, response) => {
   corsHandler(request, response, async () => {
@@ -136,10 +137,19 @@ export const getEvents = onRequest((request, response) => {
         .collection(DatabaseTableKeys.Events)
         .get();
 
-      const events = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const events = querySnapshot.docs.map(async (doc) => {
+        const event = doc.data() as ICommonDTO;
+
+        const destination = `${DatabaseTableKeys.Events}/${event.name}`;
+        const fileRef = storage.bucket().file(destination);
+
+        const url = await fileRef.getSignedUrl({
+          action: "read",
+          expires: Date.now() + 15 * 60 * 1000,
+        });
+
+        return { id: doc.id, ...event, url };
+      });
 
       response.status(200).send(events);
     } catch (error) {

@@ -204,7 +204,17 @@ export const getAlbums = onRequest((request, response) => {
 
       const albums = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data(),
+        ...(doc.data() as IAlbum).images.map(async (img) => {
+          const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+          const fileRef = storage.bucket().file(destination);
+
+          const url = await fileRef.getSignedUrl({
+            action: "read",
+            expires: Date.now() + 15 * 60 * 1000,
+          });
+
+          return { ...img, url };
+        }),
       }));
 
       response.status(200).json(albums);
