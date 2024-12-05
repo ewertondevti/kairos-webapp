@@ -10,8 +10,8 @@ import {
   DeleteCommonPayload,
   UploadCommonRequest,
 } from "../models";
+import { IEvent } from "../models/event";
 import { corsHandler, processHeicToJpeg } from "../utils";
-import { ICommonDTO } from "./../../../src/types/store";
 
 export const uploadEvent = onRequest((request, response) => {
   corsHandler(request, response, async () => {
@@ -139,7 +139,7 @@ export const getEvents = onRequest((request, response) => {
 
       const events = await Promise.all(
         querySnapshot.docs.map(async (doc) => {
-          const event = doc.data() as ICommonDTO;
+          const event = doc.data() as IEvent;
 
           const destination = `${DatabaseTableKeys.Events}/${event.name}`;
           const fileRef = storage.bucket().file(destination);
@@ -149,7 +149,7 @@ export const getEvents = onRequest((request, response) => {
             expires: Date.now() + 15 * 60 * 1000,
           });
 
-          return { id: doc.id, ...event, url, teste: url };
+          return { ...event, id: doc.id, url };
         })
       );
 
