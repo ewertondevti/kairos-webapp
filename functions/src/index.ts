@@ -4,6 +4,7 @@ import {
   deleteImageFromAlbum,
   getAlbumById,
   getAlbums,
+  updateAlbum,
   uploadImage,
 } from "./controllers/albumController";
 import { deleteUploadedImage } from "./controllers/commonController";
@@ -26,6 +27,7 @@ export {
   getAlbumById,
   getAlbums,
   getEvents,
+  updateAlbum,
   uploadEvent,
   uploadImage,
 };
