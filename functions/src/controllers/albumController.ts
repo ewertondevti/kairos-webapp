@@ -189,7 +189,7 @@ export const updateAlbum = onRequest((request, response) => {
           updatedDate: admin.firestore.FieldValue.serverTimestamp(),
         };
 
-        if (body.images.length) {
+        if (body.images?.length) {
           updatedAlbum.images = [...album.images, ...body.images];
         }
 
