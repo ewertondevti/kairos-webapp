@@ -40,7 +40,7 @@ export const uploadImage = onRequest(
       if (isExists[0]) {
         const url = await fileRef.getSignedUrl({
           action: "read",
-          expires: "03-01-2500",
+          expires: Date.now() + 15 * 60 * 1000,
         });
 
         response.status(200).send({ url });
@@ -86,7 +86,7 @@ export const uploadImage = onRequest(
           const fileRef = storage.bucket().file(destination);
           const [url] = await fileRef.getSignedUrl({
             action: "read",
-            expires: "03-01-2500",
+            expires: Date.now() + 15 * 60 * 1000,
           });
 
           console.log("Arquivo enviado para:", url);
@@ -202,20 +202,22 @@ export const getAlbums = onRequest((request, response) => {
         .collection(DatabaseTableKeys.Albums)
         .get();
 
-      const albums = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as IAlbum).images.map(async (img) => {
-          const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-          const fileRef = storage.bucket().file(destination);
+      const albums = await Promise.all(
+        querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as IAlbum).images.map(async (img) => {
+            const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+            const fileRef = storage.bucket().file(destination);
 
-          const url = await fileRef.getSignedUrl({
-            action: "read",
-            expires: Date.now() + 15 * 60 * 1000,
-          });
+            const url = await fileRef.getSignedUrl({
+              action: "read",
+              expires: Date.now() + 15 * 60 * 1000,
+            });
 
-          return { ...img, url };
-        }),
-      }));
+            return { ...img, url };
+          }),
+        }))
+      );
 
       response.status(200).json(albums);
     } catch (error) {

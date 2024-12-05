@@ -35,7 +35,7 @@ export const uploadEvent = onRequest((request, response) => {
     if (isExists[0]) {
       const url = await storedFile.getSignedUrl({
         action: "read",
-        expires: "03-01-2500",
+        expires: Date.now() + 15 * 60 * 1000,
       });
 
       response.status(200).send({ url });
@@ -77,7 +77,7 @@ export const uploadEvent = onRequest((request, response) => {
       const fileRef = storage.bucket().file(destination);
       const [url] = await fileRef.getSignedUrl({
         action: "read",
-        expires: "03-01-2500",
+        expires: Date.now() + 15 * 60 * 1000,
       });
 
       console.log("Arquivo enviado para:", url);
@@ -137,19 +137,21 @@ export const getEvents = onRequest((request, response) => {
         .collection(DatabaseTableKeys.Events)
         .get();
 
-      const events = querySnapshot.docs.map(async (doc) => {
-        const event = doc.data() as ICommonDTO;
+      const events = await Promise.all(
+        querySnapshot.docs.map(async (doc) => {
+          const event = doc.data() as ICommonDTO;
 
-        const destination = `${DatabaseTableKeys.Events}/${event.name}`;
-        const fileRef = storage.bucket().file(destination);
+          const destination = `${DatabaseTableKeys.Events}/${event.name}`;
+          const fileRef = storage.bucket().file(destination);
 
-        const url = await fileRef.getSignedUrl({
-          action: "read",
-          expires: Date.now() + 15 * 60 * 1000,
-        });
+          const url = await fileRef.getSignedUrl({
+            action: "read",
+            expires: Date.now() + 15 * 60 * 1000,
+          });
 
-        return { id: doc.id, ...event, url };
-      });
+          return { id: doc.id, ...event, url, teste: url };
+        })
+      );
 
       response.status(200).send(events);
     } catch (error) {
