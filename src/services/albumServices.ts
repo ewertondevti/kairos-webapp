@@ -6,7 +6,7 @@ export const createAlbum = async (payload: IAlbum) => {
   return data;
 };
 
-export const updateAlbum = async (payload: IAlbum) => {
+export const updateAlbum = async (payload: IAlbumDTO) => {
   const { data } = await api.post("/updateAlbum", payload);
   return data;
 };

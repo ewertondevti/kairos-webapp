@@ -235,38 +235,57 @@ export const getAlbums = onRequest(
   }
 );
 
-export const getAlbumById = onRequest((request, response) => {
-  corsHandler(request, response, async () => {
-    if (request.method !== "GET") {
-      response.set("Allow", "GET");
-      response.status(405).send("Método não permitido. Use GET.");
-      return;
-    }
-
-    try {
-      const id = request.query.id as string;
-
-      if (!id) {
-        response.status(400).send("ID do álbum não foi fornecido!");
+export const getAlbumById = onRequest(
+  { memory: "2GiB", timeoutSeconds: 600, maxInstances: 20 },
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method !== "GET") {
+        response.set("Allow", "GET");
+        response.status(405).send("Método não permitido. Use GET.");
         return;
       }
 
-      const docSnap = await firestore
-        .collection(DatabaseTableKeys.Albums)
-        .doc(id)
-        .get();
+      try {
+        const id = request.query.id as string;
 
-      if (docSnap.exists) {
-        response.status(200).json({ id: docSnap.id, ...docSnap.data() });
+        if (!id) {
+          response.status(400).send("ID do álbum não foi fornecido!");
+          return;
+        }
+
+        const docSnap = await firestore
+          .collection(DatabaseTableKeys.Albums)
+          .doc(id)
+          .get();
+
+        if (docSnap.exists) {
+          const album = docSnap.data() as IAlbum;
+
+          const images = await Promise.all(
+            album.images.map(async (img) => {
+              const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+              const fileRef = storage.bucket().file(destination);
+
+              const url = await fileRef.getSignedUrl({
+                action: "read",
+                expires: Date.now() + 15 * 60 * 1000,
+              });
+
+              return { ...img, url };
+            })
+          );
+
+          response.status(200).json({ id: docSnap.id, ...album, images });
+        }
+
+        response.status(404).send("Álbum não existe!");
+      } catch (error) {
+        console.error("Erro ao buscar álbuns:", error);
+        response.status(500).send("Erro ao buscar álbuns.");
       }
-
-      response.status(404).send("Álbum não existe!");
-    } catch (error) {
-      console.error("Erro ao buscar álbuns:", error);
-      response.status(500).send("Erro ao buscar álbuns.");
-    }
-  });
-});
+    });
+  }
+);
 
 export const deleteImageFromAlbum = onRequest((request, response) => {
   corsHandler(request, response, async () => {
