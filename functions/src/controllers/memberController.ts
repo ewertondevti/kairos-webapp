@@ -9,6 +9,11 @@ import { corsHandler } from "../utils";
 
 export const createNewMember = onRequest((request, response) => {
   corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
     if (request.method !== "POST") {
       response.set("Allow", "POST");
       response.status(405).send("Método não permitido. Use POST.");

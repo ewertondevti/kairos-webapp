@@ -19,6 +19,11 @@ export const uploadImage = onRequest(
   { memory: "2GiB", timeoutSeconds: 600, maxInstances: 20 },
   async (request, response) => {
     corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
       if (request.method !== "POST") {
         response.set("Allow", "POST");
         response.status(405).send("Método não permitido. Use POST.");
@@ -110,6 +115,11 @@ export const uploadImage = onRequest(
 
 export const createAlbum = onRequest((request, response) => {
   corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
     if (request.method !== "POST") {
       response.set("Allow", "POST");
       response.status(405).send("Método não permitido. Use POST.");
@@ -141,6 +151,11 @@ export const createAlbum = onRequest((request, response) => {
 
 export const updateAlbum = onRequest((request, response) => {
   corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
     if (request.method !== "POST") {
       response.set("Allow", "POST");
       response.status(405).send("Método não permitido. Use POST.");
@@ -193,6 +208,11 @@ export const getAlbums = onRequest(
   { memory: "2GiB", timeoutSeconds: 600, maxInstances: 20 },
   async (request, response) => {
     corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
       if (request.method !== "GET") {
         response.set("Allow", "GET");
         response.status(405).send("Método não permitido. Use GET.");
@@ -239,6 +259,11 @@ export const getAlbumById = onRequest(
   { memory: "2GiB", timeoutSeconds: 600, maxInstances: 20 },
   async (request, response) => {
     corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
       if (request.method !== "GET") {
         response.set("Allow", "GET");
         response.status(405).send("Método não permitido. Use GET.");
@@ -289,6 +314,11 @@ export const getAlbumById = onRequest(
 
 export const deleteImageFromAlbum = onRequest((request, response) => {
   corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
     if (request.method !== "POST") {
       response.set("Allow", "POST");
       response.status(405).send("Método não permitido. Use POST.");
@@ -337,6 +367,11 @@ export const deleteImageFromAlbum = onRequest((request, response) => {
 
 export const deleteAlbum = onRequest((request, response) => {
   corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
     if (request.method !== "DELETE") {
       response.set("Allow", "DELETE");
       response.status(405).send("Método não permitido. Use DELETE.");

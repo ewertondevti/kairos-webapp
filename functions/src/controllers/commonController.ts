@@ -4,6 +4,11 @@ import { corsHandler } from "../utils";
 
 export const deleteUploadedImage = onRequest((request, response) => {
   corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
     if (request.method !== "DELETE") {
       response.set("Allow", "DELETE");
       response.status(405).send("Método não permitido. Use DELETE.");

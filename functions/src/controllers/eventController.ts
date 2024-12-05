@@ -15,6 +15,11 @@ import { corsHandler, processHeicToJpeg } from "../utils";
 
 export const uploadEvent = onRequest((request, response) => {
   corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
     if (request.method !== "POST") {
       response.set("Allow", "POST");
       response.status(405).send("Método não permitido. Use POST.");
@@ -99,6 +104,11 @@ export const uploadEvent = onRequest((request, response) => {
 
 export const createEvents = onRequest((request, response) => {
   corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
     if (request.method !== "POST") {
       response.set("Allow", "POST");
       response.status(405).send("Método não permitido. Use POST.");
@@ -163,6 +173,11 @@ export const getEvents = onRequest((request, response) => {
 
 export const deleteEvents = onRequest((request, response) => {
   corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
     if (request.method !== "POST") {
       response.set("Allow", "POST");
       response.status(405).send("Método não permitido. Use POST.");
