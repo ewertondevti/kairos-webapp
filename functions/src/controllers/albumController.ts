@@ -203,20 +203,25 @@ export const getAlbums = onRequest((request, response) => {
         .get();
 
       const albums = await Promise.all(
-        querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as IAlbum).images.map(async (img) => {
-            const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-            const fileRef = storage.bucket().file(destination);
+        querySnapshot.docs.map(async (doc) => {
+          const album = doc.data() as IAlbum;
 
-            const url = await fileRef.getSignedUrl({
-              action: "read",
-              expires: Date.now() + 15 * 60 * 1000,
-            });
+          const images = await Promise.all(
+            album.images.map(async (img) => {
+              const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+              const fileRef = storage.bucket().file(destination);
 
-            return { ...img, url };
-          }),
-        }))
+              const url = await fileRef.getSignedUrl({
+                action: "read",
+                expires: Date.now() + 15 * 60 * 1000,
+              });
+
+              return { ...img, url };
+            })
+          );
+
+          return { ...album, id: doc.id, images };
+        })
       );
 
       response.status(200).json(albums);

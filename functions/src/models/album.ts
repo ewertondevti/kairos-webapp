@@ -7,7 +7,6 @@ export interface IImage {
 }
 
 export interface IAlbum {
-  id: string;
   name: string;
   images: Partial<IImage>[];
   creationDate?: admin.firestore.FieldValue;
