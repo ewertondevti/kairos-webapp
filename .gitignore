@@ -24,4 +24,3 @@ dist-ssr
 *.sw?
 .firebase
 package-lock.json
-functions/package-lock.json
