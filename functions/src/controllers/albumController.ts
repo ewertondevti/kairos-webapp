@@ -189,48 +189,51 @@ export const updateAlbum = onRequest((request, response) => {
   });
 });
 
-export const getAlbums = onRequest((request, response) => {
-  corsHandler(request, response, async () => {
-    if (request.method !== "GET") {
-      response.set("Allow", "GET");
-      response.status(405).send("Método não permitido. Use GET.");
-      return;
-    }
+export const getAlbums = onRequest(
+  { memory: "2GiB", timeoutSeconds: 600, maxInstances: 20 },
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method !== "GET") {
+        response.set("Allow", "GET");
+        response.status(405).send("Método não permitido. Use GET.");
+        return;
+      }
 
-    try {
-      const querySnapshot = await firestore
-        .collection(DatabaseTableKeys.Albums)
-        .get();
+      try {
+        const querySnapshot = await firestore
+          .collection(DatabaseTableKeys.Albums)
+          .get();
 
-      const albums = await Promise.all(
-        querySnapshot.docs.map(async (doc) => {
-          const album = doc.data() as IAlbum;
+        const albums = await Promise.all(
+          querySnapshot.docs.map(async (doc) => {
+            const album = doc.data() as IAlbum;
 
-          const images = await Promise.all(
-            album.images.map(async (img) => {
-              const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-              const fileRef = storage.bucket().file(destination);
+            const images = await Promise.all(
+              album.images.map(async (img) => {
+                const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+                const fileRef = storage.bucket().file(destination);
 
-              const url = await fileRef.getSignedUrl({
-                action: "read",
-                expires: Date.now() + 15 * 60 * 1000,
-              });
+                const url = await fileRef.getSignedUrl({
+                  action: "read",
+                  expires: Date.now() + 15 * 60 * 1000,
+                });
 
-              return { ...img, url };
-            })
-          );
+                return { ...img, url };
+              })
+            );
 
-          return { ...album, id: doc.id, images };
-        })
-      );
+            return { ...album, id: doc.id, images };
+          })
+        );
 
-      response.status(200).json(albums);
-    } catch (error) {
-      console.error("Erro ao buscar álbuns:", error);
-      response.status(500).send("Erro ao buscar álbuns.");
-    }
-  });
-});
+        response.status(200).json(albums);
+      } catch (error) {
+        console.error("Erro ao buscar álbuns:", error);
+        response.status(500).send("Erro ao buscar álbuns.");
+      }
+    });
+  }
+);
 
 export const getAlbumById = onRequest((request, response) => {
   corsHandler(request, response, async () => {
