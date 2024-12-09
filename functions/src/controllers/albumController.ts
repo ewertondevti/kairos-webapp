@@ -71,7 +71,7 @@ export const uploadImage = onRequest(
           let finalPath = tempFilePath;
 
           // Verifica se o arquivo é HEIC e realiza a conversão
-          if ([mimeType, type].includes("image/heic")) {
+          if (mimeType.toLowerCase() === "image/heic") {
             // Converte HEIC para JPEG
             finalPath = await processHeicToJpeg(
               tempFilePath,
