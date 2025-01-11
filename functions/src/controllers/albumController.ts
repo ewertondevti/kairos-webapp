@@ -12,7 +12,7 @@ import {
   UpdateAlbumPayload,
   UploadCommonRequest,
 } from "../models";
-import { IAlbum } from "../models/album";
+import { IAlbum, IImage } from "../models/album";
 import { corsHandler, processHeicToJpeg } from "../utils";
 
 export const uploadImage = onRequest(
@@ -342,6 +342,7 @@ export const deleteImageFromAlbum = onRequest((request, response) => {
       const albumRef = firestore
         .collection(DatabaseTableKeys.Albums)
         .doc(albumId);
+
       const albumSnap = await albumRef.get();
 
       if (!albumSnap.exists) {
@@ -349,8 +350,12 @@ export const deleteImageFromAlbum = onRequest((request, response) => {
         return;
       }
 
+      const currImages = albumSnap.data() as IImage[];
+
       await albumRef.update({
-        images: admin.firestore.FieldValue.arrayRemove(...images),
+        images: currImages.filter((img) =>
+          images.every((i) => i.name !== img.name)
+        ),
       });
 
       const paths = images.map(
