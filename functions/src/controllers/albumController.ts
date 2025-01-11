@@ -229,17 +229,19 @@ export const getAlbums = onRequest(
             const album = doc.data() as IAlbum;
 
             const images = await Promise.all(
-              album.images.map(async (img) => {
-                const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-                const fileRef = storage.bucket().file(destination);
+              album.images
+                .filter((_, idx) => idx < 3)
+                .map(async (img) => {
+                  const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+                  const fileRef = storage.bucket().file(destination);
 
-                const url = await fileRef.getSignedUrl({
-                  action: "read",
-                  expires: Date.now() + 15 * 60 * 1000,
-                });
+                  const url = await fileRef.getSignedUrl({
+                    action: "read",
+                    expires: Date.now() + 15 * 60 * 1000,
+                  });
 
-                return { ...img, url };
-              })
+                  return { ...img, url };
+                })
             );
 
             return { ...album, id: doc.id, images };
