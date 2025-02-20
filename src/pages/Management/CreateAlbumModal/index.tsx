@@ -73,7 +73,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
       ...values,
       images: fileList.map(({ name, response }) => ({
         name,
-        url: (response as UploadCommonResponse).url,
+        url: (response as UploadCommonResponse).url[0],
       })),
     };
 

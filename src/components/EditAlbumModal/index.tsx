@@ -6,6 +6,7 @@ import { updateAlbum } from "@/services/albumServices";
 import { deleteUploadedImage, onImageUpload } from "@/services/commonServices";
 import { useAppState } from "@/store";
 import { AlbumValuesType } from "@/types/album";
+import { UploadCommonResponse } from "@/types/event";
 import { IAlbumDTO } from "@/types/store";
 import { requiredRules } from "@/utils/app";
 import {
@@ -88,7 +89,10 @@ export const EditAlbumModal = () => {
     const payload: IAlbumDTO = {
       id: albumId,
       name: values.name,
-      images: values.images!,
+      images: fileList.map(({ name, response }) => ({
+        name,
+        url: (response as UploadCommonResponse).url[0],
+      })),
     };
 
     updateAlbum(payload)
