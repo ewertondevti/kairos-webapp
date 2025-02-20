@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
+import { Timestamp } from "firebase/firestore";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -248,7 +249,15 @@ export const getAlbums = onRequest(
           })
         );
 
-        response.status(200).json(albums);
+        response
+          .status(200)
+          .json(
+            albums.sort(
+              (a, b) =>
+                (b.creationDate as Timestamp).toDate().getTime() -
+                (a.creationDate as Timestamp).toDate().getTime()
+            )
+          );
       } catch (error) {
         console.error("Erro ao buscar álbuns:", error);
         response.status(500).send("Erro ao buscar álbuns.");
