@@ -2,33 +2,45 @@ import { onRequest } from "firebase-functions/v2/https";
 import { deleteImageStorage } from "../helpers/common";
 import { corsHandler } from "../utils";
 
-export const deleteUploadedImage = onRequest((request, response) => {
-  corsHandler(request, response, async () => {
-    if (request.method === "OPTIONS") {
-      response.status(204).send();
-      return;
-    }
+// Common function configuration
+const COMMON_CONFIG = {
+  maxInstances: 10,
+};
 
-    if (request.method !== "DELETE") {
-      response.set("Allow", "DELETE");
-      response.status(405).send("Método não permitido. Use DELETE.");
-      return;
-    }
+/**
+ * Deletes a single uploaded image from Firebase Storage
+ */
+export const deleteUploadedImage = onRequest(
+  COMMON_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
 
-    const imagePath = request.query.imagePath as string;
+      if (request.method !== "DELETE") {
+        response.set("Allow", "DELETE");
+        response.status(405).send("Método não permitido. Use DELETE.");
+        return;
+      }
 
-    if (!imagePath) {
-      console.warn("Nenhuma URL de imagem fornecida para exclusão.");
-      response.status(400).send("URL da imagem não foi fornecida.");
-      return;
-    }
+      const imagePath = request.query.imagePath as string;
 
-    try {
-      await deleteImageStorage([imagePath]);
-      response.status(200).send("Imagem excluída com sucesso.");
-    } catch (error) {
-      console.error(error);
-      response.status(500).send("Houve um erro ao tentar remover imagem.");
-    }
-  });
-});
+      if (!imagePath?.trim()) {
+        console.warn("Nenhuma URL de imagem fornecida para exclusão.");
+        response.status(400).send("URL da imagem não foi fornecida.");
+        return;
+      }
+
+      try {
+        await deleteImageStorage([imagePath.trim()]);
+        console.log(`Imagem excluída com sucesso: ${imagePath}`);
+        response.status(200).send("Imagem excluída com sucesso.");
+      } catch (error) {
+        console.error("Erro ao excluir imagem:", error);
+        response.status(500).send("Houve um erro ao tentar remover imagem.");
+      }
+    });
+  }
+);

@@ -1,23 +1,32 @@
 import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
-import { Timestamp } from "firebase/firestore";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { DatabaseTableKeys } from "../enums/app";
 import { firestore, storage } from "../firebaseAdmin";
-import { deleteImageStorage } from "../helpers/common";
+import { deleteImageStorage, generateUniqueFileName } from "../helpers/common";
 import {
   CreateAlbumPayload,
   DeleteImgFromAlbumPayload,
   UpdateAlbumPayload,
   UploadCommonRequest,
 } from "../models";
-import { IAlbum, IImage } from "../models/album";
+import { IAlbum } from "../models/album";
 import { corsHandler, processHeicToJpeg } from "../utils";
 
+// Common function configuration for image uploads
+const IMAGE_UPLOAD_CONFIG = {
+  memory: "2GiB" as const,
+  timeoutSeconds: 600,
+  maxInstances: 20,
+};
+
+/**
+ * Uploads an image to Firebase Storage with automatic duplicate name handling
+ */
 export const uploadImage = onRequest(
-  { memory: "2GiB", timeoutSeconds: 600, maxInstances: 20 },
+  IMAGE_UPLOAD_CONFIG,
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -38,175 +47,206 @@ export const uploadImage = onRequest(
         return;
       }
 
-      // Verifica se a imagem já existe
-      const destination = `${DatabaseTableKeys.Images}/${fileName}`;
-      const fileRef = storage.bucket().file(destination);
-      const isExists = await fileRef.exists();
-
-      if (isExists[0]) {
-        const url = await fileRef.getSignedUrl({
-          action: "read",
-          expires: Date.now() + 15 * 60 * 1000,
-        });
-
-        response.status(200).send({ url });
-        return;
-      }
+      let tempFilePath: string | null = null;
+      let convertedFilePath: string | null = null;
 
       try {
-        await firestore.runTransaction(async () => {
-          // Decodifica o arquivo base64
-          const base64Data = file.split(";base64,").pop()!;
-          const tempFilePath = path.join(os.tmpdir(), fileName);
-          const convertedFilePath = path.join(
+        // Generate unique filename if file already exists
+        const uniqueFileName = await generateUniqueFileName(
+          DatabaseTableKeys.Images,
+          fileName
+        );
+        const destination = `${DatabaseTableKeys.Images}/${uniqueFileName}`;
+
+        // Decode base64 file
+        const base64Data = file.split(";base64,").pop();
+        if (!base64Data) {
+          response.status(400).send("Formato de arquivo inválido!");
+          return;
+        }
+
+        tempFilePath = path.join(os.tmpdir(), uniqueFileName);
+        const fileExtension = path.extname(fileName).toLowerCase();
+        const isHeic = mimeType?.toLowerCase() === "image/heic";
+
+        // Save temporary file
+        fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
+
+        let finalPath = tempFilePath;
+        let contentType = `image/${fileExtension.slice(1)}`.toLowerCase();
+
+        // Convert HEIC to JPEG if needed
+        if (isHeic) {
+          convertedFilePath = path.join(
             os.tmpdir(),
-            `${path.parse(fileName).name}.jpeg`
+            `${path.parse(uniqueFileName).name}.jpeg`
           );
+          finalPath = await processHeicToJpeg(tempFilePath, convertedFilePath);
+          contentType = "image/jpeg";
+        }
 
-          // Salva o arquivo temporariamente
-          fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
-
-          const type = `image/${fileName.split(".").pop()}`.toLowerCase();
-
-          // Define o caminho final para upload
-          let finalPath = tempFilePath;
-
-          // Verifica se o arquivo é HEIC e realiza a conversão
-          if (mimeType.toLowerCase() === "image/heic") {
-            // Converte HEIC para JPEG
-            finalPath = await processHeicToJpeg(
-              tempFilePath,
-              convertedFilePath
-            );
-          }
-
-          // Faz o upload para o Firebase Storage
-          await storage.bucket().upload(finalPath, {
-            destination,
-            metadata: {
-              contentType: type === "image/heic" ? "image/jpeg" : type,
-            },
-          });
-
-          // Obtém a URL pública do arquivo
-          const fileRef = storage.bucket().file(destination);
-          const [url] = await fileRef.getSignedUrl({
-            action: "read",
-            expires: Date.now() + 15 * 60 * 1000,
-          });
-
-          console.log("Arquivo enviado para:", url);
-
-          // Responde com a URL do arquivo
-          response.status(200).send({ url });
+        // Upload to Firebase Storage
+        await storage.bucket().upload(finalPath, {
+          destination,
+          metadata: { contentType },
         });
+
+        // Get signed URL
+        const fileRef = storage.bucket().file(destination);
+        const [url] = await fileRef.getSignedUrl({
+          action: "read",
+          expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+        });
+
+        console.log(`Imagem enviada com sucesso: ${uniqueFileName} -> ${url}`);
+
+        response.status(200).send({ url, fileName: uniqueFileName });
       } catch (error) {
         console.error("Erro ao processar o arquivo:", error);
         response.status(500).send("Erro ao processar o arquivo.");
       } finally {
-        // Remove o arquivo temporário
-        const tempFilePath = path.join(os.tmpdir(), fileName);
-        if (fs.existsSync(tempFilePath)) {
-          fs.unlinkSync(tempFilePath);
+        // Clean up temporary files
+        const filesToClean = [tempFilePath, convertedFilePath].filter(
+          Boolean
+        ) as string[];
+        filesToClean.forEach((filePath) => {
+          try {
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
+          } catch (cleanupError) {
+            console.error(
+              `Erro ao limpar arquivo temporário ${filePath}:`,
+              cleanupError
+            );
+          }
+        });
+      }
+    });
+  }
+);
+
+/**
+ * Creates a new album
+ */
+export const createAlbum = onRequest(
+  { maxInstances: 10 },
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "POST") {
+        response.set("Allow", "POST");
+        response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      try {
+        const body = request.body as CreateAlbumPayload;
+
+        if (!body?.name?.trim() || !body.images?.length) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        const newAlbum: Omit<IAlbum, "id"> = {
+          name: body.name.trim(),
+          images: body.images,
+          creationDate: admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        await firestore.collection(DatabaseTableKeys.Albums).add(newAlbum);
+
+        console.log(`Álbum criado com sucesso: ${body.name}`);
+        response.status(201).send();
+      } catch (error) {
+        console.error("Erro ao criar álbum:", error);
+        response.status(500).send("Houve um erro ao tentar criar o álbum.");
+      }
+    });
+  }
+);
+
+/**
+ * Updates an existing album
+ */
+export const updateAlbum = onRequest(
+  { maxInstances: 10 },
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "POST") {
+        response.set("Allow", "POST");
+        response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      try {
+        const body = request.body as UpdateAlbumPayload;
+
+        if (!body?.id || !body.name?.trim()) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        const albumRef = firestore
+          .collection(DatabaseTableKeys.Albums)
+          .doc(body.id);
+
+        await firestore.runTransaction(
+          async (transaction: admin.firestore.Transaction) => {
+            const albumSnap = await transaction.get(albumRef);
+
+            if (!albumSnap.exists) {
+              throw new Error("Álbum não encontrado");
+            }
+
+            const album = albumSnap.data() as IAlbum;
+
+            const updatedAlbum: Partial<IAlbum> = {
+              name: body.name.trim(),
+              updatedDate: admin.firestore.FieldValue.serverTimestamp(),
+            };
+
+            if (body.images?.length) {
+              updatedAlbum.images = [...album.images, ...body.images];
+            }
+
+            transaction.update(albumRef, updatedAlbum);
+          }
+        );
+
+        console.log(`Álbum atualizado com sucesso: ${body.id}`);
+        response.status(200).send("Álbum atualizado com sucesso.");
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Erro desconhecido";
+        console.error("Erro ao atualizar álbum:", errorMessage);
+
+        if (errorMessage === "Álbum não encontrado") {
+          response.status(404).send(errorMessage);
+        } else {
+          response
+            .status(500)
+            .send("Houve um erro ao tentar atualizar o álbum.");
         }
       }
     });
   }
 );
 
-export const createAlbum = onRequest((request, response) => {
-  corsHandler(request, response, async () => {
-    if (request.method === "OPTIONS") {
-      response.status(204).send();
-      return;
-    }
-
-    if (request.method !== "POST") {
-      response.set("Allow", "POST");
-      response.status(405).send("Método não permitido. Use POST.");
-      return;
-    }
-
-    try {
-      const body = request.body as CreateAlbumPayload;
-
-      if (!body || !body.name || !body.images?.length) {
-        response.status(400).send("Dados incompletos ou inválidos!");
-        return;
-      }
-
-      const newAlbum = {
-        ...body,
-        creationDate: admin.firestore.FieldValue.serverTimestamp(),
-      };
-
-      await firestore.collection(DatabaseTableKeys.Albums).add(newAlbum);
-
-      response.status(201).send();
-    } catch (error) {
-      console.error(error);
-      response.status(500).send("Houve um erro ao tentar criar o álbum.");
-    }
-  });
-});
-
-export const updateAlbum = onRequest((request, response) => {
-  corsHandler(request, response, async () => {
-    if (request.method === "OPTIONS") {
-      response.status(204).send();
-      return;
-    }
-
-    if (request.method !== "POST") {
-      response.set("Allow", "POST");
-      response.status(405).send("Método não permitido. Use POST.");
-      return;
-    }
-
-    try {
-      const body = request.body as UpdateAlbumPayload;
-
-      if (!body || !body.id || !body.name) {
-        response.status(400).send("Dados incompletos ou inválidos!");
-        return;
-      }
-
-      const albumRef = firestore
-        .collection(DatabaseTableKeys.Albums)
-        .doc(body.id);
-
-      await firestore.runTransaction(async (transaction) => {
-        const albumSnap = await transaction.get(albumRef);
-
-        if (!albumSnap.exists) {
-          response.status(404).send("Álbum não encontrado.");
-          return;
-        }
-
-        const album = albumSnap.data() as IAlbum;
-
-        const updatedAlbum: Partial<IAlbum> = {
-          name: body.name,
-          updatedDate: admin.firestore.FieldValue.serverTimestamp(),
-        };
-
-        if (body.images?.length) {
-          updatedAlbum.images = [...album.images, ...body.images];
-        }
-
-        transaction.update(albumRef, updatedAlbum);
-      });
-
-      response.status(200).send("Álbum atualizado com sucesso.");
-    } catch (error) {
-      console.error(error);
-      response.status(500).send("Houve um erro ao tentar atualizar o álbum.");
-    }
-  });
-});
-
+/**
+ * Retrieves all albums with preview images (first 3 images)
+ */
 export const getAlbums = onRequest(
-  { memory: "2GiB", timeoutSeconds: 600, maxInstances: 20 },
+  IMAGE_UPLOAD_CONFIG,
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -225,39 +265,63 @@ export const getAlbums = onRequest(
           .collection(DatabaseTableKeys.Albums)
           .get();
 
+        if (querySnapshot.empty) {
+          response.status(200).json([]);
+          return;
+        }
+
         const albums = await Promise.all(
-          querySnapshot.docs.map(async (doc) => {
-            const album = doc.data() as IAlbum;
+          querySnapshot.docs.map(
+            async (doc: admin.firestore.QueryDocumentSnapshot) => {
+              const album = doc.data() as IAlbum;
 
-            const images = await Promise.all(
-              album.images
-                .filter((_, idx) => idx < 3)
-                .map(async (img) => {
-                  const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-                  const fileRef = storage.bucket().file(destination);
+              // Get preview images (first 3)
+              const previewImages = album.images
+                .filter((img) => img.name)
+                .slice(0, 3);
+              const images = await Promise.all(
+                previewImages.map(async (img) => {
+                  if (!img.name) {
+                    return { ...img, url: undefined };
+                  }
 
-                  const url = await fileRef.getSignedUrl({
-                    action: "read",
-                    expires: Date.now() + 15 * 60 * 1000,
-                  });
+                  try {
+                    const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+                    const fileRef = storage.bucket().file(destination);
 
-                  return { ...img, url };
+                    const [url] = await fileRef.getSignedUrl({
+                      action: "read",
+                      expires: Date.now() + 15 * 60 * 1000,
+                    });
+
+                    return { ...img, url };
+                  } catch (error) {
+                    console.error(
+                      `Erro ao obter URL da imagem ${img.name}:`,
+                      error
+                    );
+                    return { ...img, url: undefined };
+                  }
                 })
-            );
+              );
 
-            return { ...album, id: doc.id, images };
-          })
+              return { ...album, id: doc.id, images };
+            }
+          )
         );
 
-        response
-          .status(200)
-          .json(
-            albums.sort(
-              (a, b) =>
-                (b.creationDate as Timestamp).toDate().getTime() -
-                (a.creationDate as Timestamp).toDate().getTime()
-            )
-          );
+        // Sort by creation date (newest first)
+        const sortedAlbums = albums.sort(
+          (a: IAlbum & { id: string }, b: IAlbum & { id: string }) => {
+            const dateA =
+              (a.creationDate as admin.firestore.Timestamp)?.toMillis() || 0;
+            const dateB =
+              (b.creationDate as admin.firestore.Timestamp)?.toMillis() || 0;
+            return dateB - dateA;
+          }
+        );
+
+        response.status(200).json(sortedAlbums);
       } catch (error) {
         console.error("Erro ao buscar álbuns:", error);
         response.status(500).send("Erro ao buscar álbuns.");
@@ -266,8 +330,11 @@ export const getAlbums = onRequest(
   }
 );
 
+/**
+ * Retrieves a specific album by ID with all images
+ */
 export const getAlbumById = onRequest(
-  { memory: "2GiB", timeoutSeconds: 600, maxInstances: 20 },
+  IMAGE_UPLOAD_CONFIG,
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -284,147 +351,186 @@ export const getAlbumById = onRequest(
       try {
         const id = request.query.id as string;
 
-        if (!id) {
+        if (!id?.trim()) {
           response.status(400).send("ID do álbum não foi fornecido!");
           return;
         }
 
         const docSnap = await firestore
           .collection(DatabaseTableKeys.Albums)
-          .doc(id)
+          .doc(id.trim())
           .get();
 
-        if (docSnap.exists) {
-          const album = docSnap.data() as IAlbum;
-
-          const images = await Promise.all(
-            album.images.map(async (img) => {
-              const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-              const fileRef = storage.bucket().file(destination);
-
-              const url = await fileRef.getSignedUrl({
-                action: "read",
-                expires: Date.now() + 15 * 60 * 1000,
-              });
-
-              return { ...img, url };
-            })
-          );
-
-          response.status(200).json({ id: docSnap.id, ...album, images });
+        if (!docSnap.exists) {
+          response.status(404).send("Álbum não encontrado!");
+          return;
         }
 
-        response.status(404).send("Álbum não existe!");
+        const album = docSnap.data() as IAlbum;
+
+        // Get all image URLs
+        const images = await Promise.all(
+          album.images
+            .filter((img) => img.name)
+            .map(async (img) => {
+              if (!img.name) {
+                return { ...img, url: undefined };
+              }
+
+              try {
+                const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+                const fileRef = storage.bucket().file(destination);
+
+                const [url] = await fileRef.getSignedUrl({
+                  action: "read",
+                  expires: Date.now() + 15 * 60 * 1000,
+                });
+
+                return { ...img, url };
+              } catch (error) {
+                console.error(
+                  `Erro ao obter URL da imagem ${img.name}:`,
+                  error
+                );
+                return { ...img, url: undefined };
+              }
+            })
+        );
+
+        response.status(200).json({ id: docSnap.id, ...album, images });
       } catch (error) {
-        console.error("Erro ao buscar álbuns:", error);
-        response.status(500).send("Erro ao buscar álbuns.");
+        console.error("Erro ao buscar álbum:", error);
+        response.status(500).send("Erro ao buscar álbum.");
       }
     });
   }
 );
 
-export const deleteImageFromAlbum = onRequest((request, response) => {
-  corsHandler(request, response, async () => {
-    if (request.method === "OPTIONS") {
-      response.status(204).send();
-      return;
-    }
-
-    if (request.method !== "POST") {
-      response.set("Allow", "POST");
-      response.status(405).send("Método não permitido. Use POST.");
-      return;
-    }
-
-    try {
-      const body = request.body as DeleteImgFromAlbumPayload;
-
-      if (!body || !body.albumId || !body.images?.length) {
-        response
-          .status(400)
-          .send("ID do álbum ou imagens não foram fornecidos!");
+/**
+ * Deletes images from an album
+ */
+export const deleteImageFromAlbum = onRequest(
+  { maxInstances: 10 },
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
         return;
       }
 
-      const { albumId, images } = body;
-
-      const albumRef = firestore
-        .collection(DatabaseTableKeys.Albums)
-        .doc(albumId);
-
-      const albumSnap = await albumRef.get();
-
-      if (!albumSnap.exists) {
-        response.status(404).send("Álbum não encontrado!");
+      if (request.method !== "POST") {
+        response.set("Allow", "POST");
+        response.status(405).send("Método não permitido. Use POST.");
         return;
       }
 
-      const currImages = albumSnap.data() as IImage[];
+      try {
+        const body = request.body as DeleteImgFromAlbumPayload;
 
-      await albumRef.update({
-        images: currImages.filter((img) =>
-          images.every((i) => i.name !== img.name)
-        ),
-      });
+        if (!body?.albumId || !body.images?.length) {
+          response
+            .status(400)
+            .send("ID do álbum ou imagens não foram fornecidos!");
+          return;
+        }
 
-      const paths = images.map(
-        (img) => `${DatabaseTableKeys.Images}/${img.name}`
-      );
+        const { albumId, images } = body;
+        const imageNamesToDelete = new Set(images.map((img) => img.name));
 
-      await deleteImageStorage(paths);
+        const albumRef = firestore
+          .collection(DatabaseTableKeys.Albums)
+          .doc(albumId);
 
-      response.status(200).send();
-    } catch (error) {
-      console.error(error);
-      response.status(500).send("Houve um erro ao remover imagens.");
-    }
-  });
-});
+        const albumSnap = await albumRef.get();
 
-export const deleteAlbum = onRequest((request, response) => {
-  corsHandler(request, response, async () => {
-    if (request.method === "OPTIONS") {
-      response.status(204).send();
-      return;
-    }
+        if (!albumSnap.exists) {
+          response.status(404).send("Álbum não encontrado!");
+          return;
+        }
 
-    if (request.method !== "DELETE") {
-      response.set("Allow", "DELETE");
-      response.status(405).send("Método não permitido. Use DELETE.");
-      return;
-    }
+        const album = albumSnap.data() as IAlbum;
 
-    try {
-      const id = request.query.id as string;
-
-      if (!id) {
-        response.status(400).send("ID do álbum não foi fornecido!");
-        return;
-      }
-
-      const albumRef = firestore.collection(DatabaseTableKeys.Albums).doc(id);
-      const albumSnap = await albumRef.get();
-
-      if (!albumSnap.exists) {
-        response.status(404).send("Álbum não encontrado!");
-        return;
-      }
-
-      const data = albumSnap.data() as IAlbum;
-
-      if (data.images.length) {
-        const paths = data.images.map(
-          (img) => `${DatabaseTableKeys.Images}/${img.name}`
+        // Filter out images to be deleted
+        const remainingImages = album.images.filter(
+          (img) => img.name && !imageNamesToDelete.has(img.name)
         );
 
+        // Update album with remaining images
+        await albumRef.update({ images: remainingImages });
+
+        // Delete images from storage
+        const paths = images
+          .filter((img) => img.name)
+          .map((img) => `${DatabaseTableKeys.Images}/${img.name!}`);
         await deleteImageStorage(paths);
+
+        console.log(
+          `Imagens removidas do álbum ${albumId}: ${images.length} imagem(ns)`
+        );
+        response.status(200).send();
+      } catch (error) {
+        console.error("Erro ao remover imagens:", error);
+        response.status(500).send("Houve um erro ao remover imagens.");
+      }
+    });
+  }
+);
+
+/**
+ * Deletes an album and all its associated images
+ */
+export const deleteAlbum = onRequest(
+  { maxInstances: 10 },
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
       }
 
-      await albumRef.delete();
-      response.status(200).send();
-    } catch (error) {
-      console.error(error);
-      response.status(500).send("Houve um erro ao buscar eventos.");
-    }
-  });
-});
+      if (request.method !== "DELETE") {
+        response.set("Allow", "DELETE");
+        response.status(405).send("Método não permitido. Use DELETE.");
+        return;
+      }
+
+      try {
+        const id = request.query.id as string;
+
+        if (!id?.trim()) {
+          response.status(400).send("ID do álbum não foi fornecido!");
+          return;
+        }
+
+        const albumRef = firestore
+          .collection(DatabaseTableKeys.Albums)
+          .doc(id.trim());
+        const albumSnap = await albumRef.get();
+
+        if (!albumSnap.exists) {
+          response.status(404).send("Álbum não encontrado!");
+          return;
+        }
+
+        const album = albumSnap.data() as IAlbum;
+
+        // Delete all images from storage if they exist
+        if (album.images?.length > 0) {
+          const paths = album.images
+            .filter((img) => img.name)
+            .map((img) => `${DatabaseTableKeys.Images}/${img.name!}`);
+          await deleteImageStorage(paths);
+        }
+
+        // Delete album document
+        await albumRef.delete();
+
+        console.log(`Álbum deletado com sucesso: ${id}`);
+        response.status(200).send();
+      } catch (error) {
+        console.error("Erro ao deletar álbum:", error);
+        response.status(500).send("Houve um erro ao deletar o álbum.");
+      }
+    });
+  }
+);
