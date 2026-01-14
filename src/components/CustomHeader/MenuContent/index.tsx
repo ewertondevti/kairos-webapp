@@ -1,3 +1,5 @@
+"use client";
+
 import { RoutesEnums } from "@/enums/routesEnums";
 import { firebaseAuth } from "@/firebase";
 import { useAuth } from "@/store";
@@ -10,15 +12,15 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Col, Divider, Row } from "antd";
 import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
 import { FC, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 
 type Props = {
   onClose: () => void;
 };
 
 export const MenuContent: FC<Props> = ({ onClose }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const { user } = useAuth();
   const isAuthenticated = useMemo(() => !!user, [user]);
@@ -29,7 +31,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
   };
 
   const onRedirect = (to: string) => {
-    navigate(to);
+    router.push(to);
     onClose();
   };
 
@@ -43,7 +45,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
         <Button
           type="text"
           icon={<FontAwesomeIcon icon={faImages} />}
-          className="align-left"
+          className="justify-start text-left"
           onClick={() => onRedirect(`/${RoutesEnums.Gallery}`)}
           block
         >
@@ -55,7 +57,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
         <Button
           type="text"
           icon={<FontAwesomeIcon icon={faUsers} />}
-          className="align-left"
+          className="justify-start text-left"
           onClick={() => onRedirect(`/${RoutesEnums.MembershipForm}`)}
           block
         >
@@ -68,7 +70,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
           <Button
             type="text"
             icon={<FontAwesomeIcon icon={faGears} />}
-            className="align-left"
+            className="justify-start text-left"
             onClick={() => onRedirect(`/${RoutesEnums.Management}`)}
             block
           >
@@ -88,7 +90,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
               type="text"
               danger
               icon={<FontAwesomeIcon icon={faPowerOff} />}
-              className="align-left"
+              className="justify-start text-left"
               block
               onClick={onLogout}
             >

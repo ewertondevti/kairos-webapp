@@ -1,3 +1,5 @@
+"use client";
+
 import { EditAlbumModal } from "@/components/EditAlbumModal";
 import { TopBar } from "@/components/TopBar";
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
@@ -24,14 +26,18 @@ import {
 } from "antd";
 import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
+import { usePathname, useRouter } from "next/navigation";
 import { isMobile } from "react-device-detect";
-import { useLocation, useNavigate } from "react-router-dom";
-import "./Management.scss";
-import { managementTabs } from "./tabs/management.tabs";
+import { AlbumsTab } from "./tabs/AlbumsTab";
+import { EventsTab } from "./tabs/EventsTab";
 
-const Management = () => {
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
+type ManagementProps = {
+  children?: React.ReactNode;
+};
+
+const Management = ({ children }: ManagementProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
 
   const { data: albums } = useGetAlbums();
 
@@ -43,7 +49,7 @@ const Management = () => {
   const onChange: TabsProps["onChange"] = (key) => {
     updateMode("default");
     updateSelectedImages([]);
-    navigate(key);
+    router.push(`/management/${key}`);
   };
 
   const keys = pathname.split("/").filter(Boolean);
@@ -81,7 +87,7 @@ const Management = () => {
   }));
 
   return (
-    <Layout style={{ padding: isMobile ? 8 : 20 }} className="height-100perc">
+    <Layout style={{ padding: isMobile ? 8 : 20 }} className="h-full">
       <Flex gap={16} vertical>
         <Breadcrumb style={{ textTransform: "capitalize" }} items={items} />
 
@@ -89,7 +95,7 @@ const Management = () => {
           <Title style={{ margin: 0 }}>Gerenciamento</Title>
 
           {mode === "select" && (
-            <small className="small-text">
+            <small className="flex items-center justify-center">
               Selecionados: {selectedImages.length}
             </small>
           )}
@@ -136,13 +142,36 @@ const Management = () => {
             },
           }}
         >
-          <Tabs
-            items={managementTabs}
-            defaultActiveKey={defaultKey}
-            destroyInactiveTabPane
-            onChange={onChange}
-            className="management__container"
-          />
+          {children ? (
+            children
+          ) : (
+            <Tabs
+              items={[
+                {
+                  key: ManagementRoutesEnums.Albums,
+                  label: "Álbuns",
+                  children: (
+                    <AlbumsTab
+                      albumId={
+                        pathname.includes("/albums/")
+                          ? pathname.split("/").pop()
+                          : undefined
+                      }
+                    />
+                  ),
+                },
+                {
+                  key: ManagementRoutesEnums.Events,
+                  label: "Próximos eventos",
+                  children: <EventsTab />,
+                },
+              ]}
+              activeKey={defaultKey}
+              destroyInactiveTabPane
+              onChange={onChange}
+              className="h-full [&_.ant-tabs-content]:h-full [&_.ant-tabs-tabpane]:h-full"
+            />
+          )}
         </Image.PreviewGroup>
       </Content>
 

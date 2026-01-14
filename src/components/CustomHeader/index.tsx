@@ -1,21 +1,23 @@
+"use client";
+
 import { RoutesEnums } from "@/enums/routesEnums";
 import { useAuth } from "@/store";
 import { faBars, faLock, faLockOpen } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Flex, Popover, PopoverProps } from "antd";
 import { Header } from "antd/es/layout/layout";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Colors } from "../ThemeProvider/colors.config";
 import { LoginContent } from "./LoginContent";
 import { MenuContent } from "./MenuContent";
-import AppLogo from "/kairos-logo.png";
 
 export const CustomHeader = () => {
   const [menuIsOpen, setMenuIsOpen] = useState(false);
   const [loginIsOpen, setLoginIsOpen] = useState(false);
 
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const { user } = useAuth();
 
@@ -28,14 +30,22 @@ export const CustomHeader = () => {
   const onCloseLogin = () => setLoginIsOpen(false);
   const onCloseMenu = () => setMenuIsOpen(false);
 
-  const onRedirect = () => navigate(RoutesEnums.Home);
+  const onRedirect = () => router.push(RoutesEnums.Home);
 
   const isAuthenticated = useMemo(() => !!user, [user]);
 
   return (
-    <Header className="layout__app-header">
-      <Flex align="center" justify="space-between" className="height-100perc">
-        <img src={AppLogo} height={50} width={50} onClick={onRedirect} />
+    <Header className="border-b border-white/12">
+      <Flex align="center" justify="space-between" className="h-full">
+        <div onClick={onRedirect} className="cursor-pointer">
+          <Image
+            src="/kairos-logo.png"
+            height={50}
+            width={50}
+            alt="Kairós Logo"
+            priority
+          />
+        </div>
 
         <Flex gap={16} align="center">
           <Popover
@@ -43,7 +53,7 @@ export const CustomHeader = () => {
             content={<LoginContent onClose={onCloseLogin} />}
             onOpenChange={onLoginOpenChange}
             open={loginIsOpen}
-            destroyTooltipOnHide
+            destroyOnHidden
           >
             <Button
               type="primary"
@@ -51,7 +61,7 @@ export const CustomHeader = () => {
               icon={
                 <FontAwesomeIcon icon={isAuthenticated ? faLockOpen : faLock} />
               }
-              className="button__small"
+              className="text-xs leading-normal"
               disabled={isAuthenticated}
             >
               {isAuthenticated ? "Logado" : "Login"}

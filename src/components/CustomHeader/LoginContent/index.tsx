@@ -34,13 +34,13 @@ export const LoginContent: FC<Props> = ({ onClose }) => {
     <Form form={form} onFinish={onLogin}>
       <Row gutter={10}>
         <Col span={12}>
-          <Form.Item name="email" className="no-margin">
+          <Form.Item name="email" className="m-0">
             <Input placeholder="Email" />
           </Form.Item>
         </Col>
 
         <Col span={12}>
-          <Form.Item name="password" className="no-margin">
+          <Form.Item name="password" className="m-0">
             <Input.Password placeholder="Senha" />
           </Form.Item>
         </Col>
@@ -51,7 +51,7 @@ export const LoginContent: FC<Props> = ({ onClose }) => {
               type="primary"
               htmlType="submit"
               size="small"
-              className="button__small"
+              className="text-xs leading-normal"
               icon={<FontAwesomeIcon icon={faPaperPlane} />}
               style={{ marginTop: 10 }}
               loading={isLoading}

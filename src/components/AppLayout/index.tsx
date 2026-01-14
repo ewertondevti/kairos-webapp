@@ -1,17 +1,14 @@
+"use client";
+
 import { Layout } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { Outlet } from "react-router-dom";
 import { CustomHeader } from "../CustomHeader";
-import "./AppLayout.scss";
 
-const AppLayout = () => {
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <Layout className="layout__app">
+    <Layout className="h-full overflow-hidden flex flex-col">
       <CustomHeader />
-
-      <Content className="layout__app-content">
-        <Outlet />
-      </Content>
+      <Content className="h-full overflow-auto flex-1">{children}</Content>
     </Layout>
   );
 };

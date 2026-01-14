@@ -6,12 +6,12 @@ const url = "https://www.abibliadigital.com.br/api";
 
 const headers = new AxiosHeaders().set(
   "Authorization",
-  `Bearer ${import.meta.env.VITE_DEFAULT_USER_TOKEN}`
+  `Bearer ${process.env.NEXT_PUBLIC_DEFAULT_USER_TOKEN || ''}`
 );
 
 export const getUser = async () => {
   const { data } = await api.get<User>(
-    `${url}/users/${import.meta.env.VITE_DEFAULT_USER_EMAIL}`,
+    `${url}/users/${process.env.NEXT_PUBLIC_DEFAULT_USER_EMAIL || ''}`,
     { headers }
   );
   return data;

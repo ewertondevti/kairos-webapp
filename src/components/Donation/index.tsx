@@ -1,3 +1,5 @@
+"use client";
+
 import { useGetVerse } from "@/react-query";
 import { Button, Col, Divider, Flex, Skeleton, Space, Typography } from "antd";
 import { useState } from "react";
@@ -21,7 +23,11 @@ export const Donation = () => {
         </Title>
       </Divider>
 
-      <Flex align="center" justify="center" className="home__content-container">
+      <Flex
+        align="center"
+        justify="center"
+        className="my-[100px] md:my-[75px] sm:my-[50px]"
+      >
         <Flex
           vertical
           gap={32}

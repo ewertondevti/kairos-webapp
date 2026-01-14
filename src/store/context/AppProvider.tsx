@@ -1,3 +1,5 @@
+'use client';
+
 import { AppState } from "@/types/state";
 import { IImageDTO } from "@/types/store";
 import { createContext, FC, ReactNode, useState } from "react";

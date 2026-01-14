@@ -1,6 +1,8 @@
+"use client";
+
+import { CreateAlbumModal } from "@/components/pages/Management/CreateAlbumModal";
 import { DatabaseTableKeys } from "@/enums/app";
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
-import { CreateAlbumModal } from "@/pages/Management/CreateAlbumModal";
 import { useGetAlbumById, useGetEvents } from "@/react-query";
 import { deleteAlbum, deleteImageFromAlbum } from "@/services/albumServices";
 import { deleteEvents } from "@/services/eventServices";
@@ -15,8 +17,9 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Col, Flex, message, Popconfirm, Row, Tooltip } from "antd";
+
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EventModal } from "../EventModal";
 
 export const TopBar = () => {
@@ -24,10 +27,11 @@ export const TopBar = () => {
   const [isEventOpen, setIsEventOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { pathname } = useLocation();
-  const { id: albumId } = useParams();
+  const pathname = usePathname();
+  const params = useParams();
+  const albumId = params?.id as string | undefined;
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const { user } = useAuth();
   const { data: events } = useGetEvents();
@@ -61,7 +65,7 @@ export const TopBar = () => {
       deleteAlbum(albumId)
         .then(() => {
           message.success("Álbum apagado com sucesso!");
-          navigate(
+          router.push(
             `/${RoutesEnums.Management}/${ManagementRoutesEnums.Albums}`
           );
           refresh();

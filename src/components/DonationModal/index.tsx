@@ -1,5 +1,7 @@
-import MbWayLogo from "@/assets/mb-way.svg";
+"use client";
+
 import { Descriptions, Flex, Modal, Typography } from "antd";
+import Image from "next/image";
 import { FC } from "react";
 
 const { Text } = Typography;
@@ -19,7 +21,7 @@ export const DonationModal: FC<Props> = ({ isOpen, onCancel }) => {
     >
       <Flex gap={8} vertical>
         <Flex justify="center">
-          <img src={MbWayLogo} />
+          <Image src="/mb-way.svg" alt="MB Way" width={200} height={200} />
         </Flex>
 
         <Descriptions column={1} bordered>

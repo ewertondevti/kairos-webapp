@@ -12,7 +12,12 @@ export const CustomFooter = () => {
         </Title>
       </Divider>
 
-      <Flex vertical align="center" gap={16} className="home__content-container">
+      <Flex
+        vertical
+        align="center"
+        gap={16}
+        className="my-[100px] md:my-[75px] sm:my-[50px]"
+      >
         <Flex justify="center" align="center" vertical>
           <img src="/kairos-logo.png" width={50} />
           <Title level={5}>Igreja Kairós Portugal</Title>
@@ -23,13 +28,13 @@ export const CustomFooter = () => {
           <Button
             shape="circle"
             icon={<FacebookFilled />}
-            href={import.meta.env.VITE_FACEBOOK_URL}
+            href={process.env.NEXT_PUBLIC_FACEBOOK_URL}
             target="_blank"
           />
           <Button
             shape="circle"
             icon={<InstagramFilled />}
-            href={import.meta.env.VITE_INSTAGRAM_URL}
+            href={process.env.NEXT_PUBLIC_INSTAGRAM_URL}
             target="_blank"
           />
         </Flex>

@@ -1,3 +1,5 @@
+'use client';
+
 import { ConfigProvider, theme } from "antd";
 import { ThemeConfig } from "antd/es/config-provider/context";
 import BR from "antd/es/locale/pt_BR";

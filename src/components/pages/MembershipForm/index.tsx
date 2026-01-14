@@ -1,3 +1,5 @@
+"use client";
+
 import { MembershipFields } from "@/enums/membership";
 import { createNewMember, getAddress } from "@/services/membershipServices";
 import { MembershipValues } from "@/types/membership";

@@ -1,3 +1,5 @@
+'use client';
+
 import { firebaseAuth } from "@/firebase";
 import AuthContext from "@/store";
 import { onAuthStateChanged, User } from "firebase/auth";

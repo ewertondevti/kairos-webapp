@@ -1,17 +1,16 @@
-/// <reference types="vite/client" />
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
 
-declare interface ImportMetaEnv {
-  readonly VITE_API_KEY: string;
-  readonly VITE_AUTH_DOMAIN: string;
-  readonly VITE_PROJECT_ID: string;
-  readonly VITE_STORAGE_BUCKET: string;
-  readonly VITE_DEFAULT_USER_EMAIL: string;
-  readonly VITE_DEFAULT_USER_TOKEN: string;
-  readonly VITE_FACEBOOK_URL: string;
-  readonly VITE_INSTAGRAM_URL: string;
-  readonly VITE_PTCP_APP_ID: string;
-}
-
-declare interface ImportMeta {
-  readonly env: ImportMetaEnv;
+declare namespace NodeJS {
+  interface ProcessEnv {
+    readonly NEXT_PUBLIC_API_KEY: string;
+    readonly NEXT_PUBLIC_AUTH_DOMAIN: string;
+    readonly NEXT_PUBLIC_PROJECT_ID: string;
+    readonly NEXT_PUBLIC_STORAGE_BUCKET: string;
+    readonly NEXT_PUBLIC_DEFAULT_USER_EMAIL?: string;
+    readonly NEXT_PUBLIC_DEFAULT_USER_TOKEN?: string;
+    readonly NEXT_PUBLIC_FACEBOOK_URL?: string;
+    readonly NEXT_PUBLIC_INSTAGRAM_URL?: string;
+    readonly NEXT_PUBLIC_PTCP_APP_ID?: string;
+  }
 }

@@ -11,7 +11,11 @@ export const WorshipDays = () => {
         </Title>
       </Divider>
 
-      <Flex align="center" justify="center" className="home__content-container">
+      <Flex
+        align="center"
+        justify="center"
+        className="my-[100px] md:my-[75px] sm:my-[50px]"
+      >
         <Row gutter={[32, 8]} justify="center">
           <Col>
             <WorshipContent
@@ -22,7 +26,7 @@ export const WorshipDays = () => {
           </Col>
 
           <Col>
-            <Divider type="vertical" className="height-100perc" />
+            <Divider type="vertical" className="h-full" />
           </Col>
 
           <Col>

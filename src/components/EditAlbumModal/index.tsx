@@ -1,3 +1,5 @@
+"use client";
+
 import { DatabaseTableKeys } from "@/enums/app";
 import { useGetListItemSize } from "@/hooks/app";
 import { useGetAlbums } from "@/react-query";
@@ -29,10 +31,10 @@ import {
   UploadFile,
   UploadProps,
 } from "antd";
+
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import { FixedSizeList } from "react-window";
-import "./EditAlbumModal.scss";
 
 const { Text } = Typography;
 
@@ -41,7 +43,8 @@ export const EditAlbumModal = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [form] = Form.useForm();
-  const { id: albumId } = useParams();
+  const params = useParams();
+  const albumId = params?.id as string | undefined;
   const queryClient = useQueryClient();
   const { height, width } = useGetListItemSize();
 
@@ -124,7 +127,7 @@ export const EditAlbumModal = () => {
       onCancel={onCancel}
       title="Editar álbum"
       okText="Gravar"
-      className="album__modal"
+      className=""
       zIndex={1300}
       okButtonProps={{ loading: isLoading }}
     >
@@ -188,7 +191,7 @@ export const EditAlbumModal = () => {
                       className="ant-upload-list-item-container"
                     >
                       <Flex
-                        className={`ant-upload-list-item ant-upload-list-item-${item.status} width-100perc`}
+                        className={`ant-upload-list-item ant-upload-list-item-${item.status} w-full`}
                       >
                         <Flex className="ant-upload-icon">
                           {item.status === "uploading" && <LoadingOutlined />}

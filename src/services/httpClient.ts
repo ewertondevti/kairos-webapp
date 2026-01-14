@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 
-const projectId = import.meta.env.VITE_PROJECT_ID;
+const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
 
 const api = axios.create({
   baseURL: `https://us-central1-${projectId}.cloudfunctions.net`,
