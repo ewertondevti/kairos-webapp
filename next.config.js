@@ -2,16 +2,16 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['firebasestorage.googleapis.com'],
+    domains: ["firebasestorage.googleapis.com"],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**.firebasestorage.googleapis.com',
+        protocol: "https",
+        hostname: "**.firebasestorage.googleapis.com",
       },
     ],
   },
   experimental: {
-    optimizePackageImports: ['antd', '@ant-design/icons'],
+    optimizePackageImports: ["antd", "@ant-design/icons"],
   },
   webpack: (config) => {
     config.resolve.alias = {
@@ -19,6 +19,7 @@ const nextConfig = {
     };
     return config;
   },
-}
+  turbopack: {},
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

@@ -1,15 +1,23 @@
-'use client';
+"use client";
 
+import { ThemeProvider } from "@/components/ThemeProvider";
+import AppProvider from "@/store/context/AppProvider";
+import AuthProvider from "@/store/context/AuthProvider";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { Nunito } from "next/font/google";
 import { PrimeReactProvider } from "primereact/api";
 import { useState } from "react";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import AppProvider from "@/store/context/AppProvider";
-import AuthProvider from "@/store/context/AuthProvider";
 import "./globals.css";
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800", "900", "1000"],
+  style: ["normal", "italic"],
+  variable: "--font-nunito",
+});
 
 library.add(fas);
 
@@ -30,7 +38,7 @@ export default function RootLayout({
   );
 
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={nunito.variable}>
       <head>
         <link rel="icon" type="image/png" href="/kairos-logo.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
