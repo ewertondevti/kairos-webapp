@@ -1,19 +1,16 @@
 import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
 import { DatabaseTableKeys } from "../enums/app";
 import { firestore, storage } from "../firebaseAdmin";
-import { deleteImageStorage, generateUniqueFileName } from "../helpers/common";
+import { deleteImageStorage } from "../helpers/common";
+import { handleMultipartUpload } from "../helpers/upload";
 import {
   CreateAlbumPayload,
   DeleteImgFromAlbumPayload,
   UpdateAlbumPayload,
-  UploadCommonRequest,
 } from "../models";
-import { IAlbum } from "../models/album";
-import { corsHandler, processHeicToJpeg } from "../utils";
+import { IAlbum, IImage } from "../models/album";
+import { corsHandler, mapWithConcurrency } from "../utils";
 
 // Common function configuration for image uploads
 const IMAGE_UPLOAD_CONFIG = {
@@ -21,6 +18,16 @@ const IMAGE_UPLOAD_CONFIG = {
   timeoutSeconds: 600,
   maxInstances: 20,
 };
+
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+const SIGNED_URL_EXPIRATION_MS = 24 * 60 * 60 * 1000;
+const SIGNED_URL_CONCURRENCY = 10;
+const CACHE_CONTROL = "public, max-age=31536000, immutable";
+
+const normalizeImages = (images?: Partial<IImage>[]) =>
+  (images || [])
+    .filter((img) => img?.name?.trim())
+    .map((img) => ({ name: img.name!.trim() }));
 
 /**
  * Uploads an image to Firebase Storage with automatic duplicate name handling
@@ -40,87 +47,23 @@ export const uploadImage = onRequest(
         return;
       }
 
-      const { file, fileName, mimeType } = request.body as UploadCommonRequest;
-
-      if (!file || !fileName) {
-        response.status(400).send("Dados incompletos!");
-        return;
-      }
-
-      let tempFilePath: string | null = null;
-      let convertedFilePath: string | null = null;
-
       try {
-        // Generate unique filename if file already exists
-        const uniqueFileName = await generateUniqueFileName(
+        const result = await handleMultipartUpload(
+          request,
           DatabaseTableKeys.Images,
-          fileName
-        );
-        const destination = `${DatabaseTableKeys.Images}/${uniqueFileName}`;
-
-        // Decode base64 file
-        const base64Data = file.split(";base64,").pop();
-        if (!base64Data) {
-          response.status(400).send("Formato de arquivo inválido!");
-          return;
-        }
-
-        tempFilePath = path.join(os.tmpdir(), uniqueFileName);
-        const fileExtension = path.extname(fileName).toLowerCase();
-        const isHeic = mimeType?.toLowerCase() === "image/heic";
-
-        // Save temporary file
-        fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
-
-        let finalPath = tempFilePath;
-        let contentType = `image/${fileExtension.slice(1)}`.toLowerCase();
-
-        // Convert HEIC to JPEG if needed
-        if (isHeic) {
-          convertedFilePath = path.join(
-            os.tmpdir(),
-            `${path.parse(uniqueFileName).name}.jpeg`
-          );
-          finalPath = await processHeicToJpeg(tempFilePath, convertedFilePath);
-          contentType = "image/jpeg";
-        }
-
-        // Upload to Firebase Storage
-        await storage.bucket().upload(finalPath, {
-          destination,
-          metadata: { contentType },
-        });
-
-        // Get signed URL
-        const fileRef = storage.bucket().file(destination);
-        const [url] = await fileRef.getSignedUrl({
-          action: "read",
-          expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-        });
-
-        console.log(`Imagem enviada com sucesso: ${uniqueFileName} -> ${url}`);
-
-        response.status(200).send({ url, fileName: uniqueFileName });
-      } catch (error) {
-        console.error("Erro ao processar o arquivo:", error);
-        response.status(500).send("Erro ao processar o arquivo.");
-      } finally {
-        // Clean up temporary files
-        const filesToClean = [tempFilePath, convertedFilePath].filter(
-          Boolean
-        ) as string[];
-        filesToClean.forEach((filePath) => {
-          try {
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
-            }
-          } catch (cleanupError) {
-            console.error(
-              `Erro ao limpar arquivo temporário ${filePath}:`,
-              cleanupError
-            );
+          {
+            maxFileSizeBytes: MAX_FILE_SIZE_BYTES,
+            cacheControl: CACHE_CONTROL,
+            urlExpiresMs: SIGNED_URL_EXPIRATION_MS,
           }
-        });
+        );
+
+        console.log(`Imagem enviada com sucesso: ${result.fileName}`);
+        response.status(200).send({ url: result.url, fileName: result.fileName });
+      } catch (error: any) {
+        console.error("Erro ao processar o arquivo:", error);
+        const status = error?.statusCode || 500;
+        response.status(status).send(error?.message || "Erro ao processar o arquivo.");
       }
     });
   }
@@ -154,7 +97,8 @@ export const createAlbum = onRequest(
 
         const newAlbum: Omit<IAlbum, "id"> = {
           name: body.name.trim(),
-          images: body.images,
+          eventDate: body.eventDate?.trim(),
+          images: normalizeImages(body.images),
           creationDate: admin.firestore.FieldValue.serverTimestamp(),
         };
 
@@ -212,11 +156,15 @@ export const updateAlbum = onRequest(
 
             const updatedAlbum: Partial<IAlbum> = {
               name: body.name.trim(),
+              eventDate: body.eventDate?.trim(),
               updatedDate: admin.firestore.FieldValue.serverTimestamp(),
             };
 
             if (body.images?.length) {
-              updatedAlbum.images = [...album.images, ...body.images];
+              updatedAlbum.images = [
+                ...(album.images || []),
+                ...normalizeImages(body.images),
+              ];
             }
 
             transaction.update(albumRef, updatedAlbum);
@@ -274,13 +222,14 @@ export const getAlbums = onRequest(
           querySnapshot.docs.map(
             async (doc: admin.firestore.QueryDocumentSnapshot) => {
               const album = doc.data() as IAlbum;
-
-              // Get preview image (first 1)
-              const previewImages = album.images
+              const previewImages = (album.images || [])
                 .filter((img) => img.name)
                 .slice(0, 1);
-              const images = await Promise.all(
-                previewImages.map(async (img) => {
+
+              const images = await mapWithConcurrency(
+                previewImages,
+                SIGNED_URL_CONCURRENCY,
+                async (img) => {
                   if (!img.name) {
                     return { ...img, url: undefined };
                   }
@@ -288,12 +237,10 @@ export const getAlbums = onRequest(
                   try {
                     const destination = `${DatabaseTableKeys.Images}/${img.name}`;
                     const fileRef = storage.bucket().file(destination);
-
                     const [url] = await fileRef.getSignedUrl({
                       action: "read",
-                      expires: Date.now() + 15 * 60 * 1000,
+                      expires: Date.now() + SIGNED_URL_EXPIRATION_MS,
                     });
-
                     return { ...img, url };
                   } catch (error) {
                     console.error(
@@ -302,7 +249,7 @@ export const getAlbums = onRequest(
                     );
                     return { ...img, url: undefined };
                   }
-                })
+                }
               );
 
               return { ...album, id: doc.id, images };
@@ -369,32 +316,29 @@ export const getAlbumById = onRequest(
         const album = docSnap.data() as IAlbum;
 
         // Get all image URLs
-        const images = await Promise.all(
-          album.images
-            .filter((img) => img.name)
-            .map(async (img) => {
-              if (!img.name) {
-                return { ...img, url: undefined };
-              }
+        const images = await mapWithConcurrency(
+          (album.images || []).filter((img) => img.name),
+          SIGNED_URL_CONCURRENCY,
+          async (img) => {
+            if (!img.name) {
+              return { ...img, url: undefined };
+            }
 
-              try {
-                const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-                const fileRef = storage.bucket().file(destination);
+            try {
+              const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+              const fileRef = storage.bucket().file(destination);
 
-                const [url] = await fileRef.getSignedUrl({
-                  action: "read",
-                  expires: Date.now() + 15 * 60 * 1000,
-                });
+              const [url] = await fileRef.getSignedUrl({
+                action: "read",
+                expires: Date.now() + SIGNED_URL_EXPIRATION_MS,
+              });
 
-                return { ...img, url };
-              } catch (error) {
-                console.error(
-                  `Erro ao obter URL da imagem ${img.name}:`,
-                  error
-                );
-                return { ...img, url: undefined };
-              }
-            })
+              return { ...img, url };
+            } catch (error) {
+              console.error(`Erro ao obter URL da imagem ${img.name}:`, error);
+              return { ...img, url: undefined };
+            }
+          }
         );
 
         response.status(200).json({ id: docSnap.id, ...album, images });

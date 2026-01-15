@@ -17,12 +17,14 @@
   "dependencies": {
     "@google-cloud/storage": "^7.15.0",
     "axios": "^1.7.7",
+    "busboy": "^1.6.0",
     "cors": "^2.8.5",
     "firebase-admin": "^13.0.2",
     "firebase-functions": "^6.2.0",
     "heic-convert": "^2.1.0"
   },
   "devDependencies": {
+    "@types/busboy": "^1.5.4",
     "@types/cors": "^2.8.17",
     "@types/heic-convert": "^2.1.0",
     "@types/node": "^22.9.0",

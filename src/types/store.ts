@@ -9,12 +9,23 @@ export interface IImageDTO {
   name: string;
 }
 
-export interface IAlbum {
+export interface IAlbumDTO extends ICommon {
   name: string;
+  eventDate?: string;
   images: IImageDTO[];
 }
 
-export interface IAlbumDTO extends IAlbum, ICommon {}
+export type AlbumImagePayload = {
+  name: string;
+};
+
+export interface IAlbumPayload {
+  name: string;
+  eventDate?: string;
+  images: AlbumImagePayload[];
+}
+
+export interface IAlbumUpdatePayload extends IAlbumPayload, ICommon {}
 export interface ICommonDTO extends IImageDTO, ICommon {}
 
 export type MemberPayload = {

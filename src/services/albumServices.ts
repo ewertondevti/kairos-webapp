@@ -1,51 +1,33 @@
-import { DeleteImgFromAlbumPayload, IAlbum, IAlbumDTO } from "@/types/store";
+import {
+  DeleteImgFromAlbumPayload,
+  IAlbumDTO,
+  IAlbumPayload,
+  IAlbumUpdatePayload,
+} from "@/types/store";
+import axios from "axios";
 
-export const createAlbum = async (payload: IAlbum) => {
-  const response = await fetch("/api/albums", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
+export const createAlbum = async (payload: IAlbumPayload) => {
+  try {
+    const response = await axios.post("/api/albums", payload);
+    return response.data;
+  } catch (error) {
     throw new Error("Erro ao criar álbum");
   }
-
-  return response.json();
 };
 
-export const updateAlbum = async (payload: IAlbumDTO) => {
-  const response = await fetch("/api/albums", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
+export const updateAlbum = async (payload: IAlbumUpdatePayload) => {
+  try {
+    const response = await axios.post("/api/albums", payload);
+    return response.data;
+  } catch (error) {
     throw new Error("Erro ao atualizar álbum");
   }
-
-  return response.json();
 };
 
 export const getAlbums = async (): Promise<IAlbumDTO[]> => {
   try {
-    const response = await fetch("/api/albums", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar álbuns: ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    const response = await axios.get("/api/albums");
+    const data = response.data;
 
     // Handle case where response.data might be a string
     if (typeof data === "string") {
@@ -59,9 +41,10 @@ export const getAlbums = async (): Promise<IAlbumDTO[]> => {
     }
 
     return Array.isArray(data) ? data : [];
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     console.error("Erro ao buscar álbuns:", {
-      message: error?.message,
+      message: err?.message,
     });
     // Return empty array instead of throwing to prevent UI crashes
     return [];
@@ -72,53 +55,22 @@ export const getAlbumById = async (
   id: string
 ): Promise<IAlbumDTO | undefined> => {
   try {
-    const response = await fetch(`/api/albums/${id}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar álbum: ${response.statusText}`);
-    }
-
-    return response.json();
-  } catch (error: any) {
+    const response = await axios.get(`/api/albums/${id}`);
+    return response.data;
+  } catch (error: unknown) {
     console.error("Erro ao buscar álbum por ID:", error);
     return undefined;
   }
 };
 
 export const deleteAlbum = async (id: string) => {
-  const response = await fetch(`/api/albums?id=${id}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Erro ao deletar álbum");
-  }
-
-  return response.json();
+  const response = await axios.delete("/api/albums", { params: { id } });
+  return response.data;
 };
 
 export const deleteImageFromAlbum = async (
   payload: DeleteImgFromAlbumPayload
 ) => {
-  const response = await fetch("/api/albums/delete-image", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error("Erro ao deletar imagem do álbum");
-  }
-
-  return response.json();
+  const response = await axios.post("/api/albums/delete-image", payload);
+  return response.data;
 };

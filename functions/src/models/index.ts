@@ -6,6 +6,7 @@ export interface CreateCommonPayload {
 
 export interface CreateAlbumPayload {
   name: string;
+  eventDate?: string;
   images: Partial<IImage>[];
 }
 

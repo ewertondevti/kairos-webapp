@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import * as path from "path";
 import { storage } from "../firebaseAdmin";
 
@@ -26,6 +27,19 @@ export const generateUniqueFileName = async (
     uniqueFileName = `${fileNameWithoutExt} (${counter})${fileExtension}`;
     counter++;
   }
+};
+
+export const buildStorageFileName = (
+  originalName: string,
+  overrideExtension?: string
+) => {
+  const safeName = path.basename(originalName);
+  const parsed = path.parse(safeName);
+  const extension =
+    overrideExtension?.startsWith(".") ? overrideExtension : parsed.ext;
+  const cleanBase = parsed.name.replace(/\s+/g, "-").toLowerCase();
+  const uniqueSuffix = crypto.randomUUID();
+  return `${cleanBase}-${uniqueSuffix}${extension || ""}`;
 };
 
 /**

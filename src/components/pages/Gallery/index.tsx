@@ -10,12 +10,12 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
 } from "@ant-design/icons";
-import { Empty, Flex, Image, Space, Spin, Typography } from "antd";
+import { Empty, Flex, Image, Space, Typography } from "antd";
 import { AlbumContent } from "../Management/tabs/AlbumsTab/AlbumContent";
 import { AlbumDetails } from "../Management/tabs/AlbumsTab/AlbumDetails";
 import styles from "./Gallery.module.scss";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 type GalleryProps = {
   albumId?: string;
@@ -25,7 +25,7 @@ export const Gallery = ({ albumId }: GalleryProps) => {
   const { data: albums, isLoading } = useGetAlbums();
 
   const getTitle = () => {
-    const title = "Galeria";
+    const title = "Galeria de álbuns";
 
     if (albumId && albums) {
       const album = albums.find((a) => a.id === albumId);
@@ -40,19 +40,35 @@ export const Gallery = ({ albumId }: GalleryProps) => {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <Flex gap={16} vertical className={styles.header}>
+        <Flex gap={12} vertical className={styles.header}>
           <Flex justify="center">
             <Title level={1} className={styles.title}>
               {getTitle()}
             </Title>
           </Flex>
+          {!albumId && (
+            <div className={styles.subtitleWrapper}>
+              <span className={styles.divider} />
+              <Text className={styles.subtitle}>
+                Explore nossos álbuns de fotos e momentos especiais
+              </Text>
+            </div>
+          )}
         </Flex>
 
         <div className={styles.content}>
           {isLoading && (
-            <Flex justify="center" align="center" className={styles.centered}>
-              <Spin size="large" />
-            </Flex>
+            <div className={styles.loadingGrid}>
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={`skeleton-${index}`} className={styles.skeletonCard}>
+                  <div className={styles.skeletonImage} />
+                  <div className={styles.skeletonFooter}>
+                    <div className={styles.skeletonLine} />
+                    <div className={styles.skeletonLineShort} />
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
 
           {!isLoading && !albums?.length && (
@@ -117,8 +133,13 @@ export const Gallery = ({ albumId }: GalleryProps) => {
 
           {!albumId && albums && albums.length > 0 && (
             <div className={styles.grid}>
-              {albums.map((album) => (
-                <AlbumContent {...album} key={album.id} basePath="/gallery" />
+              {albums.map((album, index) => (
+                <AlbumContent
+                  {...album}
+                  key={album.id}
+                  basePath="/gallery"
+                  index={index}
+                />
               ))}
             </div>
           )}

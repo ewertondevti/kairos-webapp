@@ -4,6 +4,7 @@ import { onImageUpload, onRemoveImage } from "@/services/commonServices";
 import { createEvents } from "@/services/eventServices";
 import { UploadCommonResponse } from "@/types/event";
 import { CreateCommonPayload } from "@/types/store";
+import { getUploadUrl } from "@/utils/upload";
 import { InboxOutlined } from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { message, Modal, Upload, UploadFile, UploadProps } from "antd";
@@ -32,7 +33,7 @@ export const EventModal: FC<Props> = ({ isOpen, onCancel }) => {
     const payload: CreateCommonPayload = {
       images: fileList.map((file) => ({
         name: file.name,
-        url: (file.response as UploadCommonResponse).url,
+        url: getUploadUrl(file.response as UploadCommonResponse | undefined),
       })),
     };
 

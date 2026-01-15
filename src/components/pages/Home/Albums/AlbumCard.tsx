@@ -31,29 +31,22 @@ export const AlbumCard: FC<Props> = ({
       styles={{ body: { padding: 0 } }}
       onClick={onRedirect}
     >
-      <div className={styles.shine} />
-      <div className={styles.imageWrap}>
-        <div className={styles.imageOverlay} />
-        {coverImage ? (
-          <img
-            src={coverImage}
-            alt={name}
-            className={styles.image}
-            loading="lazy"
-          />
-        ) : (
-          <div className={styles.placeholder}>
-            📷
-          </div>
-        )}
-        <div className={styles.infoOverlay}>
-          <div className={styles.infoText}>Ver album</div>
-          <div className={styles.infoLine} />
+      <div className={styles.frame}>
+        <div className={styles.photoWrap}>
+          {coverImage ? (
+            <img
+              src={coverImage}
+              alt={name}
+              className={styles.photo}
+              loading="lazy"
+            />
+          ) : (
+            <div className={styles.placeholder}>📷</div>
+          )}
         </div>
-      </div>
-      <div className={styles.cornerAccent} />
-      <div className={styles.body}>
-        <Text className={styles.title}>{name}</Text>
+        <div className={styles.label}>
+          <Text className={styles.title}>{name}</Text>
+        </div>
       </div>
     </Card>
   );

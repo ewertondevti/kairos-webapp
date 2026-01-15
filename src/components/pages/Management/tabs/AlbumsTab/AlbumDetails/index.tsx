@@ -68,8 +68,8 @@ export const AlbumDetails = ({ albumId }: AlbumDetailsProps) => {
         <Image.PreviewGroup
           preview={{
             current: previewIndex,
-            visible: isPreviewOpen,
-            onVisibleChange: (visible) => setIsPreviewOpen(visible),
+            open: isPreviewOpen,
+            onOpenChange: (open) => setIsPreviewOpen(open),
             onChange: (current) => setPreviewIndex(current),
           }}
         >

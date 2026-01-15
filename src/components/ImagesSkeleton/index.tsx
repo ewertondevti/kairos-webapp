@@ -1,4 +1,3 @@
-import { Skeleton } from "antd";
 import styles from "./ImagesSkeleton.module.scss";
 
 export const ImagesSkeleton = () => {
@@ -9,14 +8,15 @@ export const ImagesSkeleton = () => {
       <div className={styles.masonry}>
         {Array.from({ length: 12 }).map((_, index) => (
           <div key={index} className={styles.item}>
-            <Skeleton.Image
-              active
-              className={styles.skeleton}
-              style={{
-                width: "100%",
-                height: heights[index % heights.length],
-              }}
-            />
+            <div className={styles.card}>
+              <div
+                className={styles.photo}
+                style={{ height: heights[index % heights.length] }}
+              />
+              <div className={styles.label}>
+                <div className={styles.line} />
+              </div>
+            </div>
           </div>
         ))}
       </div>

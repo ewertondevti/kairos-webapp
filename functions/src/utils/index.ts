@@ -37,3 +37,24 @@ export const processHeicToJpeg = async (
     throw new Error("Erro na conversão de HEIC para JPEG.");
   }
 };
+
+export const mapWithConcurrency = async <T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>
+): Promise<R[]> => {
+  const results: R[] = [];
+  let currentIndex = 0;
+
+  const workers = Array.from({ length: Math.min(limit, items.length) }).map(
+    async () => {
+      while (currentIndex < items.length) {
+        const index = currentIndex++;
+        results[index] = await worker(items[index], index);
+      }
+    }
+  );
+
+  await Promise.all(workers);
+  return results;
+};
