@@ -6,10 +6,17 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const { searchParams } = request.nextUrl;
+  const limit = searchParams.get("limit") || undefined;
+  const cursor = searchParams.get("cursor") || undefined;
   
   if (!id) {
     return proxyRequest("GET", "/getAlbumById", undefined, { id: "" }); // Will return error from proxy
   }
 
-  return proxyRequest("GET", "/getAlbumById", undefined, { id });
+  return proxyRequest("GET", "/getAlbumById", undefined, {
+    id,
+    limit: limit ?? "",
+    cursor: cursor ?? "",
+  });
 }

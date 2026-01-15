@@ -1,10 +1,11 @@
-import Busboy = require("busboy");
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { storage } from "../firebaseAdmin";
-import { buildStorageFileName } from "./common";
-import { processHeicToJpeg } from "../utils";
+import {Readable} from "stream";
+import busboy = require("busboy");
+import {storage} from "../firebaseAdmin";
+import {buildStorageFileName} from "./common";
+import {processHeicToJpeg} from "../utils";
 
 type UploadResult = {
   url: string;
@@ -36,17 +37,21 @@ export const handleMultipartUpload = async (
 
   try {
     const result = await new Promise<UploadResult>((resolve, reject) => {
-      const busboy = Busboy({
+      const busboyParser = busboy({
         headers: request.headers,
-        limits: { files: 1, fileSize: options.maxFileSizeBytes },
+        limits: {files: 1, fileSize: options.maxFileSizeBytes},
       });
 
       let fileHandled = false;
       let uploadPromise: Promise<UploadResult> | null = null;
 
-      busboy.on(
+      busboyParser.on(
         "file",
-        (fieldName, fileStream, info: { filename: string; mimeType: string }) => {
+        (
+          fieldName: string,
+          fileStream: Readable & { truncated?: boolean },
+          info: busboy.FileInfo
+        ) => {
           if (fileHandled) {
             fileStream.resume();
             return;
@@ -74,7 +79,9 @@ export const handleMultipartUpload = async (
           const contentType = isHeic ? "image/jpeg" : mimeType;
 
           fileStream.on("limit", () => {
-            reject(createUploadError("Arquivo excede o limite permitido.", 413));
+            reject(
+              createUploadError("Arquivo excede o limite permitido.", 413)
+            );
           });
 
           if (isHeic) {
@@ -82,40 +89,49 @@ export const handleMultipartUpload = async (
             const tempWriteStream = fs.createWriteStream(tempFilePath);
             fileStream.pipe(tempWriteStream);
 
-            uploadPromise = new Promise<UploadResult>((resolveUpload, rejectUpload) => {
-              tempWriteStream.on("finish", async () => {
-                try {
-                  const targetPath = path.join(
-                    os.tmpdir(),
-                    `${path.parse(finalFileName).name}.jpeg`
-                  );
-                  convertedFilePath = await processHeicToJpeg(
+            uploadPromise = new Promise<UploadResult>(
+              (resolveUpload, rejectUpload) => {
+                tempWriteStream.on("finish", async () => {
+                  try {
+                    const targetPath = path.join(
+                      os.tmpdir(),
+                      `${path.parse(finalFileName).name}.jpeg`
+                    );
+                    convertedFilePath = await processHeicToJpeg(
                     tempFilePath!,
                     targetPath
-                  );
+                    );
 
-                  await storage.bucket().upload(convertedFilePath, {
-                    destination,
-                    metadata: {
-                      contentType,
-                      cacheControl: options.cacheControl,
-                    },
-                  });
+                    await storage.bucket().upload(convertedFilePath, {
+                      destination,
+                      metadata: {
+                        contentType,
+                        cacheControl: options.cacheControl,
+                      },
+                    });
 
-                  const [url] = await storage.bucket().file(destination).getSignedUrl({
-                    action: "read",
-                    expires: Date.now() + options.urlExpiresMs,
-                  });
+                    const [url] = await storage
+                      .bucket()
+                      .file(destination)
+                      .getSignedUrl({
+                        action: "read",
+                        expires: Date.now() + options.urlExpiresMs,
+                      });
 
-                  resolveUpload({ url, fileName: finalFileName, storagePath: destination });
-                } catch (error) {
-                  rejectUpload(error);
-                }
-              });
+                    resolveUpload({
+                      url,
+                      fileName: finalFileName,
+                      storagePath: destination,
+                    });
+                  } catch (error) {
+                    rejectUpload(error);
+                  }
+                });
 
-              tempWriteStream.on("error", rejectUpload);
-              fileStream.on("error", rejectUpload);
-            });
+                tempWriteStream.on("error", rejectUpload);
+                fileStream.on("error", rejectUpload);
+              }
+            );
           } else {
             const storageFile = storage.bucket().file(destination);
             const writeStream = storageFile.createWriteStream({
@@ -125,29 +141,35 @@ export const handleMultipartUpload = async (
               },
             });
 
-            uploadPromise = new Promise<UploadResult>((resolveUpload, rejectUpload) => {
-              writeStream.on("finish", async () => {
-                try {
-                  const [url] = await storageFile.getSignedUrl({
-                    action: "read",
-                    expires: Date.now() + options.urlExpiresMs,
-                  });
-                  resolveUpload({ url, fileName: finalFileName, storagePath: destination });
-                } catch (error) {
-                  rejectUpload(error);
-                }
-              });
+            uploadPromise = new Promise<UploadResult>(
+              (resolveUpload, rejectUpload) => {
+                writeStream.on("finish", async () => {
+                  try {
+                    const [url] = await storageFile.getSignedUrl({
+                      action: "read",
+                      expires: Date.now() + options.urlExpiresMs,
+                    });
+                    resolveUpload({
+                      url,
+                      fileName: finalFileName,
+                      storagePath: destination,
+                    });
+                  } catch (error) {
+                    rejectUpload(error);
+                  }
+                });
 
-              writeStream.on("error", rejectUpload);
-              fileStream.on("error", rejectUpload);
-            });
+                writeStream.on("error", rejectUpload);
+                fileStream.on("error", rejectUpload);
+              }
+            );
 
             fileStream.pipe(writeStream);
           }
         }
       );
 
-      busboy.on("finish", async () => {
+      busboyParser.on("finish", async () => {
         if (!fileHandled) {
           reject(createUploadError("Arquivo não enviado.", 400));
           return;
@@ -165,11 +187,11 @@ export const handleMultipartUpload = async (
         }
       });
 
-      busboy.on("error", (error) => {
+      busboyParser.on("error", (error: unknown) => {
         reject(error);
       });
 
-      request.pipe(busboy);
+      request.pipe(busboyParser);
     });
 
     return result;
@@ -182,7 +204,10 @@ export const handleMultipartUpload = async (
             fs.unlinkSync(filePath);
           }
         } catch (cleanupError) {
-          console.error(`Erro ao limpar arquivo temporário ${filePath}:`, cleanupError);
+          console.error(
+            `Erro ao limpar arquivo temporário ${filePath}:`,
+            cleanupError
+          );
         }
       });
   }

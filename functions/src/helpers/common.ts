@@ -1,10 +1,14 @@
 import * as crypto from "crypto";
 import * as path from "path";
-import { storage } from "../firebaseAdmin";
+import {storage} from "../firebaseAdmin";
 
 /**
- * Generates a unique filename by appending a number suffix if the file already exists
- * Example: "nome-teste.jpg" -> "nome-teste (1).jpg" -> "nome-teste (2).jpg"
+ * Generates a unique filename by appending a number suffix
+ * if the file already exists.
+ * Example: "nome-teste.jpg" -> "nome-teste (1).jpg"
+ * -> "nome-teste (2).jpg"
+ * @param {string} basePath Storage base path for the file.
+ * @param {string} fileName Original file name.
  */
 export const generateUniqueFileName = async (
   basePath: string,
@@ -14,11 +18,12 @@ export const generateUniqueFileName = async (
   const fileNameWithoutExt = path.parse(fileName).name;
   let uniqueFileName = fileName;
   let counter = 1;
+  let exists = true;
 
-  while (true) {
+  while (exists) {
     const destination = `${basePath}/${uniqueFileName}`;
     const fileRef = storage.bucket().file(destination);
-    const [exists] = await fileRef.exists();
+    [exists] = await fileRef.exists();
 
     if (!exists) {
       return uniqueFileName;
@@ -27,6 +32,8 @@ export const generateUniqueFileName = async (
     uniqueFileName = `${fileNameWithoutExt} (${counter})${fileExtension}`;
     counter++;
   }
+
+  return uniqueFileName;
 };
 
 export const buildStorageFileName = (
@@ -43,7 +50,8 @@ export const buildStorageFileName = (
 };
 
 /**
- * Deletes multiple images from Firebase Storage
+ * Deletes multiple images from Firebase Storage.
+ * @param {string[]} urls Storage object paths to delete.
  */
 export const deleteImageStorage = async (urls: string[]): Promise<void> => {
   try {

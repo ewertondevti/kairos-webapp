@@ -1,10 +1,20 @@
 import { getAlbumById, getAlbums } from "@/services/albumServices";
 import { getEvents } from "@/services/eventServices";
 import { getVerse } from "@/services/versesServices";
-import { useQuery } from "@tanstack/react-query";
+import { IAlbumWithCursor } from "@/types/store";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { QueryNames } from "./queryNames";
 
-export const useGetAlbums = () => {
+type AlbumQueryOptions = {
+  enabled?: boolean;
+};
+
+type AlbumPageOptions = {
+  enabled?: boolean;
+  limit?: number;
+};
+
+export const useGetAlbums = (options?: AlbumQueryOptions) => {
   return useQuery({
     queryKey: [QueryNames.GetAlbums],
     queryFn: async () => await getAlbums(),
@@ -12,16 +22,44 @@ export const useGetAlbums = () => {
     refetchOnWindowFocus: false,
     retry: 2,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options?.enabled ?? true,
   });
 };
 
-export const useGetAlbumById = (id?: string) => {
+export const useGetAlbumById = (
+  id?: string,
+  options?: AlbumPageOptions
+) => {
   return useQuery({
-    queryKey: [QueryNames.GetAlbumById, id],
-    queryFn: async () => await getAlbumById(id!),
-    enabled: !!id,
+    queryKey: [QueryNames.GetAlbumById, id, options?.limit],
+    queryFn: async () => await getAlbumById(id!, { limit: options?.limit }),
+    enabled: !!id && (options?.enabled ?? true),
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
+  });
+};
+
+export const useGetAlbumImagesInfinite = (
+  id?: string,
+  options?: AlbumPageOptions & { initialPage?: IAlbumWithCursor }
+) => {
+  const limit = options?.limit ?? 24;
+
+  return useInfiniteQuery({
+    queryKey: [QueryNames.GetAlbumById, id, "images", limit],
+    queryFn: async ({ pageParam }) =>
+      getAlbumById(id!, { limit, cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage?.nextCursor,
+    enabled: !!id && (options?.enabled ?? true),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    initialData: options?.initialPage
+      ? {
+          pageParams: [undefined],
+          pages: [options.initialPage],
+        }
+      : undefined,
   });
 };
 

@@ -15,6 +15,10 @@ export interface IAlbumDTO extends ICommon {
   images: IImageDTO[];
 }
 
+export interface IAlbumWithCursor extends IAlbumDTO {
+  nextCursor?: string;
+}
+
 export type AlbumImagePayload = {
   name: string;
 };

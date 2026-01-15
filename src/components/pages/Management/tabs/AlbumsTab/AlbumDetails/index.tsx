@@ -2,41 +2,77 @@
 
 import { ImagesSkeleton } from "@/components/ImagesSkeleton";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { useGetAlbumById } from "@/react-query";
+import { useGetAlbumImagesInfinite } from "@/react-query";
+import { IAlbumWithCursor } from "@/types/store";
 import { Empty } from "antd";
 import Image from "antd/es/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./AlbumDetails.module.scss";
 
 type AlbumDetailsProps = {
   albumId?: string;
+  initialAlbum?: IAlbumWithCursor;
 };
 
-export const AlbumDetails = ({ albumId }: AlbumDetailsProps) => {
-  const { data: album, isLoading } = useGetAlbumById(albumId);
+export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useGetAlbumImagesInfinite(albumId, {
+    limit: 24,
+    initialPage: initialAlbum,
+    enabled: !!albumId,
+  });
   const [previewIndex, setPreviewIndex] = useState(0);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  const albumImages = useMemo(() => {
+    const pages = data?.pages ?? [];
+    return pages.flatMap((page) => page?.images ?? []);
+  }, [data?.pages]);
+
   const images = useMemo(() => {
-    if (!album?.images?.length) return [];
-    return album.images.map((img) => ({
+    if (!albumImages.length) return [];
+    return albumImages.map((img) => ({
       src: img.url,
       alt: img.name || "Imagem",
     }));
-  }, [album?.images]);
+  }, [albumImages]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    const node = loadMoreRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  if (isLoading && !albumImages.length) {
     return <ImagesSkeleton />;
   }
 
-  if (!album?.images?.length) {
+  if (!albumImages.length) {
     return <Empty className={styles.empty} description="Nenhuma imagem encontrada" />;
   }
 
   return (
     <div className={styles.wrapper}>
       <div className={styles.masonry}>
-        {album.images.map((image, index) => (
+        {albumImages.map((image, index) => (
           <button
             key={image.url}
             type="button"
@@ -62,6 +98,10 @@ export const AlbumDetails = ({ albumId }: AlbumDetailsProps) => {
           </button>
         ))}
       </div>
+
+      {hasNextPage && (
+        <div ref={loadMoreRef} className="h-8 w-full" aria-hidden />
+      )}
 
       {/* Image Preview Modal */}
       {images.length > 0 && (

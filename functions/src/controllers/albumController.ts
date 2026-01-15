@@ -1,16 +1,16 @@
 import * as admin from "firebase-admin";
-import { onRequest } from "firebase-functions/v2/https";
-import { DatabaseTableKeys } from "../enums/app";
-import { firestore, storage } from "../firebaseAdmin";
-import { deleteImageStorage } from "../helpers/common";
-import { handleMultipartUpload } from "../helpers/upload";
+import {onRequest} from "firebase-functions/v2/https";
+import {DatabaseTableKeys} from "../enums/app";
+import {firestore, storage} from "../firebaseAdmin";
+import {deleteImageStorage} from "../helpers/common";
+import {handleMultipartUpload} from "../helpers/upload";
 import {
   CreateAlbumPayload,
   DeleteImgFromAlbumPayload,
   UpdateAlbumPayload,
 } from "../models";
-import { IAlbum, IImage } from "../models/album";
-import { corsHandler, mapWithConcurrency } from "../utils";
+import {IAlbum, IImage} from "../models/album";
+import {corsHandler, mapWithConcurrency} from "../utils";
 
 // Common function configuration for image uploads
 const IMAGE_UPLOAD_CONFIG = {
@@ -23,11 +23,39 @@ const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
 const SIGNED_URL_EXPIRATION_MS = 24 * 60 * 60 * 1000;
 const SIGNED_URL_CONCURRENCY = 10;
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
+const URL_CACHE_TTL_BUFFER_MS = 60 * 1000;
+
+type SignedUrlCacheEntry = {
+  url: string;
+  expiresAt: number;
+};
+
+const signedUrlCache = new Map<string, SignedUrlCacheEntry>();
 
 const normalizeImages = (images?: Partial<IImage>[]) =>
   (images || [])
     .filter((img) => img?.name?.trim())
-    .map((img) => ({ name: img.name!.trim() }));
+    .map((img) => ({name: img.name!.trim()}));
+
+const getSignedUrlCached = async (storagePath: string) => {
+  const cached = signedUrlCache.get(storagePath);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.url;
+  }
+
+  const fileRef = storage.bucket().file(storagePath);
+  const [url] = await fileRef.getSignedUrl({
+    action: "read",
+    expires: Date.now() + SIGNED_URL_EXPIRATION_MS,
+  });
+
+  signedUrlCache.set(storagePath, {
+    url,
+    expiresAt: Date.now() + SIGNED_URL_EXPIRATION_MS - URL_CACHE_TTL_BUFFER_MS,
+  });
+
+  return url;
+};
 
 /**
  * Uploads an image to Firebase Storage with automatic duplicate name handling
@@ -59,11 +87,12 @@ export const uploadImage = onRequest(
         );
 
         console.log(`Imagem enviada com sucesso: ${result.fileName}`);
-        response.status(200).send({ url: result.url, fileName: result.fileName });
+        response.status(200).send({url: result.url, fileName: result.fileName});
       } catch (error: any) {
         console.error("Erro ao processar o arquivo:", error);
         const status = error?.statusCode || 500;
-        response.status(status).send(error?.message || "Erro ao processar o arquivo.");
+        const message = error?.message || "Erro ao processar o arquivo.";
+        response.status(status).send(message);
       }
     });
   }
@@ -73,7 +102,7 @@ export const uploadImage = onRequest(
  * Creates a new album
  */
 export const createAlbum = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -118,7 +147,7 @@ export const createAlbum = onRequest(
  * Updates an existing album
  */
 export const updateAlbum = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -231,28 +260,25 @@ export const getAlbums = onRequest(
                 SIGNED_URL_CONCURRENCY,
                 async (img) => {
                   if (!img.name) {
-                    return { ...img, url: undefined };
+                    return {...img, url: undefined};
                   }
 
                   try {
-                    const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-                    const fileRef = storage.bucket().file(destination);
-                    const [url] = await fileRef.getSignedUrl({
-                      action: "read",
-                      expires: Date.now() + SIGNED_URL_EXPIRATION_MS,
-                    });
-                    return { ...img, url };
+                    const destination =
+                      `${DatabaseTableKeys.Images}/${img.name}`;
+                    const url = await getSignedUrlCached(destination);
+                    return {...img, url};
                   } catch (error) {
                     console.error(
                       `Erro ao obter URL da imagem ${img.name}:`,
                       error
                     );
-                    return { ...img, url: undefined };
+                    return {...img, url: undefined};
                   }
                 }
               );
 
-              return { ...album, id: doc.id, images };
+              return {...album, id: doc.id, images};
             }
           )
         );
@@ -314,34 +340,57 @@ export const getAlbumById = onRequest(
         }
 
         const album = docSnap.data() as IAlbum;
+        const albumImages = (album.images || []).filter((img) => img.name);
+        const limitParam = request.query.limit as string | undefined;
+        const cursorParam = request.query.cursor as string | undefined;
+        const limit = limitParam ? Number(limitParam) : undefined;
+        const safeLimit =
+          typeof limit === "number" && Number.isFinite(limit) && limit > 0 ?
+            Math.min(limit, 200) :
+            undefined;
 
-        // Get all image URLs
+        const startIndex = cursorParam ?
+          Math.max(
+            albumImages.findIndex((img) => img.name === cursorParam) + 1,
+            0
+          ) :
+          0;
+        const pageImages =
+          safeLimit === undefined ?
+            albumImages :
+            albumImages.slice(startIndex, startIndex + safeLimit);
+        const hasNextPage =
+          safeLimit !== undefined &&
+          startIndex + safeLimit < albumImages.length;
+        const nextCursor =
+          hasNextPage && pageImages.length ?
+            pageImages[pageImages.length - 1].name :
+            undefined;
+
+        // Get image URLs
         const images = await mapWithConcurrency(
-          (album.images || []).filter((img) => img.name),
+          pageImages,
           SIGNED_URL_CONCURRENCY,
           async (img) => {
             if (!img.name) {
-              return { ...img, url: undefined };
+              return {...img, url: undefined};
             }
 
             try {
               const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-              const fileRef = storage.bucket().file(destination);
+              const url = await getSignedUrlCached(destination);
 
-              const [url] = await fileRef.getSignedUrl({
-                action: "read",
-                expires: Date.now() + SIGNED_URL_EXPIRATION_MS,
-              });
-
-              return { ...img, url };
+              return {...img, url};
             } catch (error) {
               console.error(`Erro ao obter URL da imagem ${img.name}:`, error);
-              return { ...img, url: undefined };
+              return {...img, url: undefined};
             }
           }
         );
 
-        response.status(200).json({ id: docSnap.id, ...album, images });
+        response
+          .status(200)
+          .json({id: docSnap.id, ...album, images, nextCursor});
       } catch (error) {
         console.error("Erro ao buscar álbum:", error);
         response.status(500).send("Erro ao buscar álbum.");
@@ -354,7 +403,7 @@ export const getAlbumById = onRequest(
  * Deletes images from an album
  */
 export const deleteImageFromAlbum = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -378,7 +427,7 @@ export const deleteImageFromAlbum = onRequest(
           return;
         }
 
-        const { albumId, images } = body;
+        const {albumId, images} = body;
         const imageNamesToDelete = new Set(images.map((img) => img.name));
 
         const albumRef = firestore
@@ -400,7 +449,7 @@ export const deleteImageFromAlbum = onRequest(
         );
 
         // Update album with remaining images
-        await albumRef.update({ images: remainingImages });
+        await albumRef.update({images: remainingImages});
 
         // Delete images from storage
         const paths = images
@@ -424,7 +473,7 @@ export const deleteImageFromAlbum = onRequest(
  * Deletes an album and all its associated images
  */
 export const deleteAlbum = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {

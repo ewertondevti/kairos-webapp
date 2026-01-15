@@ -21,8 +21,13 @@ export const processHeicToJpeg = async (
     const inputBuffer = fs.readFileSync(inputPath);
 
     // Converte o buffer HEIC para JPEG usando heic-convert
+    const arrayBuffer = inputBuffer.buffer.slice(
+      inputBuffer.byteOffset,
+      inputBuffer.byteOffset + inputBuffer.byteLength
+    );
+
     const outputBuffer = await heicConvert({
-      buffer: inputBuffer as Uint8Array, // Buffer de entrada
+      buffer: arrayBuffer, // Buffer de entrada
       format: "JPEG", // Formato de saída
       quality: 1, // Qualidade máxima (1 = melhor qualidade)
     });
@@ -46,7 +51,7 @@ export const mapWithConcurrency = async <T, R>(
   const results: R[] = [];
   let currentIndex = 0;
 
-  const workers = Array.from({ length: Math.min(limit, items.length) }).map(
+  const workers = Array.from({length: Math.min(limit, items.length)}).map(
     async () => {
       while (currentIndex < items.length) {
         const index = currentIndex++;

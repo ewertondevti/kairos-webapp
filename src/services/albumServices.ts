@@ -1,6 +1,7 @@
 import {
   DeleteImgFromAlbumPayload,
   IAlbumDTO,
+  IAlbumWithCursor,
   IAlbumPayload,
   IAlbumUpdatePayload,
 } from "@/types/store";
@@ -51,11 +52,22 @@ export const getAlbums = async (): Promise<IAlbumDTO[]> => {
   }
 };
 
+type AlbumByIdParams = {
+  limit?: number;
+  cursor?: string;
+};
+
 export const getAlbumById = async (
-  id: string
-): Promise<IAlbumDTO | undefined> => {
+  id: string,
+  params?: AlbumByIdParams
+): Promise<IAlbumWithCursor | undefined> => {
   try {
-    const response = await axios.get(`/api/albums/${id}`);
+    const response = await axios.get(`/api/albums/${id}`, {
+      params: {
+        limit: params?.limit,
+        cursor: params?.cursor,
+      },
+    });
     return response.data;
   } catch (error: unknown) {
     console.error("Erro ao buscar álbum por ID:", error);

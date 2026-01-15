@@ -1,7 +1,7 @@
 "use client";
 
 import { onDownload } from "@/helpers/app";
-import { useGetAlbums } from "@/react-query";
+import { useGetAlbumById, useGetAlbums } from "@/react-query";
 import {
   DownloadOutlined,
   LeftOutlined,
@@ -22,15 +22,27 @@ type GalleryProps = {
 };
 
 export const Gallery = ({ albumId }: GalleryProps) => {
-  const { data: albums, isLoading } = useGetAlbums();
+  const isAlbumView = !!albumId;
+  const { data: albums, isLoading: isAlbumsLoading } = useGetAlbums({
+    enabled: !isAlbumView,
+  });
+  const { data: album } = useGetAlbumById(albumId, {
+    enabled: isAlbumView,
+    limit: 24,
+  });
 
   const getTitle = () => {
     const title = "Galeria de álbuns";
 
-    if (albumId && albums) {
-      const album = albums.find((a) => a.id === albumId);
+    if (isAlbumView && album) {
+      return album?.name;
+    }
 
-      if (album) return album?.name;
+    if (!isAlbumView && albums) {
+      if (albumId) {
+        const albumFromList = albums.find((a) => a.id === albumId);
+        if (albumFromList) return albumFromList?.name;
+      }
       return title;
     }
 
@@ -57,7 +69,7 @@ export const Gallery = ({ albumId }: GalleryProps) => {
         </Flex>
 
         <div className={styles.content}>
-          {isLoading && (
+          {isAlbumsLoading && (
             <div className={styles.loadingGrid}>
               {Array.from({ length: 8 }).map((_, index) => (
                 <div key={`skeleton-${index}`} className={styles.skeletonCard}>
@@ -71,7 +83,7 @@ export const Gallery = ({ albumId }: GalleryProps) => {
             </div>
           )}
 
-          {!isLoading && !albums?.length && (
+          {!isAlbumsLoading && !albums?.length && !isAlbumView && (
             <Flex justify="center" align="center" className={styles.centered}>
               <Empty description="Nenhum álbum encontrado" />
             </Flex>
@@ -127,7 +139,7 @@ export const Gallery = ({ albumId }: GalleryProps) => {
                 },
               }}
             >
-              <AlbumDetails albumId={albumId} />
+              <AlbumDetails albumId={albumId} initialAlbum={album} />
             </Image.PreviewGroup>
           )}
 

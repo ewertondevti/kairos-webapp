@@ -1,4 +1,4 @@
-import { IImage } from "./album";
+import {IImage} from "./album";
 
 export interface CreateCommonPayload {
   images: Partial<IImage>[];

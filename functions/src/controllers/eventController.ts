@@ -1,11 +1,11 @@
-import { onRequest } from "firebase-functions/v2/https";
-import { DatabaseTableKeys } from "../enums/app";
-import { firestore, storage } from "../firebaseAdmin";
-import { deleteImageStorage } from "../helpers/common";
-import { handleMultipartUpload } from "../helpers/upload";
-import { CreateCommonPayload, DeleteCommonPayload } from "../models";
-import { IEvent } from "../models/event";
-import { corsHandler, mapWithConcurrency } from "../utils";
+import {onRequest} from "firebase-functions/v2/https";
+import {DatabaseTableKeys} from "../enums/app";
+import {firestore, storage} from "../firebaseAdmin";
+import {deleteImageStorage} from "../helpers/common";
+import {handleMultipartUpload} from "../helpers/upload";
+import {CreateCommonPayload, DeleteCommonPayload} from "../models";
+import {IEvent} from "../models/event";
+import {corsHandler, mapWithConcurrency} from "../utils";
 
 // Common function configuration for image uploads
 const IMAGE_UPLOAD_CONFIG = {
@@ -20,7 +20,8 @@ const SIGNED_URL_CONCURRENCY = 10;
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 /**
- * Uploads an event image to Firebase Storage with automatic duplicate name handling
+ * Uploads an event image to Firebase Storage
+ * with automatic duplicate name handling.
  */
 export const uploadEvent = onRequest(
   IMAGE_UPLOAD_CONFIG,
@@ -49,11 +50,12 @@ export const uploadEvent = onRequest(
         );
 
         console.log(`Evento enviado com sucesso: ${result.fileName}`);
-        response.status(200).send({ url: result.url, fileName: result.fileName });
+        response.status(200).send({url: result.url, fileName: result.fileName});
       } catch (error: any) {
         console.error("Erro ao processar o arquivo:", error);
         const status = error?.statusCode || 500;
-        response.status(status).send(error?.message || "Erro ao processar o arquivo.");
+        const message = error?.message || "Erro ao processar o arquivo.";
+        response.status(status).send(message);
       }
     });
   }
@@ -63,7 +65,7 @@ export const uploadEvent = onRequest(
  * Creates multiple events
  */
 export const createEvents = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -85,7 +87,7 @@ export const createEvents = onRequest(
           return;
         }
 
-        const { images } = body;
+        const {images} = body;
 
         // Use batch write for better performance
         const batch = firestore.batch();
@@ -112,7 +114,7 @@ export const createEvents = onRequest(
  * Retrieves all events with their image URLs
  */
 export const getEvents = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -151,13 +153,13 @@ export const getEvents = onRequest(
                 expires: Date.now() + SIGNED_URL_EXPIRATION_MS,
               });
 
-              return { ...event, id: doc.id, url };
+              return {...event, id: doc.id, url};
             } catch (error) {
               console.error(
                 `Erro ao obter URL do evento ${event.name}:`,
                 error
               );
-              return { ...event, id: doc.id, url: undefined };
+              return {...event, id: doc.id, url: undefined};
             }
           }
         );
@@ -175,7 +177,7 @@ export const getEvents = onRequest(
  * Deletes multiple events and their associated images
  */
 export const deleteEvents = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -199,7 +201,7 @@ export const deleteEvents = onRequest(
           return;
         }
 
-        const { images } = body;
+        const {images} = body;
 
         // Delete Firestore documents using batch
         const batch = firestore.batch();

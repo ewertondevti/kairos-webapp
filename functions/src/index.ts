@@ -7,14 +7,14 @@ import {
   updateAlbum,
   uploadImage,
 } from "./controllers/albumController";
-import { deleteUploadedImage } from "./controllers/commonController";
+import {deleteUploadedImage} from "./controllers/commonController";
 import {
   createEvents,
   deleteEvents,
   getEvents,
   uploadEvent,
 } from "./controllers/eventController";
-import { createNewMember } from "./controllers/memberController";
+import {createNewMember} from "./controllers/memberController";
 
 export {
   createAlbum,

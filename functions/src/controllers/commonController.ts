@@ -1,6 +1,6 @@
-import { onRequest } from "firebase-functions/v2/https";
-import { deleteImageStorage } from "../helpers/common";
-import { corsHandler } from "../utils";
+import {onRequest} from "firebase-functions/v2/https";
+import {deleteImageStorage} from "../helpers/common";
+import {corsHandler} from "../utils";
 
 // Common function configuration
 const COMMON_CONFIG = {
