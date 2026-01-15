@@ -1,0 +1,35 @@
+.container {
+  position: relative;
+  width: 100%;
+}
+
+.skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.imageHidden {
+  opacity: 0;
+}
+
+.imageVisible {
+  opacity: 1;
+}
+
+.error {
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

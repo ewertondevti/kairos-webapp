@@ -1,0 +1,83 @@
+.page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #eef7f1 0%, #e6f1ea 50%, #dfece4 100%);
+  color: #0f3a1c;
+  padding: 32px 0 72px;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.header {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f3a1c;
+  text-shadow: 0 6px 18px rgba(26, 93, 46, 0.15);
+}
+
+.content {
+  min-height: 360px;
+}
+
+.centered {
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbar {
+  display: inline-flex;
+  gap: 12px;
+}
+
+.toolbarIcon {
+  color: #0f3a1c;
+  transition: color 0.2s ease;
+}
+
+.toolbarIcon:hover {
+  color: #4a9d63;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 24px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 32px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

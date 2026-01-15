@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { ConfigProvider, theme } from "antd";
 import { ThemeConfig } from "antd/es/config-provider/context";
@@ -21,8 +21,10 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
       colorBgBase: Colors.ColorBg,
       colorTextSecondary: Colors.ColorTextSecondary,
       colorBorder: Colors.ColorBorder,
-      fontFamily: 'var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      fontFamilyCode: '"SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
+      fontFamily:
+        'var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      fontFamilyCode:
+        '"SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
       fontSize: 16,
       fontSizeSM: 14,
       fontSizeLG: 18,
@@ -59,8 +61,8 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
         fontSizeHeading3: 32,
         fontSizeHeading4: 26,
         fontSizeHeading5: 20,
-        fontSizeHeading6: 18,
-        fontFamilyCode: '"SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
+        fontFamilyCode:
+          '"SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
         fontWeightStrong: 600,
         lineHeightHeading1: 1.2,
         lineHeightHeading2: 1.3,
@@ -93,11 +95,11 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
       },
       Menu: {
         colorText: Colors.ColorTextOnDark,
-        colorItemText: Colors.ColorTextOnDark,
-        colorItemTextHover: Colors.ColorTextOnDark,
-        colorItemBgHover: "rgba(26, 93, 46, 0.2)",
-        colorItemTextSelected: Colors.ColorTextOnDark,
-        colorItemBgSelected: Colors.ColorPrimary,
+        itemColor: Colors.ColorTextOnDark,
+        itemHoverColor: Colors.ColorTextOnDark,
+        itemHoverBg: "rgba(26, 93, 46, 0.2)",
+        itemSelectedColor: Colors.ColorTextOnDark,
+        itemSelectedBg: Colors.ColorPrimary,
         itemMarginInline: 12,
         itemBorderRadius: 8,
         itemPaddingInline: 20,
@@ -113,20 +115,18 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
       Input: {
         borderRadius: 8,
         colorBorder: Colors.ColorBorder,
-        colorBorderHover: Colors.ColorPrimary,
       },
       Select: {
         borderRadius: 8,
         colorBorder: Colors.ColorBorder,
-        colorBorderHover: Colors.ColorPrimary,
       },
       Image: {
         borderRadius: 8,
       },
       Space: {
         size: 16,
-        sizeSmall: 8,
-        sizeLarge: 24,
+        sizeSM: 8,
+        sizeLG: 24,
       },
       Tabs: {
         itemColor: Colors.ColorTextSecondary,

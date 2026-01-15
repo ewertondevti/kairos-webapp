@@ -15,6 +15,7 @@ import { Button, Col, Divider, Row } from "antd";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { FC, useMemo } from "react";
+import styles from "./MenuContent.module.scss";
 
 type Props = {
   onClose: () => void;
@@ -46,7 +47,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
         <Button
           type="text"
           icon={<FontAwesomeIcon icon={faImages} />}
-          className="justify-start text-left"
+          className={styles.menuButton}
           onClick={() => onRedirect(`/${RoutesEnums.Gallery}`)}
           block
         >
@@ -59,7 +60,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
           <Button
             type="text"
             icon={<FontAwesomeIcon icon={faRightToBracket} />}
-            className="justify-start text-left text-primary-600"
+            className={`${styles.menuButton} ${styles.menuButtonPrimary}`}
             onClick={() => onRedirect("/login")}
             block
           >
@@ -72,7 +73,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
         <Button
           type="text"
           icon={<FontAwesomeIcon icon={faUsers} />}
-          className="justify-start text-left"
+          className={styles.menuButton}
           onClick={() => onRedirect(`/${RoutesEnums.MembershipForm}`)}
           block
         >
@@ -85,7 +86,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
           <Button
             type="text"
             icon={<FontAwesomeIcon icon={faGears} />}
-            className="justify-start text-left"
+            className={styles.menuButton}
             onClick={() => onRedirect(`/${RoutesEnums.Management}`)}
             block
           >
@@ -105,7 +106,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
               type="text"
               danger
               icon={<FontAwesomeIcon icon={faPowerOff} />}
-              className="justify-start text-left"
+              className={styles.menuButton}
               block
               onClick={onLogout}
             >

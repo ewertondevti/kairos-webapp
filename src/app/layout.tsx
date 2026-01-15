@@ -10,7 +10,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Poppins, Playfair_Display } from "next/font/google";
 import { PrimeReactProvider } from "primereact/api";
 import { useState } from "react";
-import "./globals.css";
+import "./globals.scss";
 
 // Modern sans-serif font for body text
 const poppins = Poppins({

@@ -3,21 +3,29 @@
 import { RoutesEnums } from "@/enums/routesEnums";
 import { Button, Col, Flex, Row, Typography } from "antd";
 import { useRouter } from "next/navigation";
+import styles from "./Hero.module.scss";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const { Title, Paragraph } = Typography;
 
 export const Hero = () => {
   const router = useRouter();
+  const { ref, isVisible } = useScrollReveal();
 
   return (
-    <section className="bg-primary py-24 min-h-[600px] flex items-center">
-      <div className="container mx-auto px-4">
+    <section
+      ref={ref}
+      className={`${styles.section} scroll-reveal ${
+        isVisible ? "scroll-reveal--visible" : ""
+      }`}
+    >
+      <div className={styles.container}>
         <Row justify="center">
           <Col xs={24} sm={22} md={20} lg={18} xl={16}>
-            <Flex vertical align="center" className="text-center">
+            <Flex vertical align="center" className={styles.content}>
               <Title
                 level={1}
-                className="text-white mb-7"
+                className={styles.title}
                 style={{
                   fontSize: "clamp(40px, 6vw, 64px)",
                   letterSpacing: "0.02em",
@@ -28,7 +36,7 @@ export const Hero = () => {
                 Bem-vindo à Igreja Kairós
               </Title>
               <Paragraph
-                className="text-white/90 mb-12 max-w-[800px]"
+                className={styles.paragraph}
                 style={{
                   fontSize: "clamp(17px, 2.2vw, 21px)",
                   fontFamily: "var(--font-poppins), sans-serif",

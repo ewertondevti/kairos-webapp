@@ -13,6 +13,7 @@ import {
 import { Empty, Flex, Image, Space, Spin, Typography } from "antd";
 import { AlbumContent } from "../Management/tabs/AlbumsTab/AlbumContent";
 import { AlbumDetails } from "../Management/tabs/AlbumsTab/AlbumDetails";
+import styles from "./Gallery.module.scss";
 
 const { Title } = Typography;
 
@@ -37,27 +38,25 @@ export const Gallery = ({ albumId }: GalleryProps) => {
   };
 
   return (
-    <div className="min-h-screen py-8 md:py-12">
-      <div className="container mx-auto px-4 max-w-7xl">
-        {/* Header Section */}
-        <Flex gap={16} vertical className="mb-8 md:mb-12">
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <Flex gap={16} vertical className={styles.header}>
           <Flex justify="center">
-            <Title level={1} className="mb-0 text-white">
+            <Title level={1} className={styles.title}>
               {getTitle()}
             </Title>
           </Flex>
         </Flex>
 
-        {/* Content Section */}
-        <div>
+        <div className={styles.content}>
           {isLoading && (
-            <Flex justify="center" align="center" className="min-h-[400px]">
+            <Flex justify="center" align="center" className={styles.centered}>
               <Spin size="large" />
             </Flex>
           )}
 
           {!isLoading && !albums?.length && (
-            <Flex justify="center" align="center" className="min-h-[400px]">
+            <Flex justify="center" align="center" className={styles.centered}>
               <Empty description="Nenhum álbum encontrado" />
             </Flex>
           )}
@@ -65,7 +64,7 @@ export const Gallery = ({ albumId }: GalleryProps) => {
           {!!albumId && (
             <Image.PreviewGroup
               preview={{
-                toolbarRender: (
+                actionsRender: (
                   _,
                   {
                     image,
@@ -74,38 +73,38 @@ export const Gallery = ({ albumId }: GalleryProps) => {
                   }
                 ) => {
                   return (
-                    <Space size={12} className="toolbar-wrapper">
+                    <Space size={12} className={styles.toolbar}>
                       <LeftOutlined
                         onClick={() => onActive?.(-1)}
                         title="Voltar"
-                        className="text-white hover:text-[#1a5d2e] transition-colors"
+                        className={styles.toolbarIcon}
                       />
                       <RightOutlined
                         onClick={() => onActive?.(1)}
                         title="Próxima"
-                        className="text-white hover:text-[#1a5d2e] transition-colors"
+                        className={styles.toolbarIcon}
                       />
                       <DownloadOutlined
                         onClick={onDownload(image.url)}
                         title="Fazer download da imagem"
-                        className="text-white hover:text-[#1a5d2e] transition-colors"
+                        className={styles.toolbarIcon}
                       />
                       <ZoomOutOutlined
                         disabled={scale === 1}
                         onClick={onZoomOut}
                         title="Diminuir zoom"
-                        className="text-white hover:text-[#1a5d2e] transition-colors"
+                        className={styles.toolbarIcon}
                       />
                       <ZoomInOutlined
                         disabled={scale === 50}
                         onClick={onZoomIn}
                         title="Aumentar zoom"
-                        className="text-white hover:text-[#1a5d2e] transition-colors"
+                        className={styles.toolbarIcon}
                       />
                       <UndoOutlined
                         onClick={onReset}
                         title="Resetar tudo"
-                        className="text-white hover:text-[#1a5d2e] transition-colors"
+                        className={styles.toolbarIcon}
                       />
                     </Space>
                   );
@@ -117,7 +116,7 @@ export const Gallery = ({ albumId }: GalleryProps) => {
           )}
 
           {!albumId && albums && albums.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+            <div className={styles.grid}>
               {albums.map((album) => (
                 <AlbumContent {...album} key={album.id} basePath="/gallery" />
               ))}

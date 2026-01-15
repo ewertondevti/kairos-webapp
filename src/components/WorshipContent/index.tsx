@@ -1,5 +1,6 @@
 import { Flex, Typography } from "antd";
 import { FC } from "react";
+import styles from "./WorshipContent.module.scss";
 
 const { Title, Text } = Typography;
 
@@ -14,16 +15,14 @@ export const WorshipContent: FC<Props> = ({ title, label1, label2 }) => {
     <Flex gap={20} vertical align="center">
       <Title
         level={5}
-        className="text-emerald-900/90 uppercase tracking-[0.25em] text-lg"
+        className={styles.title}
       >
         {title}
       </Title>
 
       <Flex vertical align="center" gap={8}>
-        <Text className="text-emerald-950/90 text-base">{label1}</Text>
-        <Text className="text-emerald-900/80 text-[15px]">
-          {label2}
-        </Text>
+        <Text className={styles.labelPrimary}>{label1}</Text>
+        <Text className={styles.labelSecondary}>{label2}</Text>
       </Flex>
     </Flex>
   );

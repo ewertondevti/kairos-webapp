@@ -1,18 +1,20 @@
-import { Flex, Skeleton } from "antd";
+import { Skeleton } from "antd";
+import styles from "./ImagesSkeleton.module.scss";
 
 export const ImagesSkeleton = () => {
+  const heights = [260, 320, 300, 360, 280, 340, 310, 370, 290, 330, 350, 270];
+
   return (
-    <div className="w-full">
-      <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+    <div className={styles.wrapper}>
+      <div className={styles.masonry}>
         {Array.from({ length: 12 }).map((_, index) => (
-          <div key={index} className="break-inside-avoid mb-4">
+          <div key={index} className={styles.item}>
             <Skeleton.Image
               active
-              className="w-full"
+              className={styles.skeleton}
               style={{
                 width: "100%",
-                height: Math.floor(Math.random() * 200) + 200,
-                borderRadius: "8px",
+                height: heights[index % heights.length],
               }}
             />
           </div>

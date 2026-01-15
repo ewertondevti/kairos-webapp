@@ -1,58 +1,55 @@
+import styles from "./Login.module.scss";
+
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
-      <div className="relative isolate">
-        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-indigo-500/20 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-80 w-80 translate-x-1/4 translate-y-1/4 rounded-full bg-fuchsia-500/20 blur-3xl" />
+    <main className={styles.page}>
+      <div className={styles.background}>
+        <div className={styles.glowLayer}>
+          <div className={styles.glowTop} />
+          <div className={styles.glowBottom} />
         </div>
 
-        <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6 py-16">
-          <div className="grid w-full gap-10 lg:grid-cols-2">
-            <div className="flex flex-col justify-center">
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+        <div className={styles.container}>
+          <div className={styles.grid}>
+            <div className={styles.intro}>
+              <div className={styles.pill}>
+                <span className={styles.dot} />
                 Acesso seguro e moderno
               </div>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-                Bem-vindo de volta
-              </h1>
-              <p className="mt-4 max-w-xl text-base text-white/70 sm:text-lg">
+              <h1 className={styles.title}>Bem-vindo de volta</h1>
+              <p className={styles.subtitle}>
                 Entre com suas credenciais para gerenciar conteúdos, eventos e
                 informações da comunidade com uma experiência rápida e elegante.
               </p>
 
-              <div className="mt-8 grid gap-4 text-sm text-white/70 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="font-medium text-white">Gestão completa</p>
-                  <p className="mt-2">
+              <div className={styles.featureGrid}>
+                <div className={styles.featureCard}>
+                  <p className={styles.featureTitle}>Gestão completa</p>
+                  <p className={styles.featureText}>
                     Organize álbuns, eventos e conteúdos em um só lugar.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="font-medium text-white">Experiência rápida</p>
-                  <p className="mt-2">
+                <div className={styles.featureCard}>
+                  <p className={styles.featureTitle}>Experiência rápida</p>
+                  <p className={styles.featureText}>
                     Interface responsiva, fluida e otimizada.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-center lg:justify-end">
-              <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-semibold">Entrar</h2>
-                  <p className="mt-2 text-sm text-white/70">
+            <div className={styles.formWrap}>
+              <div className={styles.card}>
+                <div>
+                  <h2 className={styles.cardTitle}>Entrar</h2>
+                  <p className={styles.cardSubtitle}>
                     Use seu e-mail e senha cadastrados.
                   </p>
                 </div>
 
-                <form className="space-y-5">
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="email"
-                      className="text-sm font-medium text-white/90"
-                    >
+                <form className={styles.form}>
+                  <div className={styles.field}>
+                    <label htmlFor="email" className={styles.label}>
                       E-mail
                     </label>
                     <input
@@ -61,22 +58,16 @@ export default function LoginPage() {
                       type="email"
                       autoComplete="email"
                       placeholder="voce@dominio.com"
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                      className={styles.input}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label
-                        htmlFor="password"
-                        className="text-sm font-medium text-white/90"
-                      >
+                  <div className={styles.field}>
+                    <div className={styles.fieldRow}>
+                      <label htmlFor="password" className={styles.label}>
                         Senha
                       </label>
-                      <button
-                        type="button"
-                        className="text-xs font-medium text-indigo-200 hover:text-indigo-100"
-                      >
+                      <button type="button" className={styles.forgot}>
                         Esqueci minha senha
                       </button>
                     </div>
@@ -86,33 +77,25 @@ export default function LoginPage() {
                       type="password"
                       autoComplete="current-password"
                       placeholder="••••••••"
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                      className={styles.input}
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-sm text-white/70">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-white/20 bg-white/10 text-indigo-400 focus:ring-indigo-400/40"
-                      />
+                  <div className={styles.row}>
+                    <label className={styles.checkbox}>
+                      <input type="checkbox" className={styles.checkboxInput} />
                       Manter conectado
                     </label>
-                    <span className="text-xs text-white/50">
-                      Último acesso há 2 dias
-                    </span>
+                    <span>Último acesso há 2 dias</span>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="group relative w-full overflow-hidden rounded-2xl bg-linear-to-r from-indigo-500 via-indigo-400 to-fuchsia-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-indigo-300/50"
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-2">
+                  <button type="submit" className={styles.submit}>
+                    <span className={styles.submitContent}>
                       Entrar
                       <svg
                         aria-hidden="true"
                         viewBox="0 0 20 20"
-                        className="h-4 w-4 transition group-hover:translate-x-0.5"
+                        className={styles.submitIcon}
                         fill="currentColor"
                       >
                         <path
@@ -122,18 +105,12 @@ export default function LoginPage() {
                         />
                       </svg>
                     </span>
-                    <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <span className="absolute inset-0 bg-white/10" />
-                    </span>
                   </button>
                 </form>
 
-                <div className="mt-6 border-t border-white/10 pt-5 text-center text-sm text-white/70">
-                  Novo por aqui?{' '}
-                  <button
-                    type="button"
-                    className="font-semibold text-indigo-200 hover:text-indigo-100"
-                  >
+                <div className={styles.divider}>
+                  Novo por aqui?{" "}
+                  <button type="button" className={styles.linkButton}>
                     Solicitar acesso
                   </button>
                 </div>

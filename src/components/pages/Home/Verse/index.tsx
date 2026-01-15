@@ -11,6 +11,8 @@ import {
 import { Button, Flex, Skeleton, Space, Typography } from "antd";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import styles from "./Verse.module.scss";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const { Title, Text } = Typography;
 
@@ -18,6 +20,7 @@ export const Verse = () => {
   const [verse, setVerse] = useState<IVerse>();
   const [isLoading, setIsLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const { ref, isVisible } = useScrollReveal();
 
   const searchParams = useSearchParams();
 
@@ -78,9 +81,9 @@ export const Verse = () => {
 
   if (isLoading) {
     return (
-      <section className="py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <Flex justify="center" align="center" className="min-h-[400px]">
+      <section className={styles.section}>
+        <div className={styles.container}>
+          <Flex justify="center" align="center" className={styles.content}>
             <Skeleton active paragraph={{ rows: 3 }} />
           </Flex>
         </div>
@@ -89,12 +92,15 @@ export const Verse = () => {
   }
 
   return (
-    <section className="py-24 bg-white relative overflow-hidden">
-      <div className="mx-auto px-4 flex flex-col items-center justify-center">
-        <Flex vertical align="center" className="mb-14">
-          <Title
-            level={2}
-            className="mb-0"
+    <section
+      ref={ref}
+      className={`${styles.section} scroll-reveal ${
+        isVisible ? "scroll-reveal--visible" : ""
+      }`}
+    >
+      <div className={styles.container}>
+        <Flex vertical align="center" className={styles.heading}>
+          <Title level={2} className={styles.sectionTitle}
             style={{
               letterSpacing: "0.1em",
               fontFamily: "var(--font-playfair), Georgia, serif",
@@ -110,15 +116,15 @@ export const Verse = () => {
           justify="center"
           align="center"
           vertical
-          className="max-w-[900px] mx-auto"
+          className={styles.content}
         >
-          <div className="w-[140px] h-[140px] rounded-full border-4 border-primary bg-[url('/bible.jpg')] bg-cover bg-center bg-no-repeat shadow-[0_8px_24px_rgba(26,93,46,0.25)] mb-10 mx-auto" />
+          <div className={styles.bibleBadge} />
 
-          <Flex vertical align="center" className="text-center w-full">
+          <Flex vertical align="center" className={styles.content}>
             <Title
               level={4}
               italic
-              className="mb-8"
+              className={styles.quote}
               style={{
                 fontStyle: "italic",
                 fontWeight: 400,
@@ -129,23 +135,19 @@ export const Verse = () => {
               "{verse?.text}"
             </Title>
 
-            <Space size="small" className="mb-10">
+            <Space size="small" className={styles.reference}>
               <Text strong>{verse?.book.name}</Text>
               <Text strong>
                 {verse?.chapter}:{verse?.number}
               </Text>
             </Space>
 
-            <Flex gap={20} justify="center" wrap="wrap" className="w-full">
+            <Flex gap={20} justify="center" wrap="wrap" className={styles.actions}>
               <Button
                 size="large"
                 icon={copySuccess ? <CheckOutlined /> : <CopyOutlined />}
                 onClick={handleCopy}
-                style={{
-                  borderColor: "#1a5d2e",
-                  borderWidth: 2,
-                  color: "#1a5d2e",
-                }}
+                className={styles.copyButton}
               >
                 {copySuccess ? "Copiado" : "Copiar"}
               </Button>

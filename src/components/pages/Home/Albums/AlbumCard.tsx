@@ -4,6 +4,7 @@ import { IAlbumDTO } from "@/types/store";
 import { Card, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import { FC } from "react";
+import styles from "./AlbumCard.module.scss";
 
 const { Text } = Typography;
 
@@ -26,26 +27,33 @@ export const AlbumCard: FC<Props> = ({
   return (
     <Card
       hoverable
-      className="cursor-pointer transition-all duration-300 hover:shadow-lg overflow-hidden"
-      bodyStyle={{ padding: 0 }}
+      className={styles.card}
+      styles={{ body: { padding: 0 } }}
       onClick={onRedirect}
     >
-      <div className="relative w-full aspect-square overflow-hidden">
+      <div className={styles.shine} />
+      <div className={styles.imageWrap}>
+        <div className={styles.imageOverlay} />
         {coverImage ? (
           <img
             src={coverImage}
             alt={name}
-            className="w-full h-full object-cover"
+            className={styles.image}
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-            <div className="text-gray-400 text-4xl">📷</div>
+          <div className={styles.placeholder}>
+            📷
           </div>
         )}
+        <div className={styles.infoOverlay}>
+          <div className={styles.infoText}>Ver album</div>
+          <div className={styles.infoLine} />
+        </div>
       </div>
-      <div className="p-4 text-center">
-        <Text className="text-base font-medium">{name}</Text>
+      <div className={styles.cornerAccent} />
+      <div className={styles.body}>
+        <Text className={styles.title}>{name}</Text>
       </div>
     </Card>
   );
