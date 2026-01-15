@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateAlbumModal } from "@/components/pages/Management/CreateAlbumModal";
+import { CreateAlbumModal } from "@/pages/Management/CreateAlbumModal";
 import { DatabaseTableKeys } from "@/enums/app";
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
 import { useGetAlbumById, useGetEvents } from "@/react-query";

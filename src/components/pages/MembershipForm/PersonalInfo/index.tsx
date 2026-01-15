@@ -87,7 +87,7 @@ export const PersonalInfo = () => {
             <Input placeholder="" className="w-full" />
           </Form.Item>
 
-          <Col xs={24} sm={18}>
+          <Col xs={24} sm={16}>
             <Form.Item
               name={MembershipFields.Fullname}
               label="Nome"
@@ -97,7 +97,7 @@ export const PersonalInfo = () => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={6}>
+          <Col xs={24} sm={8}>
             <Form.Item
               name={MembershipFields.BirthDate}
               label="Data de nascimento"

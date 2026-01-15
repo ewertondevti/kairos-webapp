@@ -1,70 +1,75 @@
 "use client";
 
 import { ImagesSkeleton } from "@/components/ImagesSkeleton";
-import { LazyImage } from "@/components/LazyImage";
-import { useGetImageSize } from "@/hooks/app";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { useGetAlbumById } from "@/react-query";
-import { Col, Empty, Flex, Row } from "antd";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeGrid } from "react-window";
+import { Empty } from "antd";
+import Image from "antd/es/image";
+import { useMemo, useState } from "react";
 
 type AlbumDetailsProps = {
   albumId?: string;
 };
 
 export const AlbumDetails = ({ albumId }: AlbumDetailsProps) => {
-  const {
-    height: ROW_HEIGHT,
-    width: COLUMN_WIDTH,
-    columns,
-  } = useGetImageSize();
-
   const { data: album, isLoading } = useGetAlbumById(albumId);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
-  if (isLoading) return <ImagesSkeleton />;
+  const images = useMemo(() => {
+    if (!album?.images?.length) return [];
+    return album.images.map((img) => ({
+      src: img.url,
+      alt: img.name || "Imagem",
+    }));
+  }, [album?.images]);
 
-  if (!album?.images?.length) return <Empty style={{ marginTop: 50 }} />;
+  if (isLoading) {
+    return <ImagesSkeleton />;
+  }
+
+  if (!album?.images?.length) {
+    return <Empty className="mt-12" description="Nenhuma imagem encontrada" />;
+  }
 
   return (
-    <Row className="w-full h-full">
-      <Col span={24}>
-        <Flex className="h-full [&>div>div]:flex [&>div>div]:justify-center [&>div>div>div]:absolute">
-          <AutoSizer>
-            {({ height, width }) => {
-              const columnCount = Math.min(columns, album.images.length);
+    <div className="w-full">
+      {/* Masonry Grid Layout */}
+      <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+        {album.images.map((image, index) => (
+          <div
+            key={image.url}
+            className="break-inside-avoid mb-4 group cursor-pointer"
+            onClick={() => setPreviewIndex(index)}
+          >
+            <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 bg-gray-100">
+              <OptimizedImage
+                src={image.url}
+                alt={image.name || `Imagem ${index + 1}`}
+                className="w-full h-auto"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                <p className="text-white p-3 text-sm font-medium truncate w-full">
+                  {image.name || `Imagem ${index + 1}`}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
-              return (
-                <FixedSizeGrid
-                  height={height}
-                  columnCount={columnCount}
-                  columnWidth={COLUMN_WIDTH}
-                  rowCount={Math.ceil(album.images!.length / columnCount)}
-                  rowHeight={ROW_HEIGHT}
-                  width={width}
-                >
-                  {({ columnIndex, rowIndex, style }) => {
-                    const index = rowIndex * columnCount + columnIndex;
-
-                    if (index >= album.images!.length) return null;
-
-                    const image = album.images![index];
-
-                    return (
-                      <Flex
-                        style={style}
-                        className="relative p-[3px] rounded-[10px] h-full w-full [&>div]:rounded-md [&>div]:w-full [&>div]:h-full"
-                        key={image.url}
-                      >
-                        <LazyImage {...image} isLoading={isLoading} />
-                      </Flex>
-                    );
-                  }}
-                </FixedSizeGrid>
-              );
-            }}
-          </AutoSizer>
-        </Flex>
-      </Col>
-    </Row>
+      {/* Image Preview Modal */}
+      {images.length > 0 && (
+        <Image.PreviewGroup
+          preview={{
+            current: previewIndex,
+            onChange: (current) => setPreviewIndex(current),
+          }}
+        >
+          {images.map((img, idx) => (
+            <Image key={idx} src={img.src} alt={img.alt} className="hidden" />
+          ))}
+        </Image.PreviewGroup>
+      )}
+    </div>
   );
 };

@@ -275,10 +275,10 @@ export const getAlbums = onRequest(
             async (doc: admin.firestore.QueryDocumentSnapshot) => {
               const album = doc.data() as IAlbum;
 
-              // Get preview images (first 3)
+              // Get preview image (first 1)
               const previewImages = album.images
                 .filter((img) => img.name)
-                .slice(0, 3);
+                .slice(0, 1);
               const images = await Promise.all(
                 previewImages.map(async (img) => {
                   if (!img.name) {

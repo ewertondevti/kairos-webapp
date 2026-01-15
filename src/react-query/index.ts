@@ -10,6 +10,8 @@ export const useGetAlbums = () => {
     queryFn: async () => await getAlbums(),
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 

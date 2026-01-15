@@ -2,7 +2,7 @@
 
 import { EditAlbumModal } from "@/components/EditAlbumModal";
 import { TopBar } from "@/components/TopBar";
-import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
+import { ManagementRoutesEnums } from "@/enums/routesEnums";
 import { onDownload } from "@/helpers/app";
 import { useGetAlbums } from "@/react-query";
 import { useAppState } from "@/store";
@@ -15,8 +15,6 @@ import {
   ZoomOutOutlined,
 } from "@ant-design/icons";
 import {
-  Breadcrumb,
-  BreadcrumbProps,
   Flex,
   Image,
   Layout,
@@ -52,131 +50,110 @@ const Management = ({ children }: ManagementProps) => {
     router.push(`/management/${key}`);
   };
 
-  const keys = pathname.split("/").filter(Boolean);
-
-  const getLabel = (key: string) => {
-    const album = albums?.find((a) => a.id === key);
-
-    switch (key) {
-      case RoutesEnums.Management:
-        return "Gerenciamento";
-      case ManagementRoutesEnums.Albums:
-        return "Álbuns";
-      case ManagementRoutesEnums.Events:
-        return "Eventos";
-
-      default:
-        if (album) return album.name;
-        return "";
-    }
-  };
-
-  const getLink = (index: number) => {
-    const link = keys.reduce((acc, curr, currIndex) => {
-      if (currIndex <= index) return (acc += `/${curr}`);
-      return acc;
-    }, "");
-
-    return link;
-  };
-
-  const items: BreadcrumbProps["items"] = keys.map((key, idx) => ({
-    key,
-    title: getLabel(key),
-    href: getLink(idx),
-  }));
-
   return (
-    <Layout style={{ padding: isMobile ? 8 : 20 }} className="h-full">
-      <Flex gap={16} vertical>
-        <Breadcrumb style={{ textTransform: "capitalize" }} items={items} />
+    <div className="min-h-screen bg-[#fafafa] py-8 md:py-12">
+      <div className="container mx-auto px-4">
+        <Flex gap={16} vertical className="mb-8">
 
-        <Flex justify={mode === "select" ? "space-between" : "flex-start"}>
-          <Title style={{ margin: 0 }}>Gerenciamento</Title>
+          <Flex justify={mode === "select" ? "space-between" : "flex-start"} align="center">
+            <Title 
+              level={1} 
+              className="text-4xl font-semibold text-[#0a0a0a] mb-0"
+              style={{ fontFamily: 'var(--font-playfair), Georgia, serif', letterSpacing: "-0.02em" }}
+            >
+              Gerenciamento
+            </Title>
 
-          {mode === "select" && (
-            <small className="flex items-center justify-center">
+            {mode === "select" && (
+              <span 
+                className="text-lg font-medium"
+                style={{ 
+                  fontFamily: 'var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                  color: "#4a4a4a",
+                }}
+              >
               Selecionados: {selectedImages.length}
-            </small>
-          )}
+            </span>
+            )}
+          </Flex>
+
+          <TopBar />
         </Flex>
 
-        <TopBar />
-      </Flex>
-
-      <Content>
-        <Image.PreviewGroup
-          preview={{
-            toolbarRender: (
-              _,
-              {
-                image,
-                transform: { scale },
-                actions: { onActive, onZoomOut, onZoomIn, onReset },
-              }
-            ) => {
-              return (
-                <Space size={12} className="toolbar-wrapper">
-                  <LeftOutlined onClick={() => onActive?.(-1)} title="Voltar" />
-                  <RightOutlined
-                    onClick={() => onActive?.(1)}
-                    title="Próxima"
-                  />
-                  <DownloadOutlined
-                    onClick={onDownload(image.url)}
-                    title="Fazer download da imagem"
-                  />
-                  <ZoomOutOutlined
-                    disabled={scale === 1}
-                    onClick={onZoomOut}
-                    title="Diminuir zoom"
-                  />
-                  <ZoomInOutlined
-                    disabled={scale === 50}
-                    onClick={onZoomIn}
-                    title="Aumentar zoom"
-                  />
-                  <UndoOutlined onClick={onReset} title="Resetar tudo" />
-                </Space>
-              );
-            },
-          }}
-        >
-          {children ? (
-            children
-          ) : (
-            <Tabs
-              items={[
+        <div>
+          <Image.PreviewGroup
+            preview={{
+              toolbarRender: (
+                _,
                 {
-                  key: ManagementRoutesEnums.Albums,
-                  label: "Álbuns",
-                  children: (
-                    <AlbumsTab
-                      albumId={
-                        pathname.includes("/albums/")
-                          ? pathname.split("/").pop()
-                          : undefined
-                      }
+                  image,
+                  transform: { scale },
+                  actions: { onActive, onZoomOut, onZoomIn, onReset },
+                }
+              ) => {
+                return (
+                  <Space size={12} className="toolbar-wrapper">
+                    <LeftOutlined onClick={() => onActive?.(-1)} title="Voltar" />
+                    <RightOutlined
+                      onClick={() => onActive?.(1)}
+                      title="Próxima"
                     />
-                  ),
-                },
-                {
-                  key: ManagementRoutesEnums.Events,
-                  label: "Próximos eventos",
-                  children: <EventsTab />,
-                },
-              ]}
-              activeKey={defaultKey}
-              destroyInactiveTabPane
-              onChange={onChange}
-              className="h-full [&_.ant-tabs-content]:h-full [&_.ant-tabs-tabpane]:h-full"
-            />
-          )}
-        </Image.PreviewGroup>
-      </Content>
+                    <DownloadOutlined
+                      onClick={onDownload(image.url)}
+                      title="Fazer download da imagem"
+                    />
+                    <ZoomOutOutlined
+                      disabled={scale === 1}
+                      onClick={onZoomOut}
+                      title="Diminuir zoom"
+                    />
+                    <ZoomInOutlined
+                      disabled={scale === 50}
+                      onClick={onZoomIn}
+                      title="Aumentar zoom"
+                    />
+                    <UndoOutlined onClick={onReset} title="Resetar tudo" />
+                  </Space>
+                );
+              },
+            }}
+          >
+            {children ? (
+              children
+            ) : (
+              <Tabs
+                items={[
+                  {
+                    key: ManagementRoutesEnums.Albums,
+                    label: "Álbuns",
+                    children: (
+                      <AlbumsTab
+                        albumId={
+                          pathname.includes("/albums/")
+                            ? pathname.split("/").pop()
+                            : undefined
+                        }
+                      />
+                    ),
+                  },
+                  {
+                    key: ManagementRoutesEnums.Events,
+                    label: "Próximos eventos",
+                    children: <EventsTab />,
+                  },
+                ]}
+                activeKey={defaultKey}
+                destroyInactiveTabPane
+                onChange={onChange}
+                className="[&_.ant-tabs-tab]:text-[#4a4a4a] [&_.ant-tabs-tab-active]:text-[#1a5d2e] [&_.ant-tabs-tab]:font-medium"
+              />
+            )}
+          </Image.PreviewGroup>
+        </div>
 
-      <EditAlbumModal />
-    </Layout>
+        <EditAlbumModal />
+      </div>
+    </div>
   );
 };
 

@@ -18,15 +18,19 @@ export const Events = () => {
   if (!events?.length) return null;
 
   return (
-    <Col span={24}>
+    <Col span={24} className="rounded-3xl bg-linear-to-br from-[#f1f7f2] via-[#eef5ef] to-[#e4f0e6]">
       <Divider>
         <Title level={3} style={{ margin: 0, textTransform: "uppercase" }}>
           Próximos Eventos
         </Title>
       </Divider>
 
-      <Flex align="center" justify="center" className="my-[100px] md:my-[75px] sm:my-[50px]">
-        <Row gutter={[8, 8]} justify="center" className="w-full">
+      <Flex
+        align="center"
+        justify="center"
+        className="my-[100px] md:my-[75px] sm:my-[50px]"
+      >
+        <Row gutter={[16, 16]} justify="center" className="w-full">
           <Image.PreviewGroup
             preview={{
               toolbarRender: (
@@ -78,8 +82,11 @@ export const Events = () => {
                 </Col>
 
                 <Col>
-                  <Flex className="[&_.ant-image-img]:object-cover [&_.ant-image-img]:rounded-md [&_.ant-image-img]:w-[315px] [&_.ant-image-img]:h-[177px]">
-                    <Image src={url} />
+                  <Flex className="rounded-2xl border border-primary/15 bg-white/70 p-3 shadow-[0_12px_32px_rgba(15,58,28,0.12)] backdrop-blur">
+                    <Image
+                      src={url}
+                      className="h-[200px]! w-[320px]! rounded-xl object-cover"
+                    />
                   </Flex>
                 </Col>
               </Fragment>

@@ -30,9 +30,9 @@ export const Verse = () => {
   }, [copySuccess]);
 
   useEffect(() => {
-    const abbrev = searchParams.get("abbrev");
-    const chapter = searchParams.get("chapter");
-    const verse = searchParams.get("verse");
+    const abbrev = searchParams?.get("abbrev");
+    const chapter = searchParams?.get("chapter");
+    const verse = searchParams?.get("verse");
 
     const updateVerse = (verse: IVerse) => {
       if (verse.text.length < 50) {

@@ -1,20 +1,39 @@
 import { IPostalCode } from "@/types/membership";
 import { MemberPayload } from "@/types/store";
-import api from "./httpClient";
 
-export const getAddress = async (postalCode: string) => {
-  const appId = process.env.NEXT_PUBLIC_PTCP_APP_ID;
+export const getAddress = async (postalCode: string): Promise<IPostalCode[]> => {
+  try {
+    const response = await fetch(`/api/address?postalCode=${encodeURIComponent(postalCode)}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-  const { data } = await api.get<IPostalCode[]>(
-    `https://api.duminio.com/ptcp/v2/${appId}/${postalCode.replace("-", "")}`,
-    { withCredentials: false }
-  );
+    if (!response.ok) {
+      throw new Error("Erro ao buscar endereço");
+    }
 
-  return data;
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error: any) {
+    console.error("Erro ao buscar endereço:", error);
+    return [];
+  }
 };
 
 export const createNewMember = async (payload: MemberPayload) => {
-  const { data } = await api.post("/createNewMember", payload);
+  const response = await fetch("/api/members", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 
-  return data;
+  if (!response.ok) {
+    throw new Error("Erro ao criar membro");
+  }
+
+  return response.json();
 };

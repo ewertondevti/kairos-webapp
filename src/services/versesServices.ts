@@ -1,37 +1,48 @@
-import { IVerse, User } from "@/types/app";
-import { AxiosHeaders } from "axios";
-import api from "./httpClient";
+import { IVerse } from "@/types/app";
 
-const url = "https://www.abibliadigital.com.br/api";
+export const getRandomVerse = async (): Promise<IVerse> => {
+  try {
+    const response = await fetch("/api/verses?type=random", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-const headers = new AxiosHeaders().set(
-  "Authorization",
-  `Bearer ${process.env.NEXT_PUBLIC_DEFAULT_USER_TOKEN || ''}`
-);
+    if (!response.ok) {
+      throw new Error("Erro ao buscar versículo aleatório");
+    }
 
-export const getUser = async () => {
-  const { data } = await api.get<User>(
-    `${url}/users/${process.env.NEXT_PUBLIC_DEFAULT_USER_EMAIL || ''}`,
-    { headers }
-  );
-  return data;
-};
-
-export const getRandomVerse = async () => {
-  const { data } = await api.get<IVerse>(`${url}/verses/acf/random`, {
-    headers,
-  });
-  return data;
+    return response.json();
+  } catch (error: any) {
+    console.error("Erro ao buscar versículo aleatório:", error);
+    throw error;
+  }
 };
 
 export const getVerse = async (
   abbrev: string,
   chapter: string,
   verse: string
-) => {
-  const { data } = await api.get<IVerse>(
-    `${url}/verses/acf/${abbrev}/${chapter}/${verse}`,
-    { headers }
-  );
-  return data;
+): Promise<IVerse> => {
+  try {
+    const response = await fetch(
+      `/api/verses?abbrev=${abbrev}&chapter=${chapter}&verse=${verse}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Erro ao buscar versículo");
+    }
+
+    return response.json();
+  } catch (error: any) {
+    console.error("Erro ao buscar versículo:", error);
+    throw error;
+  }
 };

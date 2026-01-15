@@ -1,6 +1,5 @@
 'use client';
 
-import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
 import { onDownload } from "@/helpers/app";
 import { useGetAlbums } from "@/react-query";
 import {
@@ -12,8 +11,6 @@ import {
   ZoomOutOutlined,
 } from "@ant-design/icons";
 import {
-  Breadcrumb,
-  BreadcrumbProps,
   Empty,
   Flex,
   Image,
@@ -23,7 +20,6 @@ import {
 } from "antd";
 import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
-import { usePathname } from "next/navigation";
 import { AlbumContent } from "../Management/tabs/AlbumsTab/AlbumContent";
 import { AlbumDetails } from "../Management/tabs/AlbumsTab/AlbumDetails";
 
@@ -32,44 +28,7 @@ type GalleryProps = {
 };
 
 export const Gallery = ({ albumId }: GalleryProps) => {
-  const pathname = usePathname();
   const { data: albums, isLoading } = useGetAlbums();
-
-  const keys = pathname.split("/").filter(Boolean);
-
-  const getLabel = (key: string) => {
-    const album = albums?.find((a) => a.id === key);
-
-    switch (key) {
-      case RoutesEnums.Gallery:
-        return "Galeria";
-      case RoutesEnums.Management:
-        return "Gerenciamento";
-      case ManagementRoutesEnums.Albums:
-        return "Álbuns";
-      case ManagementRoutesEnums.Events:
-        return "Eventos";
-
-      default:
-        if (album) return album.name;
-        return "";
-    }
-  };
-
-  const getLink = (index: number) => {
-    const link = keys.reduce((acc, curr, currIndex) => {
-      if (currIndex <= index) return (acc += `/${curr}`);
-      return acc;
-    }, "");
-
-    return link;
-  };
-
-  const items: BreadcrumbProps["items"] = keys.map((key, idx) => ({
-    key,
-    title: getLabel(key),
-    href: getLink(idx),
-  }));
 
   const getTitle = () => {
     const title = "Galeria";
@@ -87,8 +46,6 @@ export const Gallery = ({ albumId }: GalleryProps) => {
   return (
     <Layout style={{ padding: 20 }} className="h-full">
       <Flex gap={16} vertical>
-        <Breadcrumb style={{ textTransform: "capitalize" }} items={items} />
-
         <Flex justify="center">
           <Title>{getTitle()}</Title>
         </Flex>

@@ -7,6 +7,7 @@ import {
   faGears,
   faImages,
   faPowerOff,
+  faRightToBracket,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -52,6 +53,20 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
           Galeria de fotos
         </Button>
       </Col>
+
+      {!isAuthenticated && (
+        <Col span={24}>
+          <Button
+            type="text"
+            icon={<FontAwesomeIcon icon={faRightToBracket} />}
+            className="justify-start text-left text-primary-600"
+            onClick={() => onRedirect("/login")}
+            block
+          >
+            Entrar
+          </Button>
+        </Col>
+      )}
 
       <Col span={24}>
         <Button

@@ -3,7 +3,6 @@ import { convertFileToBase64 } from "@/helpers/app";
 import { UploadCommonResponse } from "@/types/event";
 import { UploadProps } from "antd";
 import { RcFile } from "antd/es/upload";
-import api from "./httpClient";
 
 export const onRemoveImage =
   (dbKey: DatabaseTableKeys): UploadProps["onRemove"] =>
@@ -14,11 +13,23 @@ export const onRemoveImage =
   };
 
 export const deleteUploadedImage = async (imagePath: string) => {
-  const { data } = await api.delete("/deleteUploadedImage", {
-    params: { imagePath },
-  });
+  try {
+    const response = await fetch(`/api/upload/delete?imagePath=${encodeURIComponent(imagePath)}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-  return data;
+    if (!response.ok) {
+      throw new Error("Erro ao deletar imagem");
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error("Erro ao deletar imagem:", error);
+    throw error;
+  }
 };
 
 export const onImageUpload =
@@ -26,38 +37,47 @@ export const onImageUpload =
   async ({ file, onProgress, onSuccess, onError }) => {
     const base64img = (await convertFileToBase64(file as RcFile)) as string;
 
-    const getUri = () => {
-      switch (dbKey) {
-        case DatabaseTableKeys.Events:
-          return "/uploadEvent";
-
-        case DatabaseTableKeys.Images:
-          return "/uploadImage";
-
-        default:
-          return "";
-      }
-    };
+    const type = dbKey === DatabaseTableKeys.Events ? "event" : "image";
 
     const payload = {
       file: base64img,
       fileName: (file as RcFile).name,
       mimeType: (file as RcFile).type,
+      type,
     };
 
     try {
-      const response = await api.post<UploadCommonResponse>(getUri(), payload, {
-        onUploadProgress: (progressEvent) => {
-          const progress = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total!
-          );
-          if (onProgress) onProgress({ percent: progress });
+      // Simulate progress for fetch API
+      if (onProgress) {
+        // Simulate progress updates
+        const progressInterval = setInterval(() => {
+          onProgress({ percent: 50 });
+        }, 100);
+        
+        setTimeout(() => clearInterval(progressInterval), 500);
+      }
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify(payload),
       });
 
-      if (response.status === 200 && onSuccess) {
-        onSuccess(response.data, file);
-      } else if (onError) onError(new Error("Erro ao fazer upload."));
+      if (!response.ok) {
+        throw new Error("Erro ao fazer upload");
+      }
+
+      const data: UploadCommonResponse = await response.json();
+
+      if (onProgress) {
+        onProgress({ percent: 100 });
+      }
+
+      if (onSuccess) {
+        onSuccess(data, file);
+      }
     } catch (error: any) {
       console.error("Erro no upload:", error);
       if (onError) onError(error);

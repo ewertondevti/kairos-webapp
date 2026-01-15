@@ -1,41 +1,23 @@
-import { Col, Flex, Row, Skeleton } from "antd";
+import { Flex, Skeleton } from "antd";
 
 export const ImagesSkeleton = () => {
   return (
-    <Flex justify="center">
-      <Row gutter={[8, 8]} justify="center" className="skeleton-images">
-        <Col xs={12} sm={8} md={6} xl={4}>
-          <Skeleton.Image active className="image-skeleton" />
-        </Col>
-
-        <Col xs={12} sm={8} md={6} xl={4}>
-          <Skeleton.Image active className="image-skeleton" />
-        </Col>
-
-        <Col xs={12} sm={8} md={6} xl={4}>
-          <Skeleton.Image active className="image-skeleton" />
-        </Col>
-
-        <Col xs={12} sm={8} md={6} xl={4}>
-          <Skeleton.Image active className="image-skeleton" />
-        </Col>
-
-        <Col xs={12} sm={8} md={6} xl={4}>
-          <Skeleton.Image active className="image-skeleton" />
-        </Col>
-
-        <Col xs={12} sm={8} md={6} xl={4}>
-          <Skeleton.Image active className="image-skeleton" />
-        </Col>
-
-        <Col xs={0} sm={0} md={6} xl={4}>
-          <Skeleton.Image active className="image-skeleton" />
-        </Col>
-
-        <Col xs={0} sm={0} md={6} xl={4}>
-          <Skeleton.Image active className="image-skeleton" />
-        </Col>
-      </Row>
-    </Flex>
+    <div className="w-full">
+      <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+        {Array.from({ length: 12 }).map((_, index) => (
+          <div key={index} className="break-inside-avoid mb-4">
+            <Skeleton.Image
+              active
+              className="w-full"
+              style={{
+                width: "100%",
+                height: Math.floor(Math.random() * 200) + 200,
+                borderRadius: "8px",
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
