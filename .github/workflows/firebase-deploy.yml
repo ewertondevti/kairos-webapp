@@ -50,15 +50,16 @@ jobs:
             exit 1
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_KEY" > "$HOME/firebase-service-account.json"
+          echo "FIREBASE_CREDENTIALS_PATH=$HOME/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Enable webframeworks experiment
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-service-account.json
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.FIREBASE_CREDENTIALS_PATH }}
           FIREBASE_CLI_EXPERIMENTS: webframeworks
         run: pnpm dlx firebase-tools experiments:enable webframeworks --project ${{ secrets.FIREBASE_PROJECT_ID }}
 
       - name: Deploy to Firebase
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-service-account.json
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.FIREBASE_CREDENTIALS_PATH }}
           FIREBASE_CLI_EXPERIMENTS: webframeworks
         run: pnpm dlx firebase-tools deploy --project ${{ secrets.FIREBASE_PROJECT_ID }}
