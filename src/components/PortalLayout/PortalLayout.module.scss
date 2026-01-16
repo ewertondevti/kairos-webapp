@@ -1,3 +1,5 @@
+@import "../../styles/mixins";
+
 .portalLayout {
   min-height: 100vh;
   background: linear-gradient(135deg, #0b2214 0%, #0f3a1c 45%, #143e22 100%);
@@ -32,14 +34,14 @@
 }
 
 .content {
-  padding: 24px;
+  padding: clamp(16px, 2.4vw, 32px);
 }
 
 .header {
   background: linear-gradient(135deg, rgba(8, 20, 12, 0.92), rgba(15, 58, 28, 0.92));
   border: 1px solid rgba(26, 93, 46, 0.4);
   border-radius: 20px;
-  padding: 20px 24px;
+  padding: clamp(16px, 2.2vw, 24px);
   margin-bottom: 24px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(10px);
@@ -118,6 +120,7 @@
 .pageTitle {
   color: #ffffff !important;
   margin: 0;
+  font-size: clamp(22px, 2.6vw, 32px);
 }
 
 .pageSubtitle {
@@ -129,7 +132,7 @@
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  padding: 24px;
+  padding: clamp(16px, 2.2vw, 28px);
   min-height: calc(100vh - 200px);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(12px);
@@ -150,12 +153,31 @@
   padding: 32px;
 }
 
-@media (max-width: 768px) {
-  .content {
-    padding: 16px;
+@include media-down(md) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .page {
-    padding: 16px;
+  .headerLeft {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .headerRight {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .homeButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@include media-down(sm) {
+  .pageSubtitle {
+    font-size: 12px;
   }
 }

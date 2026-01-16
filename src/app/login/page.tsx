@@ -1,31 +1,105 @@
 "use client";
 
 import { firebaseAuth } from "@/firebase";
+import { logAuditEvent } from "@/services/auditService";
 import { requestAccess, syncUserClaims } from "@/services/userServices";
 import { UserRole } from "@/types/user";
 import { App, Form, Input, Modal } from "antd";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./Login.module.scss";
+
+const LAST_ACCESS_KEY = "kairos:lastAccess";
+
+const getRelativeAccessLabel = (lastAccess?: string | null) => {
+  if (!lastAccess) return "Sem registro de acesso";
+
+  const parsedDate = new Date(lastAccess);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Sem registro de acesso";
+  }
+
+  const diffMs = parsedDate.getTime() - Date.now();
+  const absSeconds = Math.abs(Math.round(diffMs / 1000));
+
+  const formatter = new Intl.RelativeTimeFormat("pt-PT", { numeric: "auto" });
+
+  if (absSeconds < 60) {
+    return `Último acesso ${formatter.format(
+      Math.round(diffMs / 1000),
+      "second"
+    )}`;
+  }
+
+  const absMinutes = Math.abs(Math.round(diffMs / (1000 * 60)));
+  if (absMinutes < 60) {
+    return `Último acesso ${formatter.format(
+      Math.round(diffMs / (1000 * 60)),
+      "minute"
+    )}`;
+  }
+
+  const absHours = Math.abs(Math.round(diffMs / (1000 * 60 * 60)));
+  if (absHours < 24) {
+    return `Último acesso ${formatter.format(
+      Math.round(diffMs / (1000 * 60 * 60)),
+      "hour"
+    )}`;
+  }
+
+  const absDays = Math.abs(Math.round(diffMs / (1000 * 60 * 60 * 24)));
+  if (absDays < 30) {
+    return `Último acesso ${formatter.format(
+      Math.round(diffMs / (1000 * 60 * 60 * 24)),
+      "day"
+    )}`;
+  }
+
+  const absMonths = Math.abs(Math.round(diffMs / (1000 * 60 * 60 * 24 * 30)));
+  if (absMonths < 12) {
+    return `Último acesso ${formatter.format(
+      Math.round(diffMs / (1000 * 60 * 60 * 24 * 30)),
+      "month"
+    )}`;
+  }
+
+  return `Último acesso ${formatter.format(
+    Math.round(diffMs / (1000 * 60 * 60 * 24 * 365)),
+    "year"
+  )}`;
+};
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isRequestOpen, setIsRequestOpen] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
+  const [lastAccess, setLastAccess] = useState<string | null>(null);
   const [requestForm] = Form.useForm();
   const { message } = App.useApp();
   const onBack = () => router.push("/");
   const onForgotPassword = () => router.push("/password-recovery");
   const parseRole = (value: unknown): UserRole | null => {
-    if (typeof value === "number" && [0, 1, 2].includes(value)) {
+    if (typeof value === "number" && [0, 1, 2, 3].includes(value)) {
       return value as UserRole;
     }
 
     const parsedValue = Number(value);
-    return [0, 1, 2].includes(parsedValue) ? (parsedValue as UserRole) : null;
+    return [0, 1, 2, 3].includes(parsedValue)
+      ? (parsedValue as UserRole)
+      : null;
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setLastAccess(localStorage.getItem(LAST_ACCESS_KEY));
+  }, []);
+
+  const lastAccessLabel = useMemo(
+    () => getRelativeAccessLabel(lastAccess),
+    [lastAccess]
+  );
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,12 +122,13 @@ export default function LoginPage() {
         password
       );
       const initialToken = await credential.user.getIdTokenResult(true);
+      const idToken = initialToken.token;
       let activeClaim = initialToken.claims.active as boolean | undefined;
       let role = parseRole(initialToken.claims.role);
 
       if (role === null || typeof activeClaim !== "boolean") {
         try {
-          await syncUserClaims();
+          await syncUserClaims(idToken);
           const refreshedToken = await credential.user.getIdTokenResult(true);
           activeClaim = refreshedToken.claims.active as boolean | undefined;
           role = parseRole(refreshedToken.claims.role);
@@ -72,10 +147,42 @@ export default function LoginPage() {
       }
 
       if (!active) {
+        try {
+          await syncUserClaims(idToken);
+          const refreshedToken = await credential.user.getIdTokenResult(true);
+          activeClaim = refreshedToken.claims.active as boolean | undefined;
+          role = parseRole(refreshedToken.claims.role);
+        } catch (syncError) {
+          console.error("Erro ao sincronizar claims:", syncError);
+        }
+      }
+
+      const refreshedActive = Boolean(activeClaim);
+      const refreshedHasActiveClaim = typeof activeClaim === "boolean";
+      if (role === null || !refreshedHasActiveClaim) {
+        await signOut(firebaseAuth);
+        message.error("Seu acesso ainda não está configurado.");
+        return;
+      }
+
+      if (!refreshedActive) {
         await signOut(firebaseAuth);
         message.error("Seu acesso está inativo. Fale com a secretaria.");
         return;
       }
+
+      const loginTimestamp = new Date().toISOString();
+      if (typeof window !== "undefined") {
+        localStorage.setItem(LAST_ACCESS_KEY, loginTimestamp);
+        setLastAccess(loginTimestamp);
+      }
+
+      void logAuditEvent({
+        action: "auth.login",
+        targetType: "user",
+        targetId: credential.user.uid,
+        metadata: { email },
+      });
 
       router.push("/");
     } catch (error) {
@@ -202,7 +309,7 @@ export default function LoginPage() {
                       <input type="checkbox" className={styles.checkboxInput} />
                       Manter conectado
                     </label>
-                    <span>Último acesso há 2 dias</span>
+                    <span>{lastAccessLabel}</span>
                   </div>
 
                   <button

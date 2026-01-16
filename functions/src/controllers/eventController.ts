@@ -12,6 +12,7 @@ import {
   requireRoles,
   UserRole,
 } from "../utils";
+import { logAuditEvent } from "../utils/audit";
 
 // Common function configuration for image uploads
 const IMAGE_UPLOAD_CONFIG = {
@@ -65,6 +66,15 @@ export const uploadEvent = onRequest(
         );
 
         console.log(`Evento enviado com sucesso: ${result.fileName}`);
+        void logAuditEvent(
+          {
+            action: "event.upload",
+            targetType: "event",
+            targetId: result.fileName,
+            metadata: { storage: DatabaseTableKeys.Events },
+          },
+          context
+        );
         response.status(200).send({url: result.url, fileName: result.fileName});
       } catch (error: any) {
         console.error("Erro ao processar o arquivo:", error);
@@ -124,6 +134,14 @@ export const createEvents = onRequest(
         await batch.commit();
 
         console.log(`${images.length} evento(s) criado(s) com sucesso!`);
+        void logAuditEvent(
+          {
+            action: "event.create",
+            targetType: "event",
+            metadata: { count: images.length },
+          },
+          context
+        );
         response.status(201).send();
       } catch (error) {
         console.error("Erro ao criar eventos:", error);
@@ -254,6 +272,14 @@ export const deleteEvents = onRequest(
         await deleteImageStorage(paths);
 
         console.log(`${images.length} evento(s) excluído(s) com sucesso!`);
+        void logAuditEvent(
+          {
+            action: "event.delete",
+            targetType: "event",
+            metadata: { count: images.length },
+          },
+          context
+        );
         response.status(200).send();
       } catch (error) {
         console.error("Erro ao excluir eventos:", error);

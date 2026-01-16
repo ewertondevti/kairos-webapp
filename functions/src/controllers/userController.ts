@@ -8,6 +8,7 @@ import {
   normalizeText,
 } from "../helpers/common";
 import { IAccessRequest, IUser } from "../models";
+import { logAuditEvent } from "../utils/audit";
 import { corsHandler, requireAuth, requireRoles, UserRole } from "../utils";
 
 const USER_CONFIG = {
@@ -23,6 +24,9 @@ type PhotoPayload = {
   filename?: string;
   type?: string;
 };
+
+const normalizeTimestamp = (value?: admin.firestore.Timestamp | null) =>
+  value ? value.toDate().toISOString() : null;
 
 const getUsersByRoles = async (roles: UserRole[]) => {
   const snapshot = await firestore
@@ -114,6 +118,25 @@ const uploadUserPhoto = async (photo: PhotoPayload, uid: string) => {
   return { url, storagePath: destination };
 };
 
+const getPhotoUrlFromStoragePath = async (storagePath?: string) => {
+  const normalizedPath = storagePath?.trim();
+  if (!normalizedPath) {
+    return undefined;
+  }
+
+  try {
+    const fileRef = storage.bucket().file(normalizedPath);
+    const [url] = await fileRef.getSignedUrl({
+      action: "read",
+      expires: Date.now() + USER_PHOTO_URL_EXPIRES_MS,
+    });
+    return url;
+  } catch (error) {
+    console.warn("Erro ao gerar URL da foto:", error);
+    return undefined;
+  }
+};
+
 const findUserByNormalized = async (fullname: string, email: string) => {
   const normalizedFullname = normalizeComparable(fullname);
   const normalizedEmail = normalizeComparable(email);
@@ -177,6 +200,17 @@ export const requestAccess = onRequest(
           .collection(DatabaseTableKeys.AccessRequests)
           .add(accessRequest);
 
+        void logAuditEvent({
+          action: "accessRequest.create",
+          targetType: "accessRequest",
+          metadata: {
+            fullname: accessRequest.fullname,
+            email: accessRequest.email,
+            status: accessRequest.status,
+          },
+          actor: { email: accessRequest.email },
+        });
+
         const recipients = await getUsersByRoles([
           UserRole.Admin,
           UserRole.Secretaria,
@@ -194,6 +228,169 @@ export const requestAccess = onRequest(
       } catch (error) {
         console.error("Erro ao solicitar acesso:", error);
         response.status(500).send("Erro ao solicitar acesso.");
+      }
+    });
+  }
+);
+
+export const getAccessRequests = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "GET") {
+        response.set("Allow", "GET");
+        response.status(405).send("Método não permitido. Use GET.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const snapshot = await firestore
+          .collection(DatabaseTableKeys.AccessRequests)
+          .get();
+
+        const requests = snapshot.docs.map((doc) => {
+          const data = doc.data() as IAccessRequest;
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: normalizeTimestamp(
+              data.createdAt as admin.firestore.Timestamp
+            ),
+            updatedAt: normalizeTimestamp(
+              data.updatedAt as admin.firestore.Timestamp
+            ),
+          };
+        });
+
+        response.status(200).json(requests);
+      } catch (error) {
+        console.error("Erro ao buscar solicitações:", error);
+        response.status(500).send("Erro ao buscar solicitações.");
+      }
+    });
+  }
+);
+
+export const updateAccessRequestStatus = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "PATCH") {
+        response.set("Allow", "PATCH");
+        response.status(405).send("Método não permitido. Use PATCH.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const { id, status } = request.body || {};
+        const normalizedStatus = String(status || "").trim();
+        const allowedStatuses = ["pending", "approved", "rejected"];
+
+        if (!id?.trim() || !allowedStatuses.includes(normalizedStatus)) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        const requestRef = firestore
+          .collection(DatabaseTableKeys.AccessRequests)
+          .doc(id);
+        const requestSnap = await requestRef.get();
+
+        if (!requestSnap.exists) {
+          response.status(404).send("Solicitação não encontrada.");
+          return;
+        }
+
+        await requestRef.update({
+          status: normalizedStatus,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedBy: context.uid,
+        });
+
+        void logAuditEvent(
+          {
+            action: "accessRequest.status.update",
+            targetType: "accessRequest",
+            targetId: id,
+            metadata: { status: normalizedStatus },
+          },
+          context
+        );
+
+        response.status(200).send();
+      } catch (error) {
+        console.error("Erro ao atualizar solicitação:", error);
+        response.status(500).send("Erro ao atualizar solicitação.");
+      }
+    });
+  }
+);
+
+export const deleteAccessRequest = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "DELETE") {
+        response.set("Allow", "DELETE");
+        response.status(405).send("Método não permitido. Use DELETE.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const { id } = request.body || {};
+        if (!id?.trim()) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        await firestore
+          .collection(DatabaseTableKeys.AccessRequests)
+          .doc(id)
+          .delete();
+
+        void logAuditEvent(
+          {
+            action: "accessRequest.delete",
+            targetType: "accessRequest",
+            targetId: id,
+          },
+          context
+        );
+
+        response.status(200).send();
+      } catch (error) {
+        console.error("Erro ao excluir solicitação:", error);
+        response.status(500).send("Erro ao excluir solicitação.");
       }
     });
   }
@@ -252,6 +449,13 @@ export const syncUserClaims = onRequest(
             active: true,
           });
 
+          void logAuditEvent({
+            action: "user.sync.create",
+            targetType: "user",
+            targetId: decoded.uid,
+            metadata: { role: UserRole.Admin, active: true },
+          });
+
           response.status(200).json({
             role: UserRole.Admin,
             active: true,
@@ -277,6 +481,12 @@ export const syncUserClaims = onRequest(
             fullname,
             email,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          void logAuditEvent({
+            action: "user.sync.update",
+            targetType: "user",
+            targetId: decoded.uid,
+            metadata: { role, active, fullname, email },
           });
         }
 
@@ -367,6 +577,16 @@ export const createUser = onRequest(USER_CONFIG, async (request, response) => {
         active: true,
       });
 
+      void logAuditEvent(
+        {
+          action: "user.create",
+          targetType: "user",
+          targetId: authUser.uid,
+          metadata: { email: userDoc.email, fullname: userDoc.fullname },
+        },
+        context
+      );
+
       await sendMail(
         [userDoc.email],
         "Seus dados de acesso",
@@ -431,6 +651,16 @@ export const setUserRole = onRequest(USER_CONFIG, async (request, response) => {
         role: normalizedRole,
         active: user.active,
       });
+
+      void logAuditEvent(
+        {
+          action: "user.role.update",
+          targetType: "user",
+          targetId: uid,
+          metadata: { role: normalizedRole },
+        },
+        context
+      );
 
       response.status(200).send();
     } catch (error) {
@@ -535,6 +765,16 @@ export const updateUserProfile = onRequest(
           });
         }
 
+        void logAuditEvent(
+          {
+            action: "user.profile.update",
+            targetType: "user",
+            targetId: targetUid,
+            metadata: { fields: Object.keys(payload || {}) },
+          },
+          context
+        );
+
         response.status(200).send();
       } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
@@ -599,6 +839,16 @@ export const setUserActive = onRequest(
           await auth.revokeRefreshTokens(uid);
         }
 
+        void logAuditEvent(
+          {
+            action: "user.active.update",
+            targetType: "user",
+            targetId: uid,
+            metadata: { active },
+          },
+          context
+        );
+
         response.status(200).send();
       } catch (error) {
         console.error("Erro ao atualizar status:", error);
@@ -635,10 +885,21 @@ export const getUsers = onRequest(USER_CONFIG, async (request, response) => {
         .orderBy("fullname")
         .get();
 
-      const users = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as IUser),
-      }));
+      const users = await Promise.all(
+        snapshot.docs.map(async (doc) => {
+          const data = doc.data() as IUser;
+          const fallbackPhoto =
+            !data.photo && data.photoStoragePath
+              ? await getPhotoUrlFromStoragePath(data.photoStoragePath)
+              : undefined;
+
+          return {
+            id: doc.id,
+            ...data,
+            photo: data.photo || fallbackPhoto,
+          };
+        })
+      );
 
       response.status(200).json(users);
     } catch (error) {
@@ -687,9 +948,17 @@ export const getUserProfile = onRequest(
         }
 
         const user = userSnap.data() as IUser;
+        const fallbackPhoto =
+          !user.photo && user.photoStoragePath
+            ? await getPhotoUrlFromStoragePath(user.photoStoragePath)
+            : undefined;
 
         response.status(200).json({
-          user: { id: userSnap.id, ...user },
+          user: {
+            id: userSnap.id,
+            ...user,
+            photo: user.photo || fallbackPhoto,
+          },
         });
       } catch (error) {
         console.error("Erro ao buscar perfil:", error);

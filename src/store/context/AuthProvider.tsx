@@ -19,12 +19,12 @@ const AuthProvider: FC<Props> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const parseRole = (value: unknown): UserRole | null => {
-    if (typeof value === "number" && [0, 1, 2].includes(value)) {
+    if (typeof value === "number" && [0, 1, 2, 3].includes(value)) {
       return value as UserRole;
     }
 
     const parsedValue = Number(value);
-    return [0, 1, 2].includes(parsedValue)
+    return [0, 1, 2, 3].includes(parsedValue)
       ? (parsedValue as UserRole)
       : null;
   };

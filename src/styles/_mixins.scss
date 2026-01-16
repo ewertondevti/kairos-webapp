@@ -6,6 +6,38 @@
   height: 100%;
 }
 
+$breakpoints: (
+  xs: 360px,
+  sm: 480px,
+  md: 768px,
+  lg: 1024px,
+  xl: 1280px,
+  xxl: 1440px,
+  xxxl: 1536px
+);
+
+@function breakpoint($name) {
+  @return map-get($breakpoints, $name);
+}
+
+@mixin media-up($name) {
+  @media (min-width: #{breakpoint($name)}) {
+    @content;
+  }
+}
+
+@mixin media-down($name) {
+  @media (max-width: #{breakpoint($name)}) {
+    @content;
+  }
+}
+
+@mixin media-between($min, $max) {
+  @media (min-width: #{breakpoint($min)}) and (max-width: #{breakpoint($max)}) {
+    @content;
+  }
+}
+
 @mixin flex-center {
   display: flex;
   align-items: center;

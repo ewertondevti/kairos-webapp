@@ -1,4 +1,5 @@
 export const churchRoleOptions = [
+  { label: "Membro", value: "Membro" },
   { label: "Pastor", value: "Pastor" },
   { label: "Evangelista", value: "Evangelista" },
   { label: "Presbítero", value: "Presbítero" },

@@ -12,6 +12,12 @@ export const adminPortalNav: PortalNavItem[] = [
     description: "Controle de acessos, perfis e membros com login",
     href: "/admin/users",
   },
+  {
+    key: "admin-audit",
+    label: "Auditoria",
+    description: "Histórico de alterações e acessos",
+    href: "/admin/audit",
+  },
 ];
 
 export const secretariaPortalNav: PortalNavItem[] = [

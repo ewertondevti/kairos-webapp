@@ -17,6 +17,7 @@ import {
   requireRoles,
   UserRole,
 } from "../utils";
+import { logAuditEvent } from "../utils/audit";
 
 // Common function configuration for image uploads
 const IMAGE_UPLOAD_CONFIG = {
@@ -102,6 +103,15 @@ export const uploadImage = onRequest(
         );
 
         console.log(`Imagem enviada com sucesso: ${result.fileName}`);
+        void logAuditEvent(
+          {
+            action: "image.upload",
+            targetType: "image",
+            targetId: result.fileName,
+            metadata: { storage: DatabaseTableKeys.Images },
+          },
+          context
+        );
         response.status(200).send({url: result.url, fileName: result.fileName});
       } catch (error: any) {
         console.error("Erro ao processar o arquivo:", error);
@@ -154,9 +164,20 @@ export const createAlbum = onRequest(
           creationDate: admin.firestore.FieldValue.serverTimestamp(),
         };
 
-        await firestore.collection(DatabaseTableKeys.Albums).add(newAlbum);
+        const albumRef = await firestore
+          .collection(DatabaseTableKeys.Albums)
+          .add(newAlbum);
 
         console.log(`Álbum criado com sucesso: ${body.name}`);
+        void logAuditEvent(
+          {
+            action: "album.create",
+            targetType: "album",
+            targetId: albumRef.id,
+            metadata: { name: newAlbum.name, images: newAlbum.images.length },
+          },
+          context
+        );
         response.status(201).send();
       } catch (error) {
         console.error("Erro ao criar álbum:", error);
@@ -232,6 +253,18 @@ export const updateAlbum = onRequest(
         );
 
         console.log(`Álbum atualizado com sucesso: ${body.id}`);
+        void logAuditEvent(
+          {
+            action: "album.update",
+            targetType: "album",
+            targetId: body.id,
+            metadata: {
+              name: body.name?.trim(),
+              hasNewImages: Boolean(body.images?.length),
+            },
+          },
+          context
+        );
         response.status(200).send("Álbum atualizado com sucesso.");
       } catch (error) {
         const errorMessage =
@@ -499,6 +532,15 @@ export const deleteImageFromAlbum = onRequest(
         console.log(
           `Imagens removidas do álbum ${albumId}: ${images.length} imagem(ns)`
         );
+        void logAuditEvent(
+          {
+            action: "album.images.delete",
+            targetType: "album",
+            targetId: albumId,
+            metadata: { images: images.length },
+          },
+          context
+        );
         response.status(200).send();
       } catch (error) {
         console.error("Erro ao remover imagens:", error);
@@ -566,6 +608,14 @@ export const deleteAlbum = onRequest(
         await albumRef.delete();
 
         console.log(`Álbum deletado com sucesso: ${id}`);
+        void logAuditEvent(
+          {
+            action: "album.delete",
+            targetType: "album",
+            targetId: id,
+          },
+          context
+        );
         response.status(200).send();
       } catch (error) {
         console.error("Erro ao deletar álbum:", error);

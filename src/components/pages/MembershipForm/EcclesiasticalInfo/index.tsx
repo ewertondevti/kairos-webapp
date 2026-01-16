@@ -1,3 +1,4 @@
+import { churchRoleOptions as defaultChurchRoleOptions } from "@/constants/churchRoles";
 import { MembershipFields } from "@/enums/membership";
 import { dateInputFormat, disabledDate } from "@/utils/app";
 import { Col, DatePicker, Divider, Form, Input, Row, Select } from "antd";
@@ -12,6 +13,7 @@ export const EcclesiasticalInfo = ({
   showChurchRole = true,
   churchRoleOptions,
 }: EcclesiasticalInfoProps) => {
+  const roleOptions = churchRoleOptions ?? defaultChurchRoleOptions;
   return (
     <>
       <Divider orientation="vertical" />
@@ -84,16 +86,9 @@ export const EcclesiasticalInfo = ({
             <Form.Item
               name={MembershipFields.ChurchRole}
               label="Cargo na igreja"
+              rules={[{ required: true, message: "Selecione o cargo." }]}
             >
-              {churchRoleOptions ? (
-                <Select
-                  options={churchRoleOptions}
-                  placeholder="Selecione o cargo"
-                  allowClear
-                />
-              ) : (
-                <Input placeholder="Cargo na igreja..." />
-              )}
+              <Select options={roleOptions} placeholder="Selecione o cargo" />
             </Form.Item>
           </Col>
         )}

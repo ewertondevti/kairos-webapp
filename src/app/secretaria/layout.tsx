@@ -1,5 +1,6 @@
 "use client";
 
+import "../globals.scss";
 import PortalLayout from "@/components/PortalLayout";
 import { secretariaPortalNav } from "@/config/portalNavigation";
 import { UserRole } from "@/types/user";

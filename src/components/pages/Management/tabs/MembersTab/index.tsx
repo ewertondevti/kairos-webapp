@@ -1,16 +1,25 @@
 "use client";
 
+import { AccessRequestsTable } from "@/components/pages/Management/tabs/MembersTab/AccessRequestsTable";
+import { CreateUserModal } from "@/components/pages/Management/tabs/MembersTab/CreateUserModal";
+import { MemberFormDrawer } from "@/components/pages/Management/tabs/MembersTab/MemberFormDrawer";
+import { CreateFormValues } from "@/components/pages/Management/tabs/MembersTab/types";
+import { UsersTable } from "@/components/pages/Management/tabs/MembersTab/UsersTable";
 import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/EcclesiasticalInfo";
 import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
 import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
 import { churchRoleOptions } from "@/constants/churchRoles";
 import { MembershipFields } from "@/enums/membership";
-import { useGetUsers } from "@/react-query";
+import { useGetAccessRequests, useGetUsers } from "@/react-query";
 import { QueryNames } from "@/react-query/queryNames";
+import { logAuditEvent } from "@/services/auditService";
 import {
+  AccessRequest,
   createUser,
+  deleteAccessRequest,
   setUserActive,
   setUserRole,
+  updateAccessRequestStatus,
   updateUserProfile,
 } from "@/services/userServices";
 import { useAuth } from "@/store";
@@ -19,20 +28,24 @@ import {
   mapChildrenToPayload,
   normalizeMemberChildren,
 } from "@/utils/membership";
-import { SearchOutlined } from "@ant-design/icons";
+import {
+  ExclamationCircleOutlined,
+  SearchOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  App,
+  Avatar,
   Button,
-  Drawer,
   Empty,
   Form,
+  Grid,
   Input,
   InputRef,
   message,
-  Modal,
   Select,
   Space,
-  Table,
   Tag,
 } from "antd";
 import type {
@@ -41,22 +54,32 @@ import type {
   FilterDropdownProps,
 } from "antd/es/table/interface";
 import dayjs from "dayjs";
-import { useRef, useState, type Key } from "react";
-
-type CreateFormValues = {
-  fullname: string;
-  email: string;
-  role: UserRole;
-};
+import { useEffect, useRef, useState, type Key } from "react";
+import styles from "./MembersTab.module.scss";
 
 const roleOptions = [
   { label: "Admin", value: UserRole.Admin },
   { label: "Secretaria", value: UserRole.Secretaria },
   { label: "Mídia", value: UserRole.Midia },
+  { label: "Membro", value: UserRole.Member },
 ];
 
 const getRoleLabel = (role?: UserRole) =>
   roleOptions.find((option) => option.value === role)?.label ?? "Sem perfil";
+
+const getChurchRoleLabel = (role?: string) =>
+  churchRoleOptions.find((option) => option.value === role)?.label ??
+  "Sem cargo";
+
+const getUserInitials = (user: UserProfile) => {
+  const name = user.fullname?.trim() || user.email?.trim() || "";
+  if (!name) return "";
+  const parts = name.split(" ").filter(Boolean);
+  const first = parts[0]?.charAt(0) ?? "";
+  const last =
+    parts.length > 1 ? parts[parts.length - 1]?.charAt(0) ?? "" : "";
+  return `${first}${last}`.toUpperCase();
+};
 
 type MembersTabProps = {
   mode?: "admin" | "secretaria";
@@ -103,29 +126,45 @@ const mapUserToForm = (user: UserProfile) => ({
 export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const queryClient = useQueryClient();
   const { role } = useAuth();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
+  const drawerSize = screens.md ? "large" : "default";
   const canViewUsers =
     (mode === "admin" && role === UserRole.Admin) ||
     (mode === "secretaria" &&
       (role === UserRole.Admin || role === UserRole.Secretaria));
   const { data: users = [], isLoading } = useGetUsers(canViewUsers);
+  const { data: accessRequests = [] } = useGetAccessRequests(
+    mode === "admin" && role === UserRole.Admin
+  );
 
   const isAdminView = mode === "admin";
   const canCreateUsers = isAdminView && role === UserRole.Admin;
+  const canCreateMembers = mode === "secretaria" && canViewUsers;
   const canToggleActive = isAdminView && role === UserRole.Admin;
   const canEditMembers = canViewUsers;
-  const canUpdateRole =
-    role === UserRole.Admin ||
-    (mode === "secretaria" && role === UserRole.Secretaria);
+  const canUpdateProfileRole = isAdminView && role === UserRole.Admin;
+  const canUpdateChurchRole = canEditMembers;
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [createMemberOpen, setCreateMemberOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [selectedAccessRequest, setSelectedAccessRequest] =
+    useState<AccessRequest | null>(null);
+  const [createInitialValues, setCreateInitialValues] =
+    useState<Partial<CreateFormValues> | null>(null);
   const [createForm] = Form.useForm<CreateFormValues>();
+  const [createMemberForm] = Form.useForm();
   const [editForm] = Form.useForm();
+  const [creatingMember, setCreatingMember] = useState(false);
   const searchInput = useRef<InputRef>(null);
+  const { modal } = App.useApp();
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: [QueryNames.GetUsers] });
+  const refreshAccessRequests = () =>
+    queryClient.invalidateQueries({ queryKey: [QueryNames.GetAccessRequests] });
 
   const openEdit = (user: UserProfile) => {
     setEditingUser(user);
@@ -137,6 +176,12 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     try {
       await setUserActive(user.authUid || user.id, !user.active);
       message.success("Status atualizado com sucesso!");
+      void logAuditEvent({
+        action: "user.active.update",
+        targetType: "user",
+        targetId: user.authUid || user.id,
+        metadata: { active: !user.active },
+      });
       refresh();
     } catch (error) {
       console.error(error);
@@ -144,14 +189,63 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     }
   };
 
+  const confirmDeactivateUser = (user: UserProfile) => {
+    const displayName =
+      user.fullname?.trim() || user.email?.trim() || "este usuário";
+    modal.confirm({
+      title: "Desativar usuário",
+      icon: <ExclamationCircleOutlined />,
+      content: (
+        <span>
+          Tem certeza que deseja desativar <strong>{displayName}</strong>? Ele
+          não poderá acessar o sistema.
+        </span>
+      ),
+      okText: "Desativar",
+      okButtonProps: { danger: true },
+      cancelText: "Cancelar",
+      onOk: () => onToggleActive(user),
+    });
+  };
+
   const onUpdateRole = async (user: UserProfile, nextRole: UserRole) => {
     try {
       await setUserRole(user.authUid || user.id, nextRole);
       message.success("Perfil atualizado com sucesso!");
+      void logAuditEvent({
+        action: "user.role.update",
+        targetType: "user",
+        targetId: user.authUid || user.id,
+        metadata: { role: nextRole },
+      });
       refresh();
     } catch (error) {
       console.error(error);
       message.error("Não foi possível atualizar o perfil.");
+    }
+  };
+
+  const onUpdateChurchRole = async (user: UserProfile, nextRole: string) => {
+    if (!nextRole) {
+      message.warning("Selecione um cargo válido.");
+      return;
+    }
+    try {
+      await updateUserProfile(
+        { [MembershipFields.ChurchRole]: nextRole },
+        user.authUid || user.id
+      );
+      message.success("Cargo atualizado com sucesso!");
+      void logAuditEvent({
+        action: "member.churchRole.update",
+        targetType: "user",
+        targetId: user.authUid || user.id,
+        metadata: { churchRole: nextRole },
+      });
+      refresh();
+    } catch (error) {
+      console.error(error);
+      message.error("Não foi possível atualizar o cargo.");
     }
   };
 
@@ -160,14 +254,80 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
       const values = await createForm.validateFields();
       await createUser(values);
       message.success("Usuário criado com sucesso!");
+      void logAuditEvent({
+        action: "user.create",
+        targetType: "user",
+        metadata: {
+          email: values.email,
+          fullname: values.fullname,
+          role: values.role,
+        },
+      });
+      if (selectedAccessRequest) {
+        await updateAccessRequestStatus(selectedAccessRequest.id, "approved");
+        void logAuditEvent({
+          action: "accessRequest.approve",
+          targetType: "accessRequest",
+          targetId: selectedAccessRequest.id,
+          metadata: {
+            email: selectedAccessRequest.email,
+            fullname: selectedAccessRequest.fullname,
+          },
+        });
+        refreshAccessRequests();
+      }
       createForm.resetFields();
       setCreateOpen(false);
+      setSelectedAccessRequest(null);
       refresh();
     } catch (error) {
       console.error(error);
       message.error("Não foi possível criar o usuário.");
     }
   };
+
+  const openCreateUser = () => {
+    setSelectedAccessRequest(null);
+    createForm.resetFields();
+    setCreateInitialValues({ role: UserRole.Member });
+    setCreateOpen(true);
+  };
+
+  const openCreateFromRequest = (request: AccessRequest) => {
+    setSelectedAccessRequest(request);
+    createForm.resetFields();
+    setCreateInitialValues({
+      fullname: request.fullname,
+      email: request.email,
+      role: UserRole.Member,
+    });
+    setCreateOpen(true);
+  };
+
+  const onRejectAccessRequest = async (request: AccessRequest) => {
+    try {
+      await deleteAccessRequest(request.id);
+      message.success("Solicitação recusada com sucesso!");
+      void logAuditEvent({
+        action: "accessRequest.reject",
+        targetType: "accessRequest",
+        targetId: request.id,
+        metadata: {
+          email: request.email,
+          fullname: request.fullname,
+        },
+      });
+      refreshAccessRequests();
+    } catch (error) {
+      console.error(error);
+      message.error("Não foi possível recusar a solicitação.");
+    }
+  };
+
+  useEffect(() => {
+    if (!createOpen || !createInitialValues) return;
+    createForm.setFieldsValue(createInitialValues);
+  }, [createForm, createInitialValues, createOpen]);
 
   const onUpdateUser = async () => {
     if (!editingUser) return;
@@ -191,12 +351,74 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
 
       await updateUserProfile(payload, editingUser.authUid || editingUser.id);
       message.success("Dados atualizados com sucesso!");
+      void logAuditEvent({
+        action: "member.update",
+        targetType: "user",
+        targetId: editingUser.authUid || editingUser.id,
+        metadata: { fields: Object.keys(values) },
+      });
       setEditOpen(false);
       setEditingUser(null);
       refresh();
     } catch (error) {
       console.error(error);
       message.error("Não foi possível atualizar os dados.");
+    }
+  };
+
+  const onCreateMember = async () => {
+    try {
+      const values = await createMemberForm.validateFields();
+      setCreatingMember(true);
+
+      const createPayload = {
+        fullname: values?.[MembershipFields.Fullname],
+        email: values?.[MembershipFields.Email],
+        role: UserRole.Member,
+      };
+
+      const createdUser = await createUser(createPayload);
+      const createdUid =
+        createdUser?.authUid ?? createdUser?.id ?? createdUser?.uid ?? null;
+
+      const profilePayload = {
+        ...values,
+        [MembershipFields.BirthDate]:
+          values?.[MembershipFields.BirthDate]?.toISOString(),
+        [MembershipFields.WeddingDate]:
+          values?.[MembershipFields.WeddingDate]?.toISOString(),
+        [MembershipFields.BaptismDate]:
+          values?.[MembershipFields.BaptismDate]?.toISOString(),
+        [MembershipFields.AdmissionDate]:
+          values?.[MembershipFields.AdmissionDate]?.toISOString(),
+        [MembershipFields.Children]: mapChildrenToPayload(
+          values?.[MembershipFields.Children]
+        ),
+      };
+
+      if (createdUid) {
+        await updateUserProfile(profilePayload, createdUid);
+        message.success("Membro criado com sucesso!");
+        void logAuditEvent({
+          action: "member.create",
+          targetType: "user",
+          targetId: createdUid,
+          metadata: { fields: Object.keys(values) },
+        });
+      } else {
+        message.warning(
+          "Usuário criado, mas não foi possível preencher a ficha."
+        );
+      }
+
+      createMemberForm.resetFields();
+      setCreateMemberOpen(false);
+      refresh();
+    } catch (error) {
+      console.error(error);
+      message.error("Não foi possível criar o membro.");
+    } finally {
+      setCreatingMember(false);
     }
   };
 
@@ -258,7 +480,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   });
 
   const roleColumn: ColumnsType<UserProfile>[number] = {
-    title: isAdminView ? "Perfil" : "Cargo",
+    title: "Perfil",
     dataIndex: "role",
     key: "role",
     filters: roleOptions.map((option) => ({
@@ -270,7 +492,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     sorter: (a: UserProfile, b: UserProfile) =>
       getRoleLabel(a.role).localeCompare(getRoleLabel(b.role)),
     render: (value: UserRole, record: UserProfile) =>
-      canUpdateRole ? (
+      canUpdateProfileRole ? (
         <Select
           value={value}
           options={roleOptions}
@@ -284,11 +506,43 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
               ? "blue"
               : value === UserRole.Midia
               ? "purple"
+              : value === UserRole.Member
+              ? "green"
               : "gold"
           }
         >
           {getRoleLabel(value)}
         </Tag>
+      ),
+  };
+
+  const churchRoleColumn: ColumnsType<UserProfile>[number] = {
+    title: "Cargo",
+    dataIndex: "churchRole",
+    key: "churchRole",
+    filters: churchRoleOptions.map((option) => ({
+      text: option.label,
+      value: option.value,
+    })),
+    onFilter: (value: Key | boolean, record: UserProfile) =>
+      typeof value === "boolean"
+        ? false
+        : String(record.churchRole ?? "") === String(value),
+    sorter: (a: UserProfile, b: UserProfile) =>
+      getChurchRoleLabel(a.churchRole).localeCompare(
+        getChurchRoleLabel(b.churchRole)
+      ),
+    render: (value: string | undefined, record: UserProfile) =>
+      canUpdateChurchRole ? (
+        <Select
+          value={value}
+          options={churchRoleOptions}
+          onChange={(nextRole) => onUpdateChurchRole(record, String(nextRole))}
+          style={{ minWidth: 180 }}
+          placeholder="Selecione o cargo"
+        />
+      ) : (
+        <Tag color="gold">{getChurchRoleLabel(value)}</Tag>
       ),
   };
 
@@ -311,7 +565,29 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
       value ? <Tag color="green">Ativo</Tag> : <Tag color="red">Inativo</Tag>,
   };
 
+  const photoColumn: ColumnsType<UserProfile>[number] = {
+    title: "Foto",
+    dataIndex: "photo",
+    key: "photo",
+    width: isMobile ? 56 : 72,
+    align: "center",
+    render: (_: string | undefined, record: UserProfile) => (
+      <div className={styles.photoCell}>
+        <Avatar
+          src={record.photo || undefined}
+          size={isMobile ? 32 : 40}
+          className={styles.photoAvatar}
+          aria-label={`Foto de ${record.fullname || record.email || "usuário"}`}
+          icon={<UserOutlined />}
+        >
+          {getUserInitials(record)}
+        </Avatar>
+      </div>
+    ),
+  };
+
   const columns: ColumnsType<UserProfile> = [
+    photoColumn,
     {
       title: "Nome",
       dataIndex: "fullname",
@@ -328,7 +604,9 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
         a.email.localeCompare(b.email),
       ...getColumnSearchProps("email"),
     },
-    ...(isAdminView ? [roleColumn, activeColumn] : [roleColumn, activeColumn]),
+    ...(isAdminView
+      ? [roleColumn, activeColumn]
+      : [churchRoleColumn, activeColumn]),
     {
       title: "Ações",
       key: "actions",
@@ -341,7 +619,11 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
             <Button
               type={record.active ? "default" : "primary"}
               danger={record.active}
-              onClick={() => onToggleActive(record)}
+              onClick={() =>
+                record.active
+                  ? confirmDeactivateUser(record)
+                  : onToggleActive(record)
+              }
             >
               {record.active ? "Desativar" : "Ativar"}
             </Button>
@@ -361,89 +643,92 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
       Boolean(user?.fullname?.trim() || user?.email?.trim())
   );
 
+  const pendingAccessRequests = accessRequests.filter(
+    (request) => request.status === "pending"
+  );
+
   return (
     <>
-      {canCreateUsers && (
+      {isAdminView && (
+        <AccessRequestsTable
+          requests={pendingAccessRequests}
+          isMobile={isMobile}
+          onCreateFromRequest={openCreateFromRequest}
+          onRejectRequest={onRejectAccessRequest}
+        />
+      )}
+
+      {(canCreateUsers || canCreateMembers) && (
         <Space className="mb-4">
-          <Button type="primary" onClick={() => setCreateOpen(true)}>
-            Criar usuário
-          </Button>
+          {canCreateMembers && (
+            <Button type="primary" onClick={() => setCreateMemberOpen(true)}>
+              Nova ficha
+            </Button>
+          )}
+          {canCreateUsers && (
+            <Button type="primary" onClick={openCreateUser}>
+              Criar usuário
+            </Button>
+          )}
         </Space>
       )}
 
-      <Table
-        style={{ marginTop: 16 }}
-        childrenColumnName="__children"
-        rowKey={(record) => record.authUid ?? record.id}
-        loading={isLoading}
-        dataSource={tableUsers}
+      <UsersTable
+        users={tableUsers}
         columns={columns}
-        scroll={{ x: "max-content" }}
+        isLoading={isLoading}
+        isMobile={isMobile}
       />
 
       {canCreateUsers && (
-        <Modal
-          title="Criar usuário"
+        <CreateUserModal
           open={createOpen}
-          onCancel={() => setCreateOpen(false)}
+          isMobile={isMobile}
+          form={createForm}
+          roleOptions={roleOptions}
           onOk={onCreateUser}
-          okText="Criar"
-          destroyOnHidden
-        >
-          <Form form={createForm} layout="vertical">
-            <Form.Item
-              name="fullname"
-              label="Nome completo"
-              rules={[{ required: true, message: "Informe o nome." }]}
-            >
-              <Input placeholder="Nome completo" />
-            </Form.Item>
-            <Form.Item
-              name="email"
-              label="Email"
-              rules={[
-                { required: true, message: "Informe o email." },
-                { type: "email", message: "Email inválido." },
-              ]}
-            >
-              <Input placeholder="email@dominio.com" type="email" />
-            </Form.Item>
-            <Form.Item
-              name="role"
-              label="Perfil"
-              rules={[{ required: true, message: "Selecione o perfil." }]}
-            >
-              <Select options={roleOptions} placeholder="Selecione o perfil" />
-            </Form.Item>
-          </Form>
-        </Modal>
+          onCancel={() => {
+            setCreateOpen(false);
+            setSelectedAccessRequest(null);
+            setCreateInitialValues(null);
+          }}
+        />
       )}
 
-      <Drawer
-        title={`Editar dados do ${isAdminView ? "usuario" : "membro"}`}
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        size={720}
-        extra={
-          <Space>
-            <Button onClick={() => setEditOpen(false)}>Cancelar</Button>
-            <Button type="primary" onClick={onUpdateUser}>
-              Salvar
-            </Button>
-          </Space>
-        }
-        destroyOnHidden
-      >
-        <Form
-          form={editForm}
-          layout="vertical"
-          initialValues={{ [MembershipFields.Children]: [] }}
+      {canCreateMembers && (
+        <MemberFormDrawer
+          title="Nova ficha de membro"
+          open={createMemberOpen}
+          onClose={() => setCreateMemberOpen(false)}
+          onSubmit={onCreateMember}
+          submitLabel="Salvar"
+          submitLoading={creatingMember}
+          size={drawerSize}
+          form={createMemberForm}
+          initialValues={{
+            [MembershipFields.Children]: normalizeMemberChildren([]),
+          }}
         >
           <PersonalInfo />
           <ParentInfo />
           <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
-        </Form>
-      </Drawer>
+        </MemberFormDrawer>
+      )}
+
+      <MemberFormDrawer
+        title={`Editar dados do ${isAdminView ? "usuario" : "membro"}`}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSubmit={onUpdateUser}
+        submitLabel="Salvar"
+        size={drawerSize}
+        form={editForm}
+        initialValues={{ [MembershipFields.Children]: [] }}
+      >
+        <PersonalInfo />
+        <ParentInfo />
+        <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
+      </MemberFormDrawer>
     </>
   );
 };

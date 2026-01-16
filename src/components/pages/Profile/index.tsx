@@ -7,6 +7,7 @@ import { churchRoleOptions } from "@/constants/churchRoles";
 import { MembershipFields } from "@/enums/membership";
 import { firebaseAuth } from "@/firebase";
 import { useGetUserProfile } from "@/react-query";
+import { logAuditEvent } from "@/services/auditService";
 import { updateUserProfile } from "@/services/userServices";
 import { useAuth } from "@/store";
 import { mapChildrenToPayload, normalizeMemberChildren } from "@/utils/membership";
@@ -116,6 +117,11 @@ export const ProfilePage = () => {
 
       await updateUserProfile(payload);
       message.success("Dados atualizados com sucesso!");
+      void logAuditEvent({
+        action: "member.self.update",
+        targetType: "user",
+        metadata: { fields: Object.keys(values) },
+      });
     } catch (error) {
       console.error(error);
       message.error("Não foi possível salvar os dados.");
@@ -141,6 +147,11 @@ export const ProfilePage = () => {
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, values.newPassword);
       message.success("Senha atualizada com sucesso!");
+      void logAuditEvent({
+        action: "auth.password.update",
+        targetType: "user",
+        targetId: user.uid,
+      });
       passwordForm.resetFields();
     } catch (error) {
       console.error(error);

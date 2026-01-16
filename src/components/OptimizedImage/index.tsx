@@ -1,8 +1,8 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
 import { Skeleton } from "antd";
+import { useState } from "react";
 import styles from "./OptimizedImage.module.scss";
 
 type OptimizedImageProps = {
@@ -69,7 +69,7 @@ const OptimizedImageContent = ({
         style={{
           width: width || "100%",
           height: height || "auto",
-          cursor: onClick ? "pointer" : "default",
+          cursor: "pointer",
         }}
       />
     </div>

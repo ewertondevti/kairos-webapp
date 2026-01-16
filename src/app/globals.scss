@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "../styles/mixins";
+
 html {
   scroll-behavior: smooth;
 }
@@ -24,7 +26,31 @@ body {
   min-height: 100vh;
 }
 
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 .avatar-uploader {
+  &.ant-upload-wrapper {
+    &.ant-upload-picture-circle-wrapper {
+      .ant-upload {
+        margin-inline-end: 0;
+        margin-bottom: 0;
+
+        &-select {
+          margin-inline-end: 0;
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+
   .ant-upload {
     width: 128px;
     height: 128px;
@@ -123,6 +149,26 @@ h6,
   letter-spacing: -0.02em;
 }
 
+h1 {
+  font-size: clamp(24px, 3.2vw, 36px);
+}
+
+h2 {
+  font-size: clamp(20px, 2.6vw, 30px);
+}
+
+h3 {
+  font-size: clamp(18px, 2.2vw, 24px);
+}
+
+h4 {
+  font-size: clamp(16px, 1.8vw, 20px);
+}
+
+h5 {
+  font-size: clamp(14px, 1.4vw, 18px);
+}
+
 ::-webkit-scrollbar {
   width: 12px;
 }
@@ -150,6 +196,187 @@ h6,
   max-height: 400px;
   margin-top: 10px;
   overflow-y: auto;
+}
+
+#root {
+  height: 100dvh;
+  width: 100dvw;
+}
+
+.no-margin {
+  margin: 0;
+}
+
+.align-left {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.align-center {
+  justify-content: center;
+  text-align: center;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  &.text-uppercase {
+    text-transform: uppercase;
+    margin: 0;
+  }
+}
+
+.small-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.width-100perc {
+  @include width-100perc;
+}
+
+.height-100perc {
+  @include height-100perc;
+}
+
+.ant-skeleton {
+  &.skeleton-verse {
+    width: 40%;
+    margin: 50px 0;
+  }
+
+  .ant-skeleton-image {
+    &.image-skeleton {
+      @include view-default;
+    }
+  }
+
+  &.ant-skeleton-element {
+    &.image-skeleton {
+      @include view-default;
+    }
+  }
+}
+
+.skeleton-images {
+  width: 60dvw;
+
+  .ant-skeleton {
+    &.ant-skeleton-element {
+      &.image-skeleton {
+        height: 309px;
+      }
+    }
+  }
+}
+
+.ant-carousel {
+  .slick-slider {
+    .slick-list {
+      .slick-track {
+        .slick-slide {
+          margin: 0 10px 0 -4px;
+        }
+      }
+    }
+  }
+}
+
+.upload-images {
+  .ant-upload {
+    border-radius: 12px;
+  }
+
+  .ant-upload-drag {
+    padding: 20px 16px;
+  }
+}
+
+.ant-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.drawer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.drawer-actions .ant-btn {
+  min-width: 120px;
+}
+
+.ant-table-filter-dropdown {
+  --ant-color-text: #0a0a0a !important;
+  --ant-color-text-secondary: #4a4a4a !important;
+  --ant-color-text-tertiary: #8a8a8a !important;
+  --ant-color-bg-elevated: #ffffff !important;
+
+  background: #ffffff;
+
+  .ant-dropdown-menu {
+    background: #ffffff;
+  }
+
+  .ant-dropdown-menu-item,
+  .ant-dropdown-menu-submenu-title,
+  .ant-dropdown-menu-title-content,
+  .ant-checkbox-wrapper,
+  .ant-radio-wrapper,
+  .ant-checkbox-wrapper span,
+  .ant-radio-wrapper span {
+    color: #0a0a0a;
+  }
+
+  .ant-dropdown-menu-title-content {
+    .ant-checkbox-wrapper,
+    .ant-radio-wrapper {
+      color: #0a0a0a !important;
+
+      span {
+        color: #0a0a0a !important;
+      }
+    }
+  }
+
+  .ant-checkbox-wrapper + span,
+  .ant-radio-wrapper + span {
+    color: #0a0a0a !important;
+  }
+}
+
+.ant-dropdown {
+  .ant-dropdown-menu-item,
+  .ant-dropdown-menu-submenu-title,
+  .ant-dropdown-menu-title-content,
+  .ant-checkbox-wrapper,
+  .ant-radio-wrapper,
+  .ant-checkbox-wrapper span,
+  .ant-radio-wrapper span {
+    color: #0a0a0a;
+  }
+}
+
+.ant-table-filter-dropdown-submenu {
+  .ant-checkbox-wrapper + span,
+  .ant-radio-wrapper + span {
+    color: #0a0a0a !important;
+  }
+}
+
+.ant-table-css-var {
+  --ant-color-text: #0a0a0a !important;
+  --ant-color-text-secondary: #4a4a4a !important;
+  --ant-color-text-tertiary: #8a8a8a !important;
+  --ant-color-bg-elevated: #ffffff !important;
 }
 
 /* Elegant Header Styling */
@@ -382,5 +609,129 @@ h6,
   .scroll-reveal {
     transition: none;
     transform: none;
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  .skeleton-images {
+    width: 100dvw;
+
+    .ant-skeleton {
+      &.ant-skeleton-element {
+        &.image-skeleton {
+          height: 231px;
+        }
+      }
+    }
+  }
+
+  .avatar-uploader {
+    .ant-upload,
+    .ant-upload-picture-circle-wrapper,
+    .float-btn-container {
+      width: 96px;
+      height: 96px;
+    }
+
+    .float-btn {
+      right: 24px;
+      bottom: 6px;
+    }
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .skeleton-images {
+    width: 80dvw;
+
+    .ant-skeleton {
+      &.ant-skeleton-element {
+        &.image-skeleton {
+          height: 225px;
+        }
+      }
+    }
+  }
+
+  .ant-skeleton {
+    &.skeleton-verse {
+      width: 80%;
+      margin: 50px 0;
+    }
+  }
+
+  .ant-modal {
+    max-width: calc(100vw - 24px);
+    margin: 12px auto;
+    top: 12px;
+  }
+
+  .ant-modal .ant-modal-content {
+    padding: 16px;
+  }
+
+  .ant-modal .ant-modal-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ant-modal .ant-modal-footer .ant-btn {
+    width: 100%;
+  }
+
+  .ant-drawer .ant-drawer-body {
+    padding: 16px;
+  }
+
+  .ant-table-wrapper .ant-table {
+    font-size: 12px;
+  }
+
+  .ant-table-wrapper .ant-table-thead > tr > th,
+  .ant-table-wrapper .ant-table-tbody > tr > td {
+    padding: 8px;
+  }
+
+  .upload-images {
+    .ant-upload-drag {
+      padding: 16px 12px;
+    }
+
+    .ant-upload-text {
+      font-size: 14px;
+    }
+
+    .ant-upload-hint {
+      font-size: 12px;
+    }
+  }
+}
+
+@media only screen and (min-width: 769px) and (max-width: 1024px) {
+  .skeleton-images {
+    width: 90dvw;
+
+    .ant-skeleton {
+      &.ant-skeleton-element {
+        &.image-skeleton {
+          height: 243px;
+        }
+      }
+    }
+  }
+}
+
+@media only screen and (min-width: 1025px) and (max-width: 1366px) {
+  .skeleton-images {
+    width: 80dvw;
+
+    .ant-skeleton {
+      &.ant-skeleton-element {
+        &.image-skeleton {
+          height: 288px;
+        }
+      }
+    }
   }
 }

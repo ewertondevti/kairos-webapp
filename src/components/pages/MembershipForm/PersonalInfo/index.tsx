@@ -1,3 +1,4 @@
+import { PostalAddressRecord } from "@/components/pages/MembershipForm/PersonalInfo/types";
 import {
   GenderEnum,
   MaritalStatusEnum,
@@ -33,16 +34,6 @@ import Title from "antd/es/typography/Title";
 import { RcFile, UploadProps } from "antd/es/upload";
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
-
-type PostalAddressRecord = {
-  district: string;
-  county: string;
-  parish: string;
-  address: string;
-  addressNumber?: string;
-  addressFloor?: string;
-  addressDoor?: string;
-};
 
 const toStringValue = (value: unknown) => {
   if (value === undefined || value === null) {

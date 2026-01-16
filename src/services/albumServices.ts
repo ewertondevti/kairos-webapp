@@ -5,6 +5,7 @@ import {
   IAlbumPayload,
   IAlbumUpdatePayload,
 } from "@/types/store";
+import { AlbumByIdParams } from "@/types/album";
 import axios from "axios";
 import { getAuthHeaders } from "./authHeaders";
 
@@ -53,11 +54,6 @@ export const getAlbums = async (): Promise<IAlbumDTO[]> => {
     // Return empty array instead of throwing to prevent UI crashes
     return [];
   }
-};
-
-type AlbumByIdParams = {
-  limit?: number;
-  cursor?: string;
 };
 
 export const getAlbumById = async (

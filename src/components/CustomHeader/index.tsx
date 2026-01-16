@@ -8,8 +8,8 @@ import { Button, Drawer, Flex, Layout, Menu, Typography } from "antd";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { MenuContent } from "./MenuContent";
 import styles from "./CustomHeader.module.scss";
+import { MenuContent } from "./MenuContent";
 
 const { Header } = Layout;
 const { Text } = Typography;
@@ -49,11 +49,7 @@ export const CustomHeader = () => {
       ? [
           {
             key: "/login",
-            label: (
-              <span className={styles.loginPill}>
-                Entrar
-              </span>
-            ),
+            label: <span className={styles.loginPill}>Entrar</span>,
           },
         ]
       : []),
@@ -107,19 +103,14 @@ export const CustomHeader = () => {
               align="center"
               className={styles.logoTextWrap}
             >
-              <Text
-                strong
-                className={`${styles.logoTitle} kairos-logo-title`}
-              >
+              <Text strong className={`${styles.logoTitle} kairos-logo-title`}>
                 KAIRÓS
                 {/* Decorative underline */}
                 <span
                   className={`${styles.logoUnderline} kairos-logo-underline`}
                 />
               </Text>
-              <Text
-                className={`${styles.logoSubtitle} kairos-logo-subtitle`}
-              >
+              <Text className={`${styles.logoSubtitle} kairos-logo-subtitle`}>
                 PORTUGAL
               </Text>
             </Flex>

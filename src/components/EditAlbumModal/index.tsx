@@ -2,7 +2,8 @@
 
 import { DatabaseTableKeys } from "@/enums/app";
 import { useGetListItemSize } from "@/hooks/app";
-import { useUploadQueue, type UploadQueueItem } from "@/hooks/useUploadQueue";
+import { useUploadQueue } from "@/hooks/useUploadQueue";
+import { UploadQueueItem } from "@/hooks/useUploadQueue.types";
 import { useGetAlbums } from "@/react-query";
 import { QueryNames } from "@/react-query/queryNames";
 import { updateAlbum } from "@/services/albumServices";
@@ -26,6 +27,7 @@ import {
   Button,
   Flex,
   Form,
+  Grid,
   Input,
   message,
   Modal,
@@ -122,6 +124,8 @@ export const EditAlbumModal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const limitWarningShownRef = useRef(false);
   const typeWarningShownRef = useRef(false);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
 
   const [form] = Form.useForm();
   const params = useParams();
@@ -261,6 +265,11 @@ export const EditAlbumModal = () => {
       className=""
       zIndex={1300}
       okButtonProps={{ loading: isLoading }}
+      width={isMobile ? "100%" : 720}
+      style={isMobile ? { top: 12 } : undefined}
+      bodyStyle={
+        isMobile ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" } : undefined
+      }
     >
       <Form form={form} layout="vertical" onFinish={onUpdate}>
         <Form.Item name="name" label="Nome do álbum" rules={requiredRules}>
