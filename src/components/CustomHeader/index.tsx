@@ -29,6 +29,7 @@ export const CustomHeader = () => {
   const canAccessSecretariaPortal =
     role === UserRole.Admin || role === UserRole.Secretaria;
   const canAccessAdminPortal = role === UserRole.Admin;
+  const canAccessMediaPortal = role === UserRole.Admin || role === UserRole.Midia;
 
   const navItems = [
     { key: RoutesEnums.Home, label: "Início" },
@@ -38,6 +39,9 @@ export const CustomHeader = () => {
       ? [
           ...(canAccessSecretariaPortal
             ? [{ key: "/secretaria", label: "Secretaria" }]
+            : []),
+          ...(canAccessMediaPortal
+            ? [{ key: "/midia", label: "Portal de Mídia" }]
             : []),
           ...(canAccessAdminPortal
             ? [{ key: "/admin", label: "Portal Admin" }]

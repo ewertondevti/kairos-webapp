@@ -1,13 +1,13 @@
-import {IImage} from "./album";
+import {IAlbumImage} from "./album";
 
 export interface CreateCommonPayload {
-  images: Partial<IImage>[];
+  images: Partial<IAlbumImage>[];
 }
 
 export interface CreateAlbumPayload {
   name: string;
   eventDate?: string;
-  images: Partial<IImage>[];
+  images: Partial<IAlbumImage>[];
 }
 
 export interface UpdateAlbumPayload extends CreateAlbumPayload {
@@ -16,11 +16,11 @@ export interface UpdateAlbumPayload extends CreateAlbumPayload {
 
 export interface DeleteImgFromAlbumPayload {
   albumId: string;
-  images: IImage[];
+  images: IAlbumImage[];
 }
 
 export interface DeleteCommonPayload {
-  images: IImage[];
+  images: IAlbumImage[];
 }
 
 export interface UploadCommonRequest {

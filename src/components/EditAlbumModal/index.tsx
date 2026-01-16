@@ -4,7 +4,7 @@ import { DatabaseTableKeys } from "@/enums/app";
 import { useGetListItemSize } from "@/hooks/app";
 import { useUploadQueue } from "@/hooks/useUploadQueue";
 import { UploadQueueItem } from "@/hooks/useUploadQueue.types";
-import { useGetAlbums } from "@/react-query";
+import { useGetAlbumById } from "@/react-query";
 import { QueryNames } from "@/react-query/queryNames";
 import { updateAlbum } from "@/services/albumServices";
 import { deleteUploadedImage } from "@/services/commonServices";
@@ -12,7 +12,7 @@ import { useAppState } from "@/store";
 import { AlbumValuesType } from "@/types/album";
 import { IAlbumUpdatePayload } from "@/types/store";
 import { requiredRules } from "@/utils/app";
-import { formatBytes, getUploadUrl } from "@/utils/upload";
+import { formatBytes, getUploadFileName, getUploadUrl } from "@/utils/upload";
 import {
   CheckCircleOutlined,
   DeleteOutlined,
@@ -148,11 +148,10 @@ export const EditAlbumModal = () => {
     acceptedTypes: ACCEPTED_TYPES,
   });
 
-  const { data: albums } = useGetAlbums();
-
-  const albumIdValue = Form.useWatch("albumId", form);
-
-  const album = albums?.find((a) => a.id === albumId);
+  const { data: album } = useGetAlbumById(albumId, {
+    enabled: !!albumId,
+    limit: 1,
+  });
 
   const {
     editAlbumOpen,
@@ -171,18 +170,14 @@ export const EditAlbumModal = () => {
     };
   }, [album, form]);
 
-  useEffect(() => {
-    if (albumIdValue && albums) {
-      const album = albums.find((a) => a.id === albumIdValue)!;
-      form.setFieldValue("name", album.name);
-    }
-  }, [albumIdValue, albums, form]);
 
   const handleRemoveItem = async (itemId: string) => {
     const target = items.find((item) => item.id === itemId);
     if (target?.status === "success") {
       try {
-        await deleteUploadedImage(`${DatabaseTableKeys.Images}/${target.name}`);
+        const responseName = getUploadFileName(target.response);
+        const fileName = responseName || target.name;
+        await deleteUploadedImage(`${DatabaseTableKeys.Images}/${fileName}`);
       } catch (error) {
         console.error(error);
       }
@@ -205,16 +200,24 @@ export const EditAlbumModal = () => {
 
     const uploadedImages = items
       .filter((item) => item.status === "success")
-      .map((item) => ({
-        name: item.name,
-        url: getUploadUrl(item.response),
-      }))
+      .map((item) => {
+        const responseName = getUploadFileName(item.response);
+        const fileName = responseName || item.name;
+        return {
+          name: fileName,
+          storagePath: `${DatabaseTableKeys.Images}/${fileName}`,
+          url: getUploadUrl(item.response),
+        };
+      })
       .filter((item) => item.url);
 
     const payload: IAlbumUpdatePayload = {
       id: albumId,
       name: values.name,
-      images: uploadedImages.map((image) => ({ name: image.name })),
+      images: uploadedImages.map((image) => ({
+        name: image.name,
+        storagePath: image.storagePath,
+      })),
     };
 
     updateAlbum(payload)
@@ -267,9 +270,11 @@ export const EditAlbumModal = () => {
       okButtonProps={{ loading: isLoading }}
       width={isMobile ? "100%" : 720}
       style={isMobile ? { top: 12 } : undefined}
-      bodyStyle={
-        isMobile ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" } : undefined
-      }
+      styles={{
+        body: isMobile
+          ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" }
+          : undefined,
+      }}
     >
       <Form form={form} layout="vertical" onFinish={onUpdate}>
         <Form.Item name="name" label="Nome do álbum" rules={requiredRules}>

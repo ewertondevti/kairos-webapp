@@ -2,32 +2,24 @@
 
 import { ImagesSkeleton } from "@/components/ImagesSkeleton";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { downloadImagesAsZip } from "@/helpers/app";
 import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
+import { downloadImagesAsZip } from "@/helpers/app";
 import { useGetAlbumById, useGetAlbumImagesInfinite } from "@/react-query";
 import { deleteAlbum } from "@/services/albumServices";
 import { useAppState, useAuth } from "@/store";
 import { IAlbumWithCursor, IImageDTO } from "@/types/store";
 import { UserRole } from "@/types/user";
 import {
-  DeleteOutlined,
   CheckSquareOutlined,
   CloseOutlined,
+  DeleteOutlined,
   DownloadOutlined,
 } from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  App,
-  Button,
-  Checkbox,
-  Empty,
-  Flex,
-  message,
-  Typography,
-} from "antd";
+import { App, Button, Checkbox, Empty, Flex, message, Typography } from "antd";
 import Image from "antd/es/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import styles from "./AlbumDetails.module.scss";
 
 type AlbumDetailsProps = {
@@ -36,24 +28,19 @@ type AlbumDetailsProps = {
 };
 
 export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const { modal } = App.useApp();
   const queryClient = useQueryClient();
   const { user, role, active } = useAuth();
-  const { mode, selectedImages, updateSelectedImages, updateMode } = useAppState();
-  const {
-    data,
-    isLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useGetAlbumImagesInfinite(albumId, {
-    limit: 24,
-    initialPage: initialAlbum,
-    enabled: !!albumId,
-  });
+  const { mode, selectedImages, updateSelectedImages, updateMode } =
+    useAppState();
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useGetAlbumImagesInfinite(albumId, {
+      limit: 24,
+      initialPage: initialAlbum,
+      enabled: !!albumId,
+    });
   const [previewIndex, setPreviewIndex] = useState(0);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const isSelecting = mode === "select";
@@ -74,10 +61,16 @@ export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
   const albumName =
     initialAlbum?.name?.trim() || albumData?.name?.trim() || "Sem nome";
 
+  const getImageKey = (image: IImageDTO) =>
+    image.storagePath || image.id || image.url;
+
   const toggleSelection = (image: IImageDTO) => {
-    const isSelected = selectedImages.some((img) => img.url === image.url);
+    const key = getImageKey(image);
+    const isSelected = selectedImages.some((img) => getImageKey(img) === key);
     if (isSelected) {
-      updateSelectedImages(selectedImages.filter((img) => img.url !== image.url));
+      updateSelectedImages(
+        selectedImages.filter((img) => getImageKey(img) !== key)
+      );
       return;
     }
 
@@ -143,6 +136,11 @@ export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
     await downloadImagesAsZip(albumImages, albumName);
   };
 
+  const onDownloadSelected = async () => {
+    if (!selectedImages.length) return;
+    await downloadImagesAsZip(selectedImages, `${albumName}-selecionadas`);
+  };
+
   const images = useMemo(() => {
     if (!albumImages.length) return [];
     return albumImages.map((img) => ({
@@ -151,106 +149,112 @@ export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
     }));
   }, [albumImages]);
 
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-    const node = loadMoreRef.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: "200px" }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
   if (isLoading && !albumImages.length) {
     return <ImagesSkeleton />;
   }
 
   if (!albumImages.length) {
-    return <Empty className={styles.empty} description="Nenhuma imagem encontrada" />;
+    return (
+      <Empty className={styles.empty} description="Nenhuma imagem encontrada" />
+    );
   }
 
   return (
     <div className={styles.wrapper}>
       <div className={styles.actions}>
-        <Flex justify="space-between" align="center" wrap className={styles.actionsRow}>
+        <Flex
+          justify="space-between"
+          align="center"
+          wrap
+          className={styles.actionsRow}
+        >
           <Flex gap={8} wrap className={styles.actionsGroup}>
-              {!isSelecting && (
+            {!isSelecting && (
+              <Button
+                icon={<CheckSquareOutlined />}
+                onClick={() => updateMode("select")}
+                type="default"
+                className={styles.actionButton}
+              >
+                Selecionar
+              </Button>
+            )}
+            {isSelecting && (
+              <>
                 <Button
                   icon={<CheckSquareOutlined />}
-                  onClick={() => updateMode("select")}
+                  onClick={onSelectAll}
                   type="default"
                   className={styles.actionButton}
                 >
-                  Selecionar
+                  {selectedImages.length === albumImages.length
+                    ? "Desselecionar todas"
+                    : "Selecionar todas"}
                 </Button>
-              )}
-              {isSelecting && (
-                <>
-                  <Button
-                    icon={<CheckSquareOutlined />}
-                    onClick={onSelectAll}
-                    type="default"
-                    className={styles.actionButton}
-                  >
-                    {selectedImages.length === albumImages.length
-                      ? "Desselecionar todas"
-                      : "Selecionar todas"}
-                  </Button>
-                  <Button
-                    icon={<CloseOutlined />}
-                    onClick={onCancelSelection}
-                    className={styles.actionButton}
-                  >
-                    Cancelar
-                  </Button>
-                </>
-              )}
-            </Flex>
-            <Flex gap={12} align="center" className={styles.actionsMeta}>
-              {isSelecting && (
-                <Typography.Text
-                  className={[styles.actionsCount, styles.actionsCountActive].join(" ")}
+                <Button
+                  icon={<CloseOutlined />}
+                  onClick={onCancelSelection}
+                  className={styles.actionButton}
                 >
-                  {`Selecionadas: ${selectedImages.length}`}
-                </Typography.Text>
-              )}
+                  Cancelar
+                </Button>
+              </>
+            )}
+          </Flex>
+          <Flex gap={12} align="center" className={styles.actionsMeta}>
+            {isSelecting && (
+              <Typography.Text
+                className={[
+                  styles.actionsCount,
+                  styles.actionsCountActive,
+                ].join(" ")}
+              >
+                {`Selecionadas: ${selectedImages.length}`}
+              </Typography.Text>
+            )}
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={onDownloadAlbum}
+              className={[styles.actionButton, styles.downloadButton].join(" ")}
+            >
+              Baixar álbum
+            </Button>
+            {isGalleryRoute && isSelecting && (
               <Button
                 icon={<DownloadOutlined />}
-                onClick={onDownloadAlbum}
-                className={[styles.actionButton, styles.downloadButton].join(" ")}
+                onClick={onDownloadSelected}
+                disabled={!selectedImages.length}
+                className={[styles.actionButton, styles.downloadButton].join(
+                  " "
+                )}
               >
-                Baixar álbum
+                Baixar selecionadas
               </Button>
-              {canManageMedia && (
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={openDeleteAlbumConfirm}
-                  className={styles.deleteAlbumButton}
-                >
-                  Apagar álbum
-                </Button>
-              )}
-            </Flex>
+            )}
+            {canManageMedia && !isGalleryRoute && (
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={openDeleteAlbumConfirm}
+                className={styles.deleteAlbumButton}
+              >
+                Apagar álbum
+              </Button>
+            )}
           </Flex>
-        </div>
+        </Flex>
+      </div>
       <div className={styles.masonry}>
         {albumImages.map((image, index) => (
           <button
-            key={image.url}
+            key={getImageKey(image)}
             type="button"
             className={[
               styles.item,
               isSelecting ? styles.selecting : "",
-              selectedImages.some((img) => img.url === image.url)
+              selectedImages.some(
+                (img) => getImageKey(img) === getImageKey(image)
+              )
                 ? styles.selected
                 : "",
             ].join(" ")}
@@ -263,7 +267,13 @@ export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
               setPreviewIndex(index);
               setIsPreviewOpen(true);
             }}
-            aria-pressed={isSelecting ? selectedImages.some((img) => img.url === image.url) : undefined}
+            aria-pressed={
+              isSelecting ?
+                selectedImages.some(
+                  (img) => getImageKey(img) === getImageKey(image)
+                ) :
+                undefined
+            }
           >
             <div className={styles.card}>
               <div className={styles.shine} />
@@ -280,14 +290,18 @@ export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
                   <div className={styles.selectOverlay} />
                   <div className={styles.selectBadge}>
                     <Checkbox
-                      checked={selectedImages.some((img) => img.url === image.url)}
+                      checked={selectedImages.some(
+                        (img) => getImageKey(img) === getImageKey(image)
+                      )}
                       onClick={(event) => {
                         event.stopPropagation();
                         toggleSelection(image);
                       }}
                     />
                     <span className={styles.selectLabel}>
-                      {selectedImages.some((img) => img.url === image.url)
+                      {selectedImages.some(
+                        (img) => getImageKey(img) === getImageKey(image)
+                      )
                         ? "Selecionada"
                         : "Selecionar"}
                     </span>
@@ -302,7 +316,15 @@ export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
       </div>
 
       {hasNextPage && (
-        <div ref={loadMoreRef} className="h-8 w-full" aria-hidden />
+        <Flex justify="center" className={styles.loadMore}>
+          <Button
+            onClick={() => fetchNextPage()}
+            loading={isFetchingNextPage}
+            className={styles.actionButton}
+          >
+            Carregar mais
+          </Button>
+        </Flex>
       )}
 
       {/* Image Preview Modal */}

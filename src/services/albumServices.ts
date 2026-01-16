@@ -5,7 +5,8 @@ import {
   IAlbumPayload,
   IAlbumUpdatePayload,
 } from "@/types/store";
-import { AlbumByIdParams } from "@/types/album";
+import { AlbumByIdParams, AlbumListResponse } from "@/types/album";
+import { MediaImagesResponse } from "@/types/media";
 import axios from "axios";
 import { getAuthHeaders } from "./authHeaders";
 
@@ -56,6 +57,23 @@ export const getAlbums = async (): Promise<IAlbumDTO[]> => {
   }
 };
 
+export const getAlbumsPaged = async (
+  params?: AlbumByIdParams
+): Promise<AlbumListResponse> => {
+  try {
+    const response = await axios.get<AlbumListResponse>("/api/albums/paged", {
+      params: {
+        limit: params?.limit,
+        cursor: params?.cursor,
+      },
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error("Erro ao buscar álbuns paginados:", error);
+    return { albums: [] };
+  }
+};
+
 export const getAlbumById = async (
   id: string,
   params?: AlbumByIdParams
@@ -71,6 +89,23 @@ export const getAlbumById = async (
   } catch (error: unknown) {
     console.error("Erro ao buscar álbum por ID:", error);
     return undefined;
+  }
+};
+
+export const getAlbumImages = async (
+  params?: AlbumByIdParams
+): Promise<MediaImagesResponse> => {
+  try {
+    const response = await axios.get<MediaImagesResponse>("/api/albums/images", {
+      params: {
+        limit: params?.limit,
+        cursor: params?.cursor,
+      },
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error("Erro ao buscar imagens dos álbuns:", error);
+    return { images: [] };
   }
 };
 

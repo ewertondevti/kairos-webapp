@@ -7,6 +7,7 @@ import { UserRole } from "@/types/user";
 import {
   faGears,
   faImages,
+  faPhotoFilm,
   faPowerOff,
   faRightToBracket,
   faUser,
@@ -31,6 +32,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
   const canAccessSecretariaPortal =
     role === UserRole.Admin || role === UserRole.Secretaria;
   const canAccessAdminPortal = role === UserRole.Admin;
+  const canAccessMediaPortal = role === UserRole.Admin || role === UserRole.Midia;
 
   const onLogout = async () => {
     await signOut(firebaseAuth);
@@ -96,6 +98,20 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
             block
           >
             Secretaria
+          </Button>
+        </Col>
+      )}
+
+      {isAuthenticated && canAccessMediaPortal && (
+        <Col span={24}>
+          <Button
+            type="text"
+            icon={<FontAwesomeIcon icon={faPhotoFilm} />}
+            className={styles.menuButton}
+            onClick={() => onRedirect("/midia")}
+            block
+          >
+            Portal de Mídia
           </Button>
         </Col>
       )}

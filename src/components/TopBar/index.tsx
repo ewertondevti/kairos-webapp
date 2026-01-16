@@ -198,7 +198,7 @@ export const TopBar = () => {
   const getSelectLabel = () => {
     if (
       selectedImages.length &&
-      [events?.length, album?.images.length].includes(selectedImages.length)
+      [events?.length, album?.images?.length].includes(selectedImages.length)
     ) {
       return "Desselecionar todas";
     }
@@ -210,7 +210,7 @@ export const TopBar = () => {
 
   const onSelectAll = () => {
     if (albumId && album) {
-      if (selectedImages.length === album.images.length) {
+      if (selectedImages.length === (album.images?.length ?? 0)) {
         onUnselectAll();
       } else updateSelectedImages(album.images ?? []);
     } else if (isEvents) {

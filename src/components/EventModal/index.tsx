@@ -58,14 +58,16 @@ export const EventModal: FC<Props> = ({ isOpen, onCancel }) => {
       open={isOpen}
       onCancel={isLoading ? undefined : onCancel}
       onOk={onSave}
-      destroyOnClose
+      destroyOnHidden
       okText="Gravar"
       okButtonProps={{ loading: isLoading }}
       width={isMobile ? "100%" : 720}
       style={isMobile ? { top: 12 } : undefined}
-      bodyStyle={
-        isMobile ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" } : undefined
-      }
+      styles={{
+        body: isMobile
+          ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" }
+          : undefined,
+      }}
     >
       <Upload
         type="drag"
