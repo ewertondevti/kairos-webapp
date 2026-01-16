@@ -1,3 +1,5 @@
+@use "sass:map";
+
 @mixin width-100perc {
   width: 100%;
 }
@@ -17,7 +19,7 @@ $breakpoints: (
 );
 
 @function breakpoint($name) {
-  @return map-get($breakpoints, $name);
+  @return map.get($breakpoints, $name);
 }
 
 @mixin media-up($name) {
