@@ -1,8 +1,8 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import Management from "@/pages/Management";
-import { MembersTab } from "@/pages/Management/tabs/MembersTab";
+import Management from "@/components/pages/Management";
+import { MembersTab } from "@/components/pages/Management/tabs/MembersTab";
 
 export default function ManagementMembersPage() {
   return (

@@ -1,8 +1,8 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import Management from "@/pages/Management";
-import { AlbumsTab } from "@/pages/Management/tabs/AlbumsTab";
+import Management from "@/components/pages/Management";
+import { AlbumsTab } from "@/components/pages/Management/tabs/AlbumsTab";
 
 export default function ManagementAlbumsPage() {
   return (

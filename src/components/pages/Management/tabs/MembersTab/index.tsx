@@ -12,15 +12,15 @@ import { UserProfile, UserRole } from "@/types/user";
 import {
   Button,
   Drawer,
+  Empty,
   Form,
   Input,
+  message,
   Modal,
   Select,
   Space,
   Table,
   Tag,
-  message,
-  Empty,
 } from "antd";
 import dayjs from "dayjs";
 import { useState } from "react";
@@ -139,10 +139,14 @@ export const MembersTab = () => {
       const safePhoto = typeof photoValue === "string" ? photoValue : undefined;
       const payload = {
         ...values,
-        [MembershipFields.BirthDate]: values?.[MembershipFields.BirthDate]?.toISOString(),
-        [MembershipFields.WeddingDate]: values?.[MembershipFields.WeddingDate]?.toISOString(),
-        [MembershipFields.BaptismDate]: values?.[MembershipFields.BaptismDate]?.toISOString(),
-        [MembershipFields.AdmissionDate]: values?.[MembershipFields.AdmissionDate]?.toISOString(),
+        [MembershipFields.BirthDate]:
+          values?.[MembershipFields.BirthDate]?.toISOString(),
+        [MembershipFields.WeddingDate]:
+          values?.[MembershipFields.WeddingDate]?.toISOString(),
+        [MembershipFields.BaptismDate]:
+          values?.[MembershipFields.BaptismDate]?.toISOString(),
+        [MembershipFields.AdmissionDate]:
+          values?.[MembershipFields.AdmissionDate]?.toISOString(),
         [MembershipFields.Photo]: safePhoto,
       };
 
@@ -173,7 +177,9 @@ export const MembersTab = () => {
       dataIndex: "role",
       key: "role",
       render: (value: UserRole) => (
-        <Tag color={value === "admin" ? "blue" : value === "midia" ? "purple" : "gold"}>
+        <Tag
+          color={value === "admin" ? "blue" : value === "midia" ? "purple" : "gold"}
+        >
           {value}
         </Tag>
       ),
