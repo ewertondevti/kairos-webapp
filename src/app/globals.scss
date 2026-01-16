@@ -1,8 +1,7 @@
+@use "../styles/mixins" as *;
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import "../styles/mixins";
 
 html {
   scroll-behavior: smooth;
