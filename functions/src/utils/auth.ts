@@ -4,6 +4,7 @@ export enum UserRole {
   Admin = 0,
   Secretaria = 1,
   Midia = 2,
+  Member = 3,
 }
 
 type RequestLike = {
@@ -50,7 +51,12 @@ export const requireAuth = async (
 
     if (
       typeof role !== "number" ||
-      ![UserRole.Admin, UserRole.Secretaria, UserRole.Midia].includes(role)
+      ![
+        UserRole.Admin,
+        UserRole.Secretaria,
+        UserRole.Midia,
+        UserRole.Member,
+      ].includes(role)
     ) {
       response.status(403).send("Permissão insuficiente.");
       return null;

@@ -16,6 +16,7 @@ import {
 } from "./controllers/eventController";
 import { createAuditLog, getAuditLogs } from "./controllers/auditController";
 import {
+  createNewMember,
   createUser,
   getUserProfile,
   getUsers,
@@ -34,6 +35,7 @@ export {
   getAuditLogs,
   createAlbum,
   createEvents,
+  createNewMember,
   createUser,
   deleteAlbum,
   deleteEvents,
