@@ -45,7 +45,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
   return (
     <Row gutter={[8, 16]}>
       <Col span={24}>
-        <Divider style={{ width: "auto", margin: 0 }} />
+        <Divider orientation="vertical" />
       </Col>
 
       <Col span={24}>
@@ -131,7 +131,7 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
       {isAuthenticated && (
         <>
           <Col span={24}>
-            <Divider style={{ width: "auto", margin: 0 }} />
+            <Divider orientation="vertical" />
           </Col>
 
           <Col span={24}>

@@ -1,9 +1,10 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 
 const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+const baseURL = `https://us-central1-${projectId}.cloudfunctions.net`;
 
 const api = axios.create({
-  baseURL: `https://us-central1-${projectId}.cloudfunctions.net`,
+  baseURL,
   timeout: 60000 * 5, // 5min
 });
 

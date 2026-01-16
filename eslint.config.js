@@ -2,7 +2,7 @@ const nextConfig = require("eslint-config-next");
 
 module.exports = [
   {
-    ignores: ["dist/**", "functions/**"],
+    ignores: [".firebase/**", ".next/**", "dist/**", "functions/**", "out/**"],
   },
   ...nextConfig,
 ];

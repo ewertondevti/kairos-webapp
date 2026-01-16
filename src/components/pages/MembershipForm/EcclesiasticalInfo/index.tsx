@@ -14,11 +14,10 @@ export const EcclesiasticalInfo = ({
 }: EcclesiasticalInfoProps) => {
   return (
     <>
-      <Divider orientation="vertical">
-        <Title level={3} className="text-uppercase">
-          Informações Eclasiásticas
-        </Title>
-      </Divider>
+      <Divider orientation="vertical" />
+      <Title level={3} className="text-uppercase">
+        Informações Eclasiásticas
+      </Title>
 
       <Row gutter={10}>
         <Col xs={24} sm={12} md={8}>

@@ -3,26 +3,53 @@
 import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/EcclesiasticalInfo";
 import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
 import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
+import { churchRoleOptions } from "@/constants/churchRoles";
 import { MembershipFields } from "@/enums/membership";
+import { firebaseAuth } from "@/firebase";
 import { useGetUserProfile } from "@/react-query";
 import { updateUserProfile } from "@/services/userServices";
-import { firebaseAuth } from "@/firebase";
-import { churchRoleOptions } from "@/constants/churchRoles";
+import { useAuth } from "@/store";
+import {
+  Button,
+  Card,
+  Flex,
+  Form,
+  Input,
+  Layout,
+  Result,
+  Spin,
+  message,
+} from "antd";
+import { Content } from "antd/es/layout/layout";
+import Title from "antd/es/typography/Title";
+import dayjs from "dayjs";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
 } from "firebase/auth";
-import { Button, Card, Divider, Flex, Form, Input, Spin, message } from "antd";
-import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import styles from "./Profile.module.scss";
 
 export const ProfilePage = () => {
+  const router = useRouter();
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
-  const { data, isLoading } = useGetUserProfile();
+  const { user, role, active, loading } = useAuth();
+  const hasAccess = useMemo(
+    () => Boolean(user && active && role !== null),
+    [active, role, user]
+  );
+  const { data, isLoading } = useGetUserProfile(!loading && hasAccess);
   const [saving, setSaving] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, router, user]);
 
   useEffect(() => {
     if (!data?.user) return;
@@ -74,10 +101,14 @@ export const ProfilePage = () => {
 
       const payload = {
         ...values,
-        [MembershipFields.BirthDate]: values?.[MembershipFields.BirthDate]?.toISOString(),
-        [MembershipFields.WeddingDate]: values?.[MembershipFields.WeddingDate]?.toISOString(),
-        [MembershipFields.BaptismDate]: values?.[MembershipFields.BaptismDate]?.toISOString(),
-        [MembershipFields.AdmissionDate]: values?.[MembershipFields.AdmissionDate]?.toISOString(),
+        [MembershipFields.BirthDate]:
+          values?.[MembershipFields.BirthDate]?.toISOString(),
+        [MembershipFields.WeddingDate]:
+          values?.[MembershipFields.WeddingDate]?.toISOString(),
+        [MembershipFields.BaptismDate]:
+          values?.[MembershipFields.BaptismDate]?.toISOString(),
+        [MembershipFields.AdmissionDate]:
+          values?.[MembershipFields.AdmissionDate]?.toISOString(),
         [MembershipFields.Photo]: safePhoto,
       };
 
@@ -117,7 +148,7 @@ export const ProfilePage = () => {
     }
   };
 
-  if (isLoading) {
+  if (loading || isLoading) {
     return (
       <Flex justify="center" align="center" className="min-h-[200px]">
         <Spin spinning />
@@ -125,71 +156,122 @@ export const ProfilePage = () => {
     );
   }
 
+  if (!user) {
+    return (
+      <Flex justify="center" align="center" className="min-h-[200px]">
+        <Spin spinning />
+      </Flex>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <Result
+        status="403"
+        title="Acesso restrito"
+        subTitle="Você não possui permissão para acessar esta página."
+        extra={
+          <Button type="primary" href="/">
+            Voltar ao início
+          </Button>
+        }
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#fafafa] py-8 md:py-12">
-      <div className="container mx-auto px-4">
-        <Card title="Meu perfil">
-          <Form form={form} layout="vertical" initialValues={{ [MembershipFields.Children]: [] }}>
-            <PersonalInfo />
-            <ParentInfo />
-            <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
+    <Layout>
+      <Content className={styles.page} style={{ padding: 20 }}>
+        <Title className={styles.title}>Meu perfil</Title>
 
-            <Flex justify="flex-end">
-              <Button type="primary" onClick={onSaveProfile} loading={saving}>
-                Salvar alterações
-              </Button>
-            </Flex>
-          </Form>
-        </Card>
-
-        <Divider />
-
-        <Card title="Atualizar senha">
-          <Form form={passwordForm} layout="vertical">
-            <Form.Item
-              name="currentPassword"
-              label="Senha atual"
-              rules={[{ required: true, message: "Informe a senha atual." }]}
+        <Flex justify="center">
+          <Flex vertical gap={24} className={styles.container}>
+            <Form
+              form={form}
+              layout="vertical"
+              className={styles.form}
+              style={{ maxWidth: 900, width: "100%" }}
+              initialValues={{ [MembershipFields.Children]: [] }}
             >
-              <Input.Password placeholder="Senha atual" />
-            </Form.Item>
-            <Form.Item
-              name="newPassword"
-              label="Nova senha"
-              rules={[
-                { required: true, message: "Informe a nova senha." },
-                { min: 8, message: "A senha deve ter pelo menos 8 caracteres." },
-              ]}
-            >
-              <Input.Password placeholder="Nova senha" />
-            </Form.Item>
-            <Form.Item
-              name="confirmPassword"
-              label="Confirmar nova senha"
-              dependencies={["newPassword"]}
-              rules={[
-                { required: true, message: "Confirme a nova senha." },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    if (!value || getFieldValue("newPassword") === value) {
-                      return Promise.resolve();
-                    }
-                    return Promise.reject("As senhas não coincidem.");
-                  },
-                }),
-              ]}
-            >
-              <Input.Password placeholder="Confirmar nova senha" />
-            </Form.Item>
+              <Card>
+                <PersonalInfo />
+                <ParentInfo />
+                <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
 
-            <Flex justify="flex-end">
-              <Button type="primary" onClick={onSavePassword} loading={savingPassword}>
-                Atualizar senha
-              </Button>
-            </Flex>
-          </Form>
-        </Card>
-      </div>
-    </div>
+                <Flex justify="flex-end">
+                  <Button
+                    type="primary"
+                    onClick={onSaveProfile}
+                    loading={saving}
+                  >
+                    Salvar alterações
+                  </Button>
+                </Flex>
+              </Card>
+            </Form>
+
+            <Form
+              form={passwordForm}
+              layout="vertical"
+              className={styles.form}
+              style={{ maxWidth: 900, width: "100%" }}
+            >
+              <Card title="Atualizar senha">
+                <Form.Item
+                  name="currentPassword"
+                  label="Senha atual"
+                  rules={[
+                    { required: true, message: "Informe a senha atual." },
+                  ]}
+                >
+                  <Input.Password placeholder="Senha atual" />
+                </Form.Item>
+                <Form.Item
+                  name="newPassword"
+                  label="Nova senha"
+                  rules={[
+                    { required: true, message: "Informe a nova senha." },
+                    {
+                      min: 8,
+                      message: "A senha deve ter pelo menos 8 caracteres.",
+                    },
+                  ]}
+                >
+                  <Input.Password placeholder="Nova senha" />
+                </Form.Item>
+                <Form.Item
+                  name="confirmPassword"
+                  label="Confirmar nova senha"
+                  dependencies={["newPassword"]}
+                  rules={[
+                    { required: true, message: "Confirme a nova senha." },
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        if (!value || getFieldValue("newPassword") === value) {
+                          return Promise.resolve();
+                        }
+                        return Promise.reject("As senhas não coincidem.");
+                      },
+                    }),
+                  ]}
+                >
+                  <Input.Password placeholder="Confirmar nova senha" />
+                </Form.Item>
+
+                <Flex justify="flex-end">
+                  <Button
+                    type="primary"
+                    onClick={onSavePassword}
+                    loading={savingPassword}
+                  >
+                    Atualizar senha
+                  </Button>
+                </Flex>
+              </Card>
+            </Form>
+          </Flex>
+        </Flex>
+      </Content>
+    </Layout>
   );
 };

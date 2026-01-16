@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import axios, { AxiosError, AxiosResponse } from "axios";
 
 const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+const isDev = process.env.NODE_ENV === "development";
 
 // Axios instance for server-side requests (same config as httpClient.ts)
 const serverApi = axios.create({
@@ -21,7 +22,7 @@ serverApi.interceptors.request.use(
 serverApi.interceptors.response.use(
   (response: AxiosResponse) => {
     // Log successful responses for debugging (same as httpClient.ts)
-    if (response.config.url?.includes("getAlbums")) {
+    if (isDev && response.config.url?.includes("getAlbums")) {
       console.log("getAlbums response:", {
         status: response.status,
         dataType: typeof response.data,
@@ -32,14 +33,18 @@ serverApi.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
-    console.error("Erro na requisição:", {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message,
-    });
+    if (isDev) {
+      const status = error.response?.status;
+      const log = status === 401 || status === 403 ? console.warn : console.error;
+      log("Erro na requisição:", {
+        url: error.config?.url,
+        method: error.config?.method,
+        status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      });
+    }
     return Promise.reject(error);
   }
 );
@@ -81,11 +86,15 @@ export async function proxyRequest(
     return NextResponse.json(response.data, { status: response.status });
   } catch (error: any) {
     const axiosError = error as AxiosError;
-    console.error(`Erro ao fazer proxy para ${endpoint}:`, {
-      message: axiosError.message,
-      status: axiosError.response?.status,
-      data: axiosError.response?.data,
-    });
+    if (isDev) {
+      const status = axiosError.response?.status;
+      const log = status === 401 || status === 403 ? console.warn : console.error;
+      log(`Erro ao fazer proxy para ${endpoint}:`, {
+        message: axiosError.message,
+        status,
+        data: axiosError.response?.data,
+      });
+    }
 
     const status = axiosError.response?.status || 500;
     const errorData = axiosError.response?.data || { error: axiosError.message || "Erro ao processar requisição" };

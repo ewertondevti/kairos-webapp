@@ -12,13 +12,6 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["antd", "@ant-design/icons"],
   },
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-    };
-    return config;
-  },
-  turbopack: {},
 };
 
 module.exports = nextConfig;

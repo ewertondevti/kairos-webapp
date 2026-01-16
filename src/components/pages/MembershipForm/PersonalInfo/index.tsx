@@ -77,11 +77,10 @@ export const PersonalInfo = () => {
 
   return (
     <Row gutter={10}>
-      <Divider orientation="vertical">
-        <Title level={3} className="text-uppercase">
-          Informações Pessoais
-        </Title>
-      </Divider>
+      <Divider orientation="vertical" />
+      <Title level={3} className="text-uppercase">
+        Informações Pessoais
+      </Title>
 
       <Col xs={{ order: 2, span: 24 }} md={{ order: 1, span: 20 }}>
         <Row gutter={10}>

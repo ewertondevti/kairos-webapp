@@ -48,7 +48,10 @@ export const requireAuth = async (
     const role = decoded.role as UserRole | undefined;
     const active = Boolean(decoded.active);
 
-    if (!role) {
+    if (
+      typeof role !== "number" ||
+      ![UserRole.Admin, UserRole.Secretaria, UserRole.Midia].includes(role)
+    ) {
       response.status(403).send("Permissão insuficiente.");
       return null;
     }

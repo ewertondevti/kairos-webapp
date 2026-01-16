@@ -22,11 +22,10 @@ export const ParentInfo = () => {
 
   return (
     <>
-      <Divider orientation="vertical">
-        <Title level={3} className="text-uppercase">
-          Informações Familiares
-        </Title>
-      </Divider>
+      <Divider orientation="vertical" />
+      <Title level={3} className="text-uppercase">
+        Informações Familiares
+      </Title>
 
       <Row gutter={10}>
         <Col xs={24} md={12}>

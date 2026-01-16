@@ -1,0 +1,23 @@
+.page {
+  min-height: 100vh;
+  background-color: #f0fdf4;
+
+  :global(.ant-typography) {
+    color: #15803d;
+  }
+}
+
+.form {
+  :global(.ant-form-item-label > label) {
+    color: #15803d;
+  }
+}
+
+.title {
+  text-align: center;
+}
+
+.container {
+  width: 100%;
+  align-items: center;
+}
