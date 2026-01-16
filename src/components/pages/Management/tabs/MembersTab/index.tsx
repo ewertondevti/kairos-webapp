@@ -113,7 +113,9 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const canCreateUsers = isAdminView && role === UserRole.Admin;
   const canToggleActive = isAdminView && role === UserRole.Admin;
   const canEditMembers = canViewUsers;
-  const canUpdateRole = isAdminView && role === UserRole.Admin;
+  const canUpdateRole =
+    role === UserRole.Admin ||
+    (mode === "secretaria" && role === UserRole.Secretaria);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -172,8 +174,6 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
 
     try {
       const values = await editForm.validateFields();
-      const photoValue = values?.[MembershipFields.Photo];
-      const safePhoto = typeof photoValue === "string" ? photoValue : undefined;
       const payload = {
         ...values,
         [MembershipFields.BirthDate]:
@@ -187,7 +187,6 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
         [MembershipFields.Children]: mapChildrenToPayload(
           values?.[MembershipFields.Children]
         ),
-        [MembershipFields.Photo]: safePhoto,
       };
 
       await updateUserProfile(payload, editingUser.authUid || editingUser.id);
@@ -249,12 +248,68 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
       String(record[dataIndex] ?? "")
         .toLowerCase()
         .includes(String(value).toLowerCase()),
-    onFilterDropdownOpenChange: (visible: boolean) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
-      }
+    filterDropdownProps: {
+      onOpenChange: (open: boolean) => {
+        if (open) {
+          setTimeout(() => searchInput.current?.select(), 100);
+        }
+      },
     },
   });
+
+  const roleColumn: ColumnsType<UserProfile>[number] = {
+    title: isAdminView ? "Perfil" : "Cargo",
+    dataIndex: "role",
+    key: "role",
+    filters: roleOptions.map((option) => ({
+      text: option.label,
+      value: option.value,
+    })),
+    onFilter: (value: Key | boolean, record: UserProfile) =>
+      typeof value === "boolean" ? false : record.role === Number(value),
+    sorter: (a: UserProfile, b: UserProfile) =>
+      getRoleLabel(a.role).localeCompare(getRoleLabel(b.role)),
+    render: (value: UserRole, record: UserProfile) =>
+      canUpdateRole ? (
+        <Select
+          value={value}
+          options={roleOptions}
+          onChange={(nextRole) => onUpdateRole(record, nextRole as UserRole)}
+          style={{ minWidth: 140 }}
+        />
+      ) : (
+        <Tag
+          color={
+            value === UserRole.Admin
+              ? "blue"
+              : value === UserRole.Midia
+              ? "purple"
+              : "gold"
+          }
+        >
+          {getRoleLabel(value)}
+        </Tag>
+      ),
+  };
+
+  const activeColumn: ColumnsType<UserProfile>[number] = {
+    title: "Ativo",
+    dataIndex: "active",
+    key: "active",
+    filters: [
+      { text: "Ativo", value: true },
+      { text: "Inativo", value: false },
+    ],
+    onFilter: (value: Key | boolean, record: UserProfile) => {
+      const normalizedValue =
+        typeof value === "boolean" ? value : value === "true" || value === "1";
+      return record.active === normalizedValue;
+    },
+    sorter: (a: UserProfile, b: UserProfile) =>
+      Number(a.active) - Number(b.active),
+    render: (value: boolean) =>
+      value ? <Tag color="green">Ativo</Tag> : <Tag color="red">Inativo</Tag>,
+  };
 
   const columns: ColumnsType<UserProfile> = [
     {
@@ -273,72 +328,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
         a.email.localeCompare(b.email),
       ...getColumnSearchProps("email"),
     },
-    ...(isAdminView
-      ? [
-          {
-            title: "Perfil",
-            dataIndex: "role",
-            key: "role",
-            filters: roleOptions.map((option) => ({
-              text: option.label,
-              value: option.value,
-            })),
-            onFilter: (value: Key | boolean, record: UserProfile) =>
-              typeof value === "boolean"
-                ? false
-                : record.role === Number(value),
-            sorter: (a: UserProfile, b: UserProfile) =>
-              getRoleLabel(a.role).localeCompare(getRoleLabel(b.role)),
-            render: (value: UserRole, record: UserProfile) =>
-              canUpdateRole ? (
-                <Select
-                  value={value}
-                  options={roleOptions}
-                  onChange={(nextRole) =>
-                    onUpdateRole(record, nextRole as UserRole)
-                  }
-                  style={{ minWidth: 140 }}
-                />
-              ) : (
-                <Tag
-                  color={
-                    value === UserRole.Admin
-                      ? "blue"
-                      : value === UserRole.Midia
-                      ? "purple"
-                      : "gold"
-                  }
-                >
-                  {getRoleLabel(value)}
-                </Tag>
-              ),
-          },
-          {
-            title: "Status",
-            dataIndex: "active",
-            key: "active",
-            filters: [
-              { text: "Ativo", value: true },
-              { text: "Inativo", value: false },
-            ],
-            onFilter: (value: Key | boolean, record: UserProfile) => {
-              const normalizedValue =
-                typeof value === "boolean"
-                  ? value
-                  : value === "true" || value === "1";
-              return record.active === normalizedValue;
-            },
-            sorter: (a: UserProfile, b: UserProfile) =>
-              Number(a.active) - Number(b.active),
-            render: (value: boolean) =>
-              value ? (
-                <Tag color="green">Ativo</Tag>
-              ) : (
-                <Tag color="red">Inativo</Tag>
-              ),
-          },
-        ]
-      : []),
+    ...(isAdminView ? [roleColumn, activeColumn] : [roleColumn, activeColumn]),
     {
       title: "Ações",
       key: "actions",
@@ -365,6 +355,12 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     return <Empty description="Sem permissão para visualizar esta área." />;
   }
 
+  const tableUsers = users.filter(
+    (user) =>
+      Boolean(user?.authUid || user?.id) &&
+      Boolean(user?.fullname?.trim() || user?.email?.trim())
+  );
+
   return (
     <>
       {canCreateUsers && (
@@ -377,9 +373,10 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
 
       <Table
         style={{ marginTop: 16 }}
-        rowKey={(record) => record.id}
+        childrenColumnName="__children"
+        rowKey={(record) => record.authUid ?? record.id}
         loading={isLoading}
-        dataSource={users}
+        dataSource={tableUsers}
         columns={columns}
         scroll={{ x: "max-content" }}
       />
@@ -391,7 +388,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
           onCancel={() => setCreateOpen(false)}
           onOk={onCreateUser}
           okText="Criar"
-          destroyOnClose
+          destroyOnHidden
         >
           <Form form={createForm} layout="vertical">
             <Form.Item

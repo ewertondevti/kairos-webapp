@@ -1,7 +1,16 @@
 import { MembershipFields } from "@/enums/membership";
 import { dateInputFormat, disabledDate } from "@/utils/app";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Col, DatePicker, Flex, Form, Input, Row, Typography } from "antd";
+import {
+  Button,
+  Col,
+  DatePicker,
+  Flex,
+  Form,
+  Input,
+  Row,
+  Typography,
+} from "antd";
 import styles from "./SonFields.module.scss";
 
 const { Text } = Typography;
@@ -19,7 +28,7 @@ export const SonFields = () => {
                 </Col>
               )}
 
-              <Col xs={24} md={14} lg={15}>
+              <Col flex={1}>
                 <Form.Item
                   name={[field.name, "name"]}
                   rules={[
@@ -35,7 +44,7 @@ export const SonFields = () => {
                 </Form.Item>
               </Col>
 
-              <Col xs={24} md={8} lg={7}>
+              <Col flex={1}>
                 <Form.Item name={[field.name, "birthDate"]}>
                   <DatePicker
                     format={dateInputFormat}
@@ -47,16 +56,14 @@ export const SonFields = () => {
               </Col>
 
               <Col>
-                <Flex
-                  align="center"
-                  justify="center"
-                  className="h-full"
-                >
-                  <MinusCircleOutlined
-                    className="dynamic-delete-button"
-                    onClick={() => remove(field.name)}
-                  />
-                </Flex>
+                <Form.Item>
+                  <Flex align="center" justify="center" className="h-full">
+                    <MinusCircleOutlined
+                      className="dynamic-delete-button"
+                      onClick={() => remove(field.name)}
+                    />
+                  </Flex>
+                </Form.Item>
               </Col>
             </Row>
           ))}

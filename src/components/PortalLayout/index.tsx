@@ -171,7 +171,7 @@ const PortalLayout = ({
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         placement="left"
-        width={280}
+        size={280}
         title={title}
       >
         <Button

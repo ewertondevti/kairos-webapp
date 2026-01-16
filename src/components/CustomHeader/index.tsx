@@ -151,8 +151,7 @@ export const CustomHeader = () => {
             placement="right"
             onClose={() => setDrawerOpen(false)}
             open={drawerOpen}
-            size="default"
-            style={{ width: 280 }}
+            size={280}
           >
             <MenuContent onClose={() => setDrawerOpen(false)} />
           </Drawer>

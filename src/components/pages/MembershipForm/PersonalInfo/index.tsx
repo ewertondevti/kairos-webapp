@@ -28,10 +28,11 @@ import {
   Tooltip,
   Upload,
 } from "antd";
+import type { DefaultOptionType } from "antd/es/select";
 import Title from "antd/es/typography/Title";
 import { RcFile, UploadProps } from "antd/es/upload";
 import axios from "axios";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type PostalAddressRecord = {
   district: string;
@@ -130,6 +131,14 @@ const normalizePostalResponse = (data: unknown): PostalAddressRecord[] => {
     .filter((item): item is PostalAddressRecord => Boolean(item));
 };
 
+const selectFilterOption = (
+  input: string,
+  option?: DefaultOptionType
+): boolean =>
+  String(option?.label ?? option?.value ?? "")
+    .toLowerCase()
+    .includes(input.toLowerCase());
+
 export const PersonalInfo = () => {
   const form = Form.useFormInstance();
 
@@ -150,6 +159,13 @@ export const PersonalInfo = () => {
       return undefined;
     }
     if (typeof photoValue === "string") {
+      if (
+        photoValue.startsWith("file://") ||
+        photoValue.includes("fakepath") ||
+        /^[a-zA-Z]:\\/.test(photoValue)
+      ) {
+        return undefined;
+      }
       return photoValue;
     }
     if (typeof photoValue === "object") {
@@ -181,6 +197,12 @@ export const PersonalInfo = () => {
     [normalizedPostalCode]
   );
 
+  const [postalLookupCode, setPostalLookupCode] = useState<string | null>(null);
+  const [postalTouched, setPostalTouched] = useState(false);
+  const isPostalComplete = Boolean(
+    postalLookupCode && postalLookupCode.length === 7
+  );
+
   const uniqueOptions = (values: string[]) =>
     Array.from(new Set(values)).map((value) => ({
       label: value,
@@ -203,23 +225,23 @@ export const PersonalInfo = () => {
 
   const { data: postalRecords = [], isFetching: postalRequestLoading } =
     useQuery({
-      queryKey: ["postal-address", postalDigits],
+      queryKey: ["postal-address", postalLookupCode],
       queryFn: async () => {
         const response = await axios.get("/api/address", {
-          params: { postalCode: postalDigits },
+          params: { postalCode: postalLookupCode },
         });
         return normalizePostalResponse(response.data);
       },
-      enabled: postalDigits.length === 7,
+      enabled: isPostalComplete,
       staleTime: 5 * 60 * 1000,
     });
 
   const activePostalRecords = useMemo(
-    () => (postalDigits.length === 7 ? postalRecords : []),
-    [postalDigits, postalRecords]
+    () => (isPostalComplete ? postalRecords : []),
+    [isPostalComplete, postalRecords]
   );
 
-  const postalLoading = postalDigits.length === 7 && postalRequestLoading;
+  const postalLoading = isPostalComplete && postalRequestLoading;
 
   const districtOptions = useMemo(() => {
     const options = uniqueOptions(
@@ -267,7 +289,11 @@ export const PersonalInfo = () => {
   }, [parishValue, recordsByParish, addressValue]);
 
   useEffect(() => {
-    if (!postalDigits || postalDigits.length !== 7) {
+    if (!postalTouched) {
+      return;
+    }
+
+    if (!isPostalComplete) {
       form.setFieldsValue({
         [MembershipFields.State]: undefined,
         [MembershipFields.County]: undefined,
@@ -278,9 +304,13 @@ export const PersonalInfo = () => {
         [MembershipFields.AddressDoor]: undefined,
       });
     }
-  }, [form, postalDigits]);
+  }, [form, isPostalComplete, postalTouched]);
 
   useEffect(() => {
+    if (!postalTouched || !isPostalComplete) {
+      return;
+    }
+
     const districtValues = districtOptions.map((option) => option.value);
     if (
       districtValue &&
@@ -302,9 +332,13 @@ export const PersonalInfo = () => {
     if (!districtValue && districtValues.length === 1) {
       form.setFieldValue(MembershipFields.State, districtValues[0]);
     }
-  }, [districtOptions, districtValue, form]);
+  }, [districtOptions, districtValue, form, isPostalComplete, postalTouched]);
 
   useEffect(() => {
+    if (!postalTouched || !isPostalComplete) {
+      return;
+    }
+
     const countyValues = countyOptions.map((option) => option.value);
     if (
       countyValue &&
@@ -325,9 +359,13 @@ export const PersonalInfo = () => {
     if (!countyValue && countyValues.length === 1) {
       form.setFieldValue(MembershipFields.County, countyValues[0]);
     }
-  }, [countyOptions, countyValue, form]);
+  }, [countyOptions, countyValue, form, isPostalComplete, postalTouched]);
 
   useEffect(() => {
+    if (!postalTouched || !isPostalComplete) {
+      return;
+    }
+
     const parishValues = parishOptions.map((option) => option.value);
     if (
       parishValue &&
@@ -347,9 +385,13 @@ export const PersonalInfo = () => {
     if (!parishValue && parishValues.length === 1) {
       form.setFieldValue(MembershipFields.City, parishValues[0]);
     }
-  }, [parishOptions, parishValue, form]);
+  }, [parishOptions, parishValue, form, isPostalComplete, postalTouched]);
 
   useEffect(() => {
+    if (!postalTouched || !isPostalComplete) {
+      return;
+    }
+
     const addressValues = addressOptions.map((option) => option.value);
     if (
       addressValue &&
@@ -368,9 +410,13 @@ export const PersonalInfo = () => {
     if (!addressValue && addressValues.length === 1) {
       form.setFieldValue(MembershipFields.Address, addressValues[0]);
     }
-  }, [addressOptions, addressValue, form]);
+  }, [addressOptions, addressValue, form, isPostalComplete, postalTouched]);
 
   useEffect(() => {
+    if (!postalTouched || !isPostalComplete) {
+      return;
+    }
+
     if (!addressValue) {
       form.setFieldsValue({
         [MembershipFields.AddressNumber]: undefined,
@@ -435,8 +481,21 @@ export const PersonalInfo = () => {
     addressNumberValue,
     addressValue,
     form,
+    isPostalComplete,
+    postalTouched,
     recordsByParish,
   ]);
+
+  const handlePostalChange = (value: string) => {
+    const formattedValue = formatPostalCode(value) ?? "";
+    const digits = formattedValue.replace(/\D/g, "");
+    setPostalTouched(true);
+    if (formattedValue.match(postalCodeRegex) && digits.length === 7) {
+      setPostalLookupCode(digits);
+    } else {
+      setPostalLookupCode(null);
+    }
+  };
 
   const handleChange: UploadProps["onChange"] = async ({ file }) => {
     if (file) {
@@ -465,7 +524,7 @@ export const PersonalInfo = () => {
   );
 
   return (
-    <Row gutter={[16, 16]}>
+    <Row gutter={16}>
       <Col span={24}>
         <Title level={3} className="text-uppercase">
           Informações Pessoais
@@ -473,12 +532,12 @@ export const PersonalInfo = () => {
       </Col>
 
       <Col xs={{ order: 1, span: 24 }} md={{ order: 1, span: 20 }}>
-        <Row gutter={[16, 16]}>
+        <Row gutter={16}>
           <Form.Item name={MembershipFields.Id} label="Código" hidden>
             <Input placeholder="" className="w-full" />
           </Form.Item>
 
-          <Col xs={24} sm={16}>
+          <Col span={24}>
             <Form.Item
               name={MembershipFields.Fullname}
               label="Nome"
@@ -488,7 +547,7 @@ export const PersonalInfo = () => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name={MembershipFields.BirthDate}
               label="Data de nascimento"
@@ -515,7 +574,7 @@ export const PersonalInfo = () => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name={MembershipFields.Gender}
               label="Sexo"
@@ -525,7 +584,7 @@ export const PersonalInfo = () => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name={MembershipFields.MaritalStatus}
               label="Estado civil"
@@ -538,7 +597,7 @@ export const PersonalInfo = () => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name={MembershipFields.PostalCode}
               label="Código postal"
@@ -547,6 +606,7 @@ export const PersonalInfo = () => {
                 formatPostalCode(event?.target?.value ?? "")
               }
               rules={[
+                ...requiredRules,
                 () => ({
                   validator(_, value: string) {
                     if (!value) {
@@ -565,6 +625,9 @@ export const PersonalInfo = () => {
                 inputMode="numeric"
                 pattern="[0-9]{4}-[0-9]{3}"
                 maxLength={8}
+                onChange={(event) =>
+                  handlePostalChange(event?.target?.value ?? "")
+                }
               />
             </Form.Item>
           </Col>
@@ -658,15 +721,20 @@ export const PersonalInfo = () => {
           label="Distrito"
           rules={requiredRules}
         >
-          <Select
-            placeholder="Selecione o distrito"
-            options={districtOptions}
-            loading={postalLoading}
-            disabled={!activePostalRecords.length}
-            allowClear
-            showSearch
-            optionFilterProp="label"
-          />
+          {districtOptions.length > 1 ? (
+            <Select
+              placeholder="Selecione o distrito"
+              options={districtOptions}
+              loading={postalLoading}
+              allowClear
+              showSearch={{
+                optionFilterProp: "label",
+                filterOption: selectFilterOption,
+              }}
+            />
+          ) : (
+            <Input placeholder="Informe o distrito" />
+          )}
         </Form.Item>
       </Col>
 
@@ -676,14 +744,19 @@ export const PersonalInfo = () => {
           label="Concelho"
           rules={requiredRules}
         >
-          <Select
-            placeholder="Selecione o concelho"
-            options={countyOptions}
-            disabled={!districtValue || !countyOptions.length}
-            allowClear
-            showSearch
-            optionFilterProp="label"
-          />
+          {countyOptions.length > 1 ? (
+            <Select
+              placeholder="Selecione o concelho"
+              options={countyOptions}
+              allowClear
+              showSearch={{
+                optionFilterProp: "label",
+                filterOption: selectFilterOption,
+              }}
+            />
+          ) : (
+            <Input placeholder="Informe o concelho" />
+          )}
         </Form.Item>
       </Col>
 
@@ -693,14 +766,19 @@ export const PersonalInfo = () => {
           label="Freguesia"
           rules={requiredRules}
         >
-          <Select
-            placeholder="Selecione a freguesia"
-            options={parishOptions}
-            disabled={!countyValue || !parishOptions.length}
-            allowClear
-            showSearch
-            optionFilterProp="label"
-          />
+          {parishOptions.length > 1 ? (
+            <Select
+              placeholder="Selecione a freguesia"
+              options={parishOptions}
+              allowClear
+              showSearch={{
+                optionFilterProp: "label",
+                filterOption: selectFilterOption,
+              }}
+            />
+          ) : (
+            <Input placeholder="Informe a freguesia" />
+          )}
         </Form.Item>
       </Col>
     </Row>

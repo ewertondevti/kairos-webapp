@@ -41,5 +41,6 @@ export type UserProfile = {
   churchRole?: string;
   belongsTo?: string;
   photo?: string;
+  photoStoragePath?: string;
   isActive?: boolean;
 };

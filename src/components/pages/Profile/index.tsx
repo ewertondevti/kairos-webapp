@@ -99,9 +99,6 @@ export const ProfilePage = () => {
     try {
       const values = await form.validateFields();
       setSaving(true);
-      const photoValue = values?.[MembershipFields.Photo];
-      const safePhoto = typeof photoValue === "string" ? photoValue : undefined;
-
       const payload = {
         ...values,
         [MembershipFields.BirthDate]:
@@ -115,7 +112,6 @@ export const ProfilePage = () => {
         [MembershipFields.Children]: mapChildrenToPayload(
           values?.[MembershipFields.Children]
         ),
-        [MembershipFields.Photo]: safePhoto,
       };
 
       await updateUserProfile(payload);

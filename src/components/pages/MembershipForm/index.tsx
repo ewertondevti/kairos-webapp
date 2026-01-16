@@ -85,7 +85,6 @@ export const MembershipForm = () => {
       [MembershipFields.Children]: mapChildrenToPayload(
         values?.[MembershipFields.Children]
       ),
-      [MembershipFields.Photo]: undefined,
     };
 
     updateUserProfile(payload)

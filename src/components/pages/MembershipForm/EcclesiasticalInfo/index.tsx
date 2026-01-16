@@ -73,14 +73,14 @@ export const EcclesiasticalInfo = ({
           </Form.Item>
         </Col>
 
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={12}>
           <Form.Item name={MembershipFields.Congregation} label="Congregação">
             <Input placeholder="Nome da congregação..." />
           </Form.Item>
         </Col>
 
         {showChurchRole && (
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <Form.Item
               name={MembershipFields.ChurchRole}
               label="Cargo na igreja"
@@ -98,7 +98,7 @@ export const EcclesiasticalInfo = ({
           </Col>
         )}
 
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={12}>
           <Form.Item
             name={MembershipFields.BelongsTo}
             label="Ministério que pertence"

@@ -1,14 +1,27 @@
 import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
 import { DatabaseTableKeys } from "../enums/app";
-import { auth, firestore } from "../firebaseAdmin";
-import { generateSecurePassword, normalizeText } from "../helpers/common";
+import { auth, firestore, storage } from "../firebaseAdmin";
+import {
+  buildStorageFileName,
+  generateSecurePassword,
+  normalizeText,
+} from "../helpers/common";
 import { IAccessRequest, IUser } from "../models";
 import { corsHandler, requireAuth, requireRoles, UserRole } from "../utils";
 
 const USER_CONFIG = {
   maxInstances: 10,
   invoker: "public",
+};
+
+const USER_PHOTO_CACHE_CONTROL = "public, max-age=31536000, immutable";
+const USER_PHOTO_URL_EXPIRES_MS = 10 * 365 * 24 * 60 * 60 * 1000;
+
+type PhotoPayload = {
+  file?: string;
+  filename?: string;
+  type?: string;
 };
 
 const getUsersByRoles = async (roles: UserRole[]) => {
@@ -39,6 +52,67 @@ const sendMail = async (to: string[], subject: string, html: string) => {
 };
 
 const normalizeComparable = (value?: string) => normalizeText(value ?? "");
+
+const isPhotoPayload = (value: unknown): value is PhotoPayload =>
+  Boolean(
+    value &&
+      typeof value === "object" &&
+      "file" in value &&
+      typeof (value as PhotoPayload).file === "string"
+  );
+
+const parseDataUrl = (value: string) => {
+  const match = value.match(/^data:(.+);base64,(.+)$/);
+  if (!match) return null;
+  return { mimeType: match[1], base64: match[2] };
+};
+
+const getExtensionFromMime = (mimeType?: string) => {
+  if (!mimeType) return undefined;
+  if (mimeType === "image/jpeg") return ".jpg";
+  if (mimeType === "image/png") return ".png";
+  if (mimeType === "image/webp") return ".webp";
+  return undefined;
+};
+
+const isRemotePhotoUrl = (value: string) => /^https?:\/\//i.test(value);
+
+const uploadUserPhoto = async (photo: PhotoPayload, uid: string) => {
+  const dataUrl = photo.file?.trim();
+  if (!dataUrl) {
+    return undefined;
+  }
+
+  const parsed = parseDataUrl(dataUrl);
+  if (!parsed) {
+    return undefined;
+  }
+
+  const contentType = photo.type?.trim() || parsed.mimeType;
+  if (!contentType.startsWith("image/")) {
+    return undefined;
+  }
+
+  const buffer = Buffer.from(parsed.base64, "base64");
+  const extension = getExtensionFromMime(contentType);
+  const fileName = buildStorageFileName(photo.filename || "profile", extension);
+  const destination = `${DatabaseTableKeys.Users}/${uid}/${fileName}`;
+  const fileRef = storage.bucket().file(destination);
+
+  await fileRef.save(buffer, {
+    metadata: {
+      contentType,
+      cacheControl: USER_PHOTO_CACHE_CONTROL,
+    },
+  });
+
+  const [url] = await fileRef.getSignedUrl({
+    action: "read",
+    expires: Date.now() + USER_PHOTO_URL_EXPIRES_MS,
+  });
+
+  return { url, storagePath: destination };
+};
 
 const findUserByNormalized = async (fullname: string, email: string) => {
   const normalizedFullname = normalizeComparable(fullname);
@@ -238,7 +312,10 @@ export const createUser = onRequest(USER_CONFIG, async (request, response) => {
     }
 
     const context = await requireAuth(request, response);
-    if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+    if (
+      !context ||
+      !requireRoles(context, [UserRole.Admin, UserRole.Secretaria], response)
+    ) {
       return;
     }
 
@@ -417,15 +494,37 @@ export const updateUserProfile = onRequest(
         const user = userSnap.data() as IUser;
         const fullname = payload.fullname?.trim() || user.fullname;
         const email = payload.email?.trim() || user.email;
-        const { active, role, ...safePayload } = payload;
+        const { active, role, photo, ...safePayload } = payload;
         void active;
         void role;
-        const updatePayload = {
+
+        const updatePayload: Record<string, unknown> = {
           ...safePayload,
           fullname,
           email,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
+
+        if (isPhotoPayload(photo)) {
+          const uploadedPhoto = await uploadUserPhoto(photo, targetUid);
+          if (uploadedPhoto) {
+            updatePayload.photo = uploadedPhoto.url;
+            updatePayload.photoStoragePath = uploadedPhoto.storagePath;
+          }
+        } else if (typeof photo === "string" && photo.trim()) {
+          if (photo.startsWith("data:image/")) {
+            const uploadedPhoto = await uploadUserPhoto(
+              { file: photo, filename: "profile" },
+              targetUid
+            );
+            if (uploadedPhoto) {
+              updatePayload.photo = uploadedPhoto.url;
+              updatePayload.photoStoragePath = uploadedPhoto.storagePath;
+            }
+          } else if (isRemotePhotoUrl(photo)) {
+            updatePayload.photo = photo;
+          }
+        }
 
         await userRef.update(updatePayload);
 

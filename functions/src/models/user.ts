@@ -38,6 +38,7 @@ export interface IUser {
   churchRole?: string;
   belongsTo?: string;
   photo?: string;
+  photoStoragePath?: string;
   isActive?: boolean;
   createdAt: FirebaseFirestore.FieldValue;
   updatedAt: FirebaseFirestore.FieldValue;

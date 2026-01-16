@@ -28,18 +28,22 @@ export const ParentInfo = () => {
       </Title>
 
       <Row gutter={10}>
-        <Col xs={24} md={12}>
-          <Form.Item name={MembershipFields.MotherName} label="Nome da mãe">
-            <Input placeholder="Nome completo da mãe..." />
-          </Form.Item>
-        </Col>
-
-        <Col xs={24} md={12}>
+        <Col span={24}>
           <Form.Item name={MembershipFields.FatherName} label="Nome do pai">
             <Input placeholder="Nome completo do pai..." />
           </Form.Item>
         </Col>
+      </Row>
 
+      <Row gutter={10}>
+        <Col span={24}>
+          <Form.Item name={MembershipFields.MotherName} label="Nome da mãe">
+            <Input placeholder="Nome completo da mãe..." />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={10}>
         {isShowFields(MembershipFields.SpouseName) && (
           <Col xs={24} sm={16} md={18}>
             <Form.Item
