@@ -52,6 +52,13 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_KEY" > "$HOME/firebase-service-account.json"
           echo "FIREBASE_CREDENTIALS_PATH=$HOME/firebase-service-account.json" >> "$GITHUB_ENV"
 
+      - name: Check Cloud Billing API
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.FIREBASE_CREDENTIALS_PATH }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          pnpm dlx -p google-auth-library node -e "const fs=require('fs');const{JWT}=require('google-auth-library');const keyPath=process.env.GOOGLE_APPLICATION_CREDENTIALS;const projectId=process.env.FIREBASE_PROJECT_ID;const keys=JSON.parse(fs.readFileSync(keyPath,'utf8'));const client=new JWT({email:keys.client_email,key:keys.private_key,scopes:['https://www.googleapis.com/auth/cloud-platform']});const url='https://cloudbilling.googleapis.com/v1/projects/'+encodeURIComponent(projectId)+'/billingInfo';(async()=>{try{await client.request({url});console.log('Cloud Billing API OK');}catch(err){console.error('Cloud Billing API check failed. Enable billing and Cloud Billing API for the project.');process.exit(1);}})();"
+
       - name: Enable webframeworks experiment
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ env.FIREBASE_CREDENTIALS_PATH }}
