@@ -33,6 +33,7 @@ import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
 import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
 import { SearchOutlined } from "@ant-design/icons";
 import { churchRoleOptions } from "@/constants/churchRoles";
+import type { FilterDropdownProps } from "antd/es/table/interface";
 
 type CreateFormValues = {
   fullname: string;
@@ -195,17 +196,12 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
       selectedKeys,
       confirm,
       clearFilters,
-    }: {
-      setSelectedKeys: (keys: string[]) => void;
-      selectedKeys: string[];
-      confirm: () => void;
-      clearFilters?: () => void;
-    }) => (
+    }: FilterDropdownProps) => (
       <div style={{ padding: 8 }}>
         <Input
           ref={searchInput}
           placeholder="Buscar..."
-          value={selectedKeys[0]}
+          value={selectedKeys[0] ? String(selectedKeys[0]) : ""}
           onChange={(e) =>
             setSelectedKeys(e.target.value ? [e.target.value] : [])
           }
