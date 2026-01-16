@@ -125,7 +125,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const isAdminView = mode === "admin";
   const canCreateUsers = isAdminView && role === UserRole.Admin;
   const canCreateMembers = mode === "secretaria" && canViewUsers;
-  const canToggleActive = role === UserRole.Admin;
+  const canToggleActive = isAdminView && role === UserRole.Admin;
   const canEditMembers = canViewUsers;
   const canUpdateProfileRole = isAdminView && role === UserRole.Admin;
   const canUpdateChurchRole = canEditMembers;
@@ -209,10 +209,14 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     }
   };
 
-  const onUpdateChurchRole = async (user: UserProfile, nextRole?: string) => {
+  const onUpdateChurchRole = async (user: UserProfile, nextRole: string) => {
+    if (!nextRole) {
+      message.warning("Selecione um cargo válido.");
+      return;
+    }
     try {
       await updateUserProfile(
-        { [MembershipFields.ChurchRole]: nextRole ?? null },
+        { [MembershipFields.ChurchRole]: nextRole },
         user.authUid || user.id
       );
       message.success("Cargo atualizado com sucesso!");
@@ -220,7 +224,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
         action: "member.churchRole.update",
         targetType: "user",
         targetId: user.authUid || user.id,
-        metadata: { churchRole: nextRole ?? null },
+        metadata: { churchRole: nextRole },
       });
       refresh();
     } catch (error) {
@@ -517,9 +521,8 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
         <Select
           value={value}
           options={churchRoleOptions}
-          onChange={(nextRole) => onUpdateChurchRole(record, nextRole)}
+          onChange={(nextRole) => onUpdateChurchRole(record, String(nextRole))}
           style={{ minWidth: 180 }}
-          allowClear
           placeholder="Selecione o cargo"
         />
       ) : (
