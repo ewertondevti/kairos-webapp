@@ -274,7 +274,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
               text: option.label,
               value: option.value,
             })),
-            onFilter: (value: string, record: UserProfile) =>
+            onFilter: (value: UserRole, record: UserProfile) =>
               record.role === value,
             sorter: (a: UserProfile, b: UserProfile) =>
               a.role.localeCompare(b.role),
