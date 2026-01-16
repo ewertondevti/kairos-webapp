@@ -21,3 +21,11 @@ export async function PATCH(request: NextRequest) {
     }
   );
 }
+
+export async function DELETE(request: NextRequest) {
+  const authorization = request.headers.get("authorization") || "";
+  const body = await request.json();
+  return proxyRequest("DELETE", "/deleteAccessRequest", body, undefined, {
+    authorization,
+  });
+}

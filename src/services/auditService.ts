@@ -1,6 +1,7 @@
 import { firebaseAuth } from "@/firebase";
 import axios from "axios";
 import { getAuthHeaders } from "@/services/authHeaders";
+import { AuditLogEntry } from "@/types/audit";
 
 type AuditActor = {
   uid?: string | null;
@@ -37,4 +38,13 @@ export const logAuditEvent = async (event: AuditEvent) => {
   } catch (error) {
     console.error("Erro ao registrar auditoria:", error);
   }
+};
+
+export const getAuditLogs = async (limit = 200): Promise<AuditLogEntry[]> => {
+  const headers = await getAuthHeaders();
+  const response = await axios.get("/api/audit-logs", {
+    headers,
+    params: { limit },
+  });
+  return Array.isArray(response.data) ? response.data : [];
 };

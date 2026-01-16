@@ -16,6 +16,7 @@ import { logAuditEvent } from "@/services/auditService";
 import {
   AccessRequest,
   createUser,
+  deleteAccessRequest,
   setUserActive,
   setUserRole,
   updateAccessRequestStatus,
@@ -123,9 +124,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const isAdminView = mode === "admin";
   const canCreateUsers = isAdminView && role === UserRole.Admin;
   const canCreateMembers = mode === "secretaria" && canViewUsers;
-  const canToggleActive =
-    role === UserRole.Admin ||
-    (mode === "secretaria" && role === UserRole.Secretaria);
+  const canToggleActive = role === UserRole.Admin;
   const canEditMembers = canViewUsers;
   const canUpdateProfileRole = isAdminView && role === UserRole.Admin;
   const canUpdateChurchRole = canEditMembers;
@@ -280,6 +279,26 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
       email: request.email,
     });
     setCreateOpen(true);
+  };
+
+  const onRejectAccessRequest = async (request: AccessRequest) => {
+    try {
+      await deleteAccessRequest(request.id);
+      message.success("Solicitação recusada com sucesso!");
+      void logAuditEvent({
+        action: "accessRequest.reject",
+        targetType: "accessRequest",
+        targetId: request.id,
+        metadata: {
+          email: request.email,
+          fullname: request.fullname,
+        },
+      });
+      refreshAccessRequests();
+    } catch (error) {
+      console.error(error);
+      message.error("Não foi possível recusar a solicitação.");
+    }
   };
 
   useEffect(() => {
@@ -589,6 +608,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
           requests={pendingAccessRequests}
           isMobile={isMobile}
           onCreateFromRequest={openCreateFromRequest}
+          onRejectRequest={onRejectAccessRequest}
         />
       )}
 

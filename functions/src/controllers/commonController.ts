@@ -1,5 +1,6 @@
 import {onRequest} from "firebase-functions/v2/https";
 import {deleteImageStorage} from "../helpers/common";
+import { logAuditEvent } from "../utils/audit";
 import {corsHandler, requireAuth, requireRoles, UserRole} from "../utils";
 
 // Common function configuration
@@ -45,6 +46,14 @@ export const deleteUploadedImage = onRequest(
       try {
         await deleteImageStorage([imagePath.trim()]);
         console.log(`Imagem excluída com sucesso: ${imagePath}`);
+        void logAuditEvent(
+          {
+            action: "image.delete",
+            targetType: "image",
+            targetId: imagePath.trim(),
+          },
+          context
+        );
         response.status(200).send("Imagem excluída com sucesso.");
       } catch (error) {
         console.error("Erro ao excluir imagem:", error);

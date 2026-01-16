@@ -6,4 +6,5 @@ export enum QueryNames {
   GetUsers = "GetUsers",
   GetUserProfile = "GetUserProfile",
   GetAccessRequests = "GetAccessRequests",
+  GetAuditLogs = "GetAuditLogs",
 }

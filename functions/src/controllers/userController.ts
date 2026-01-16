@@ -8,6 +8,7 @@ import {
   normalizeText,
 } from "../helpers/common";
 import { IAccessRequest, IUser } from "../models";
+import { logAuditEvent } from "../utils/audit";
 import { corsHandler, requireAuth, requireRoles, UserRole } from "../utils";
 
 const USER_CONFIG = {
@@ -180,6 +181,17 @@ export const requestAccess = onRequest(
           .collection(DatabaseTableKeys.AccessRequests)
           .add(accessRequest);
 
+        void logAuditEvent({
+          action: "accessRequest.create",
+          targetType: "accessRequest",
+          metadata: {
+            fullname: accessRequest.fullname,
+            email: accessRequest.email,
+            status: accessRequest.status,
+          },
+          actor: { email: accessRequest.email },
+        });
+
         const recipients = await getUsersByRoles([
           UserRole.Admin,
           UserRole.Secretaria,
@@ -296,10 +308,70 @@ export const updateAccessRequestStatus = onRequest(
           updatedBy: context.uid,
         });
 
+        void logAuditEvent(
+          {
+            action: "accessRequest.status.update",
+            targetType: "accessRequest",
+            targetId: id,
+            metadata: { status: normalizedStatus },
+          },
+          context
+        );
+
         response.status(200).send();
       } catch (error) {
         console.error("Erro ao atualizar solicitação:", error);
         response.status(500).send("Erro ao atualizar solicitação.");
+      }
+    });
+  }
+);
+
+export const deleteAccessRequest = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "DELETE") {
+        response.set("Allow", "DELETE");
+        response.status(405).send("Método não permitido. Use DELETE.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const { id } = request.body || {};
+        if (!id?.trim()) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        await firestore
+          .collection(DatabaseTableKeys.AccessRequests)
+          .doc(id)
+          .delete();
+
+        void logAuditEvent(
+          {
+            action: "accessRequest.delete",
+            targetType: "accessRequest",
+            targetId: id,
+          },
+          context
+        );
+
+        response.status(200).send();
+      } catch (error) {
+        console.error("Erro ao excluir solicitação:", error);
+        response.status(500).send("Erro ao excluir solicitação.");
       }
     });
   }
@@ -358,6 +430,13 @@ export const syncUserClaims = onRequest(
             active: true,
           });
 
+          void logAuditEvent({
+            action: "user.sync.create",
+            targetType: "user",
+            targetId: decoded.uid,
+            metadata: { role: UserRole.Admin, active: true },
+          });
+
           response.status(200).json({
             role: UserRole.Admin,
             active: true,
@@ -383,6 +462,12 @@ export const syncUserClaims = onRequest(
             fullname,
             email,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          void logAuditEvent({
+            action: "user.sync.update",
+            targetType: "user",
+            targetId: decoded.uid,
+            metadata: { role, active, fullname, email },
           });
         }
 
@@ -473,6 +558,16 @@ export const createUser = onRequest(USER_CONFIG, async (request, response) => {
         active: true,
       });
 
+      void logAuditEvent(
+        {
+          action: "user.create",
+          targetType: "user",
+          targetId: authUser.uid,
+          metadata: { email: userDoc.email, fullname: userDoc.fullname },
+        },
+        context
+      );
+
       await sendMail(
         [userDoc.email],
         "Seus dados de acesso",
@@ -537,6 +632,16 @@ export const setUserRole = onRequest(USER_CONFIG, async (request, response) => {
         role: normalizedRole,
         active: user.active,
       });
+
+      void logAuditEvent(
+        {
+          action: "user.role.update",
+          targetType: "user",
+          targetId: uid,
+          metadata: { role: normalizedRole },
+        },
+        context
+      );
 
       response.status(200).send();
     } catch (error) {
@@ -641,6 +746,16 @@ export const updateUserProfile = onRequest(
           });
         }
 
+        void logAuditEvent(
+          {
+            action: "user.profile.update",
+            targetType: "user",
+            targetId: targetUid,
+            metadata: { fields: Object.keys(payload || {}) },
+          },
+          context
+        );
+
         response.status(200).send();
       } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
@@ -704,6 +819,16 @@ export const setUserActive = onRequest(
         if (!active) {
           await auth.revokeRefreshTokens(uid);
         }
+
+        void logAuditEvent(
+          {
+            action: "user.active.update",
+            targetType: "user",
+            targetId: uid,
+            metadata: { active },
+          },
+          context
+        );
 
         response.status(200).send();
       } catch (error) {

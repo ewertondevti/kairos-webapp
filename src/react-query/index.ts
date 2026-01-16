@@ -1,5 +1,6 @@
 import { getAlbumById, getAlbums } from "@/services/albumServices";
 import { getEvents } from "@/services/eventServices";
+import { getAuditLogs } from "@/services/auditService";
 import {
   getAccessRequests,
   getUserProfile,
@@ -92,6 +93,16 @@ export const useGetAccessRequests = (enabled = true) => {
   return useQuery({
     queryKey: [QueryNames.GetAccessRequests],
     queryFn: async () => await getAccessRequests(),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    enabled,
+  });
+};
+
+export const useGetAuditLogs = (limit = 200, enabled = true) => {
+  return useQuery({
+    queryKey: [QueryNames.GetAuditLogs, limit],
+    queryFn: async () => await getAuditLogs(limit),
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
     enabled,

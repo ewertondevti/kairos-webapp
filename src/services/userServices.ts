@@ -57,6 +57,15 @@ export const updateAccessRequestStatus = async (
   return response.data;
 };
 
+export const deleteAccessRequest = async (id: string) => {
+  const headers = await getAuthHeaders();
+  const response = await axios.delete("/api/access-requests", {
+    headers,
+    data: { id },
+  });
+  return response.data;
+};
+
 export const createUser = async (payload: CreateUserPayload) => {
   const headers = await getAuthHeaders();
   const response = await axios.post("/api/users", payload, { headers });

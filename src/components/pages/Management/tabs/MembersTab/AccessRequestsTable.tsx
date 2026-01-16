@@ -1,5 +1,5 @@
 import { AccessRequest } from "@/services/userServices";
-import { Button, Table } from "antd";
+import { Button, Popconfirm, Space, Table } from "antd";
 import type { ColumnsType } from "antd/es/table/interface";
 import Title from "antd/es/typography/Title";
 import dayjs from "dayjs";
@@ -8,12 +8,14 @@ type AccessRequestsTableProps = {
   requests: AccessRequest[];
   isMobile: boolean;
   onCreateFromRequest: (request: AccessRequest) => void;
+  onRejectRequest: (request: AccessRequest) => void;
 };
 
 export const AccessRequestsTable = ({
   requests,
   isMobile,
   onCreateFromRequest,
+  onRejectRequest,
 }: AccessRequestsTableProps) => {
   const columns: ColumnsType<AccessRequest> = [
     {
@@ -37,9 +39,21 @@ export const AccessRequestsTable = ({
       title: "Ações",
       key: "actions",
       render: (_: unknown, record: AccessRequest) => (
-        <Button type="primary" onClick={() => onCreateFromRequest(record)}>
-          Criar usuário
-        </Button>
+        <Space>
+          <Button type="primary" onClick={() => onCreateFromRequest(record)}>
+            Aceitar
+          </Button>
+          <Popconfirm
+            title="Recusar solicitação?"
+            description="Esta ação remove a solicitação."
+            okText="Recusar"
+            cancelText="Cancelar"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => onRejectRequest(record)}
+          >
+            <Button danger>Recusar</Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
