@@ -30,7 +30,10 @@ export const CustomHeader = () => {
     { key: `/${RoutesEnums.Gallery}`, label: "Galeria" },
     { key: `/${RoutesEnums.MembershipForm}`, label: "Ficha de Membro" },
     ...(isAuthenticated
-      ? [{ key: `/${RoutesEnums.Management}`, label: "Gerenciamento" }]
+      ? [
+          { key: `/${RoutesEnums.Management}`, label: "Gerenciamento" },
+          { key: `/${RoutesEnums.Profile}`, label: "Perfil" },
+        ]
       : []),
     ...(!isAuthenticated
       ? [

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { proxyRequest } from "../_utils/proxy";
+import { proxyRequest } from "@/app/api/_utils/proxy";
 
 export async function GET() {
   return proxyRequest("GET", "/getEvents");
@@ -8,7 +8,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    return proxyRequest("POST", "/createEvents", body);
+    const authorization = request.headers.get("authorization") || "";
+    return proxyRequest("POST", "/createEvents", body, undefined, {
+      authorization,
+    });
   } catch (error: any) {
     return proxyRequest("POST", "/createEvents", {}); // Will return error
   }
@@ -17,7 +20,10 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
-    return proxyRequest("POST", "/deleteEvents", body);
+    const authorization = request.headers.get("authorization") || "";
+    return proxyRequest("POST", "/deleteEvents", body, undefined, {
+      authorization,
+    });
   } catch (error: any) {
     return proxyRequest("POST", "/deleteEvents", {}); // Will return error
   }

@@ -7,6 +7,7 @@ export interface IMemberPhoto {
 export interface IMemberPayload {
   photo?: IMemberPhoto;
   fullname: string;
+  email: string;
   birthDate: string;
   gender: number;
   maritalStatus: number;
@@ -28,11 +29,15 @@ export interface IMemberPayload {
   congregation?: string;
   churchRole?: string;
   belongsTo?: string;
+  isActive?: boolean;
+  normalizedFullname?: string;
+  normalizedEmail?: string;
 }
 
 export interface IMember {
   photo?: string;
   fullname: string;
+  email: string;
   birthDate: string;
   gender: number;
   maritalStatus: number;
@@ -54,4 +59,7 @@ export interface IMember {
   congregation?: string;
   churchRole?: string;
   belongsTo?: string;
+  isActive?: boolean;
+  normalizedFullname?: string;
+  normalizedEmail?: string;
 }

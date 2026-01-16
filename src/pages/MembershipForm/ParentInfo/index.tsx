@@ -22,7 +22,7 @@ export const ParentInfo = () => {
 
   return (
     <>
-      <Divider orientation="left">
+      <Divider orientation="vertical">
         <Title level={3} className="text-uppercase">
           Informações Familiares
         </Title>
@@ -74,3 +74,5 @@ export const ParentInfo = () => {
     </>
   );
 };
+
+export default ParentInfo;

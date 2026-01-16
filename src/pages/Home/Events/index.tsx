@@ -85,6 +85,7 @@ export const Events = () => {
                   <Flex className="rounded-2xl border border-primary/15 bg-white/70 p-3 shadow-[0_12px_32px_rgba(15,58,28,0.12)] backdrop-blur">
                     <Image
                       src={url}
+                      alt={`Evento ${idx + 1}`}
                       className="h-[200px]! w-[320px]! rounded-xl object-cover"
                     />
                   </Flex>
@@ -97,3 +98,5 @@ export const Events = () => {
     </Col>
   );
 };
+
+export default Events;

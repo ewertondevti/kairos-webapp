@@ -5,7 +5,12 @@ import {deleteImageStorage} from "../helpers/common";
 import {handleMultipartUpload} from "../helpers/upload";
 import {CreateCommonPayload, DeleteCommonPayload} from "../models";
 import {IEvent} from "../models/event";
-import {corsHandler, mapWithConcurrency} from "../utils";
+import {
+  corsHandler,
+  mapWithConcurrency,
+  requireAuth,
+  requireRoles,
+} from "../utils";
 
 // Common function configuration for image uploads
 const IMAGE_UPLOAD_CONFIG = {
@@ -35,6 +40,11 @@ export const uploadEvent = onRequest(
       if (request.method !== "POST") {
         response.set("Allow", "POST");
         response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 
@@ -76,6 +86,11 @@ export const createEvents = onRequest(
       if (request.method !== "POST") {
         response.set("Allow", "POST");
         response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 
@@ -188,6 +203,11 @@ export const deleteEvents = onRequest(
       if (request.method !== "POST") {
         response.set("Allow", "POST");
         response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 

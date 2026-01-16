@@ -10,7 +10,12 @@ import {
   UpdateAlbumPayload,
 } from "../models";
 import {IAlbum, IImage} from "../models/album";
-import {corsHandler, mapWithConcurrency} from "../utils";
+import {
+  corsHandler,
+  mapWithConcurrency,
+  requireAuth,
+  requireRoles,
+} from "../utils";
 
 // Common function configuration for image uploads
 const IMAGE_UPLOAD_CONFIG = {
@@ -75,6 +80,11 @@ export const uploadImage = onRequest(
         return;
       }
 
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+        return;
+      }
+
       try {
         const result = await handleMultipartUpload(
           request,
@@ -113,6 +123,11 @@ export const createAlbum = onRequest(
       if (request.method !== "POST") {
         response.set("Allow", "POST");
         response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 
@@ -158,6 +173,11 @@ export const updateAlbum = onRequest(
       if (request.method !== "POST") {
         response.set("Allow", "POST");
         response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 
@@ -417,6 +437,11 @@ export const deleteImageFromAlbum = onRequest(
         return;
       }
 
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+        return;
+      }
+
       try {
         const body = request.body as DeleteImgFromAlbumPayload;
 
@@ -484,6 +509,11 @@ export const deleteAlbum = onRequest(
       if (request.method !== "DELETE") {
         response.set("Allow", "DELETE");
         response.status(405).send("Método não permitido. Use DELETE.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 

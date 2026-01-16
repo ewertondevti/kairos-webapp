@@ -28,3 +28,5 @@ export interface UploadCommonRequest {
   fileName: string;
   mimeType: string;
 }
+
+export * from "./user";

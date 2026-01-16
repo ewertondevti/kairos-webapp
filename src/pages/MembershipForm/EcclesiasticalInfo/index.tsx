@@ -6,7 +6,7 @@ import Title from "antd/es/typography/Title";
 export const EcclesiasticalInfo = () => {
   return (
     <>
-      <Divider orientation="left">
+      <Divider orientation="vertical">
         <Title level={3} className="text-uppercase">
           Informações Eclasiásticas
         </Title>
@@ -93,3 +93,5 @@ export const EcclesiasticalInfo = () => {
     </>
   );
 };
+
+export default EcclesiasticalInfo;

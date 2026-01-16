@@ -1,10 +1,10 @@
 "use client";
 
 import { RoutesEnums } from "@/enums/routesEnums";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Button, Col, Flex, Row, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import styles from "./Hero.module.scss";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const { Title, Paragraph } = Typography;
 
@@ -43,7 +43,7 @@ export const Hero = () => {
                   lineHeight: 1.8,
                 }}
               >
-                Uma comunidade comprometida com o Evangelho de Jesus Cristo.
+                Uma igreja comprometida com o Evangelho de Jesus Cristo.
                 Junte-se a nós e descubra o poder transformador da Palavra de
                 Deus.
               </Paragraph>

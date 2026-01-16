@@ -21,3 +21,5 @@ export const EventsTab = () => {
     </Flex>
   );
 };
+
+export default EventsTab;

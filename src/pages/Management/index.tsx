@@ -28,6 +28,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { isMobile } from "react-device-detect";
 import { AlbumsTab } from "./tabs/AlbumsTab";
 import { EventsTab } from "./tabs/EventsTab";
+import { MembersTab } from "./tabs/MembersTab";
 
 type ManagementProps = {
   children?: React.ReactNode;
@@ -36,13 +37,14 @@ type ManagementProps = {
 const Management = ({ children }: ManagementProps) => {
   const router = useRouter();
   const pathname = usePathname();
+  const currentPath = pathname ?? "";
 
   const { data: albums } = useGetAlbums();
 
   const { selectedImages, mode, updateMode, updateSelectedImages } =
     useAppState();
 
-  const defaultKey = pathname.split("/").filter(Boolean)[1];
+  const defaultKey = currentPath.split("/").filter(Boolean)[1];
 
   const onChange: TabsProps["onChange"] = (key) => {
     updateMode("default");
@@ -129,8 +131,8 @@ const Management = ({ children }: ManagementProps) => {
                     children: (
                       <AlbumsTab
                         albumId={
-                          pathname.includes("/albums/")
-                            ? pathname.split("/").pop()
+                          currentPath.includes("/albums/")
+                            ? currentPath.split("/").pop()
                             : undefined
                         }
                       />
@@ -140,6 +142,11 @@ const Management = ({ children }: ManagementProps) => {
                     key: ManagementRoutesEnums.Events,
                     label: "Próximos eventos",
                     children: <EventsTab />,
+                  },
+                  {
+                    key: ManagementRoutesEnums.Members,
+                    label: "Membros",
+                    children: <MembersTab />,
                   },
                 ]}
                 activeKey={defaultKey}

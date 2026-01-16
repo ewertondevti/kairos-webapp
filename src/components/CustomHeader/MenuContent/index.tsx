@@ -8,6 +8,7 @@ import {
   faImages,
   faPowerOff,
   faRightToBracket,
+  faUser,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -91,6 +92,20 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
             block
           >
             Gerenciamento
+          </Button>
+        </Col>
+      )}
+
+      {isAuthenticated && (
+        <Col span={24}>
+          <Button
+            type="text"
+            icon={<FontAwesomeIcon icon={faUser} />}
+            className={styles.menuButton}
+            onClick={() => onRedirect(`/${RoutesEnums.Profile}`)}
+            block
+          >
+            Meu perfil
           </Button>
         </Col>
       )}

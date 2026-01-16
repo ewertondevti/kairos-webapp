@@ -5,7 +5,7 @@ import { LazyImage } from "@/components/LazyImage";
 import { useGetImageSize } from "@/hooks/app";
 import { useGetAlbumById } from "@/react-query";
 import { Col, Empty, Flex, Row } from "antd";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { AutoSizer } from "react-virtualized-auto-sizer";
 import { Grid, type CellComponentProps } from "react-window";
 
@@ -55,15 +55,13 @@ export const AlbumDetails = ({ albumId }: AlbumDetailsProps) => {
 
   const { data: album, isLoading } = useGetAlbumById(albumId);
 
-  const columnCount = useMemo(() => {
-    if (!album?.images?.length) return columns;
-    return Math.min(columns, album.images.length);
-  }, [album?.images?.length, columns]);
+  const columnCount = album?.images?.length
+    ? Math.min(columns, album.images.length)
+    : columns;
 
-  const rowCount = useMemo(() => {
-    if (!album?.images?.length) return 0;
-    return Math.ceil(album.images.length / columnCount);
-  }, [album?.images?.length, columnCount]);
+  const rowCount = album?.images?.length
+    ? Math.ceil(album.images.length / columnCount)
+    : 0;
 
   const GridChild = useCallback(
     ({
@@ -127,3 +125,5 @@ export const AlbumDetails = ({ albumId }: AlbumDetailsProps) => {
     </Row>
   );
 };
+
+export default AlbumDetails;

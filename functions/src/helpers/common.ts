@@ -72,3 +72,36 @@ export const deleteImageStorage = async (urls: string[]): Promise<void> => {
     throw error;
   }
 };
+
+export const normalizeText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+export const generateSecurePassword = (length = 20) => {
+  const digits = "0123456789";
+  const lower = "abcdefghijklmnopqrstuvwxyz";
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const symbols = "!@#$%^&*()-_=+[]{}<>?";
+  const all = `${digits}${lower}${upper}${symbols}`;
+
+  const pick = (charset: string) =>
+    charset[crypto.randomInt(0, charset.length)];
+
+  const passwordChars = [
+    pick(digits),
+    pick(lower),
+    pick(upper),
+    pick(symbols),
+  ];
+
+  for (let i = passwordChars.length; i < length; i += 1) {
+    passwordChars.push(pick(all));
+  }
+
+  return passwordChars
+    .sort(() => crypto.randomInt(0, 2) - 0.5)
+    .join("");
+};

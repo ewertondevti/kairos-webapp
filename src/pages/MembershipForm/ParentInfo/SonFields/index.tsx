@@ -65,3 +65,5 @@ export const SonFields = () => {
     </Form.List>
   );
 };
+
+export default SonFields;

@@ -1,6 +1,7 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Skeleton } from "antd";
 import styles from "./OptimizedImage.module.scss";
 
@@ -14,7 +15,7 @@ type OptimizedImageProps = {
   onClick?: () => void;
 };
 
-export const OptimizedImage = ({
+const OptimizedImageContent = ({
   src,
   alt,
   width,
@@ -25,16 +26,6 @@ export const OptimizedImage = ({
 }: OptimizedImageProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const imgRef = useRef<HTMLImageElement | null>(null);
-
-  useEffect(() => {
-    const image = imgRef.current;
-    if (!image) return;
-
-    if (image.complete && image.naturalWidth > 0) {
-      setIsLoading(false);
-    }
-  }, [src]);
 
   if (hasError) {
     return (
@@ -60,7 +51,6 @@ export const OptimizedImage = ({
         />
       )}
       <img
-        ref={imgRef}
         src={src}
         alt={alt}
         width={width}
@@ -84,4 +74,8 @@ export const OptimizedImage = ({
       />
     </div>
   );
+};
+
+export const OptimizedImage = (props: OptimizedImageProps) => {
+  return <OptimizedImageContent key={props.src} {...props} />;
 };

@@ -1,6 +1,6 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import { useGetListItemSize } from "@/hooks/app";
-import { useUploadQueue } from "@/hooks/useUploadQueue";
+import { useUploadQueue, type UploadQueueItem } from "@/hooks/useUploadQueue";
 import { QueryNames } from "@/react-query/queryNames";
 import { createAlbum } from "@/services/albumServices";
 import { deleteUploadedImage } from "@/services/commonServices";
@@ -32,14 +32,87 @@ import {
 } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/pt-br";
-import { CSSProperties, FC, useMemo, useRef, useState } from "react";
-import { FixedSizeList } from "react-window";
+import { FC, useMemo, useRef, useState } from "react";
+import { List, type RowComponentProps } from "react-window";
 
 const { Text } = Typography;
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_FILES = 500;
 const MAX_CONCURRENCY = 4;
+
+type UploadRowProps = {
+  items: UploadQueueItem[];
+  onRemove: (itemId: string) => void;
+  onRetry: (itemId: string) => void;
+};
+
+const UploadRow = ({
+  index,
+  style,
+  items,
+  onRemove,
+  onRetry,
+}: RowComponentProps<UploadRowProps>) => {
+  const item = items[index];
+  const isUploading = item.status === "uploading";
+  const isSuccess = item.status === "success";
+  const isError = item.status === "error";
+
+  return (
+    <Flex
+      justify="space-between"
+      align="center"
+      flex={1}
+      style={style}
+      className="ant-upload-list-item-container"
+    >
+      <Flex className="ant-upload-list-item w-full" align="center" gap={8}>
+        <Flex className="ant-upload-icon">
+          {isUploading && <LoadingOutlined />}
+          {isSuccess && <CheckCircleOutlined className="text-green-500" />}
+          {isError && <ExclamationCircleOutlined className="text-red-500" />}
+          {!isUploading && !isSuccess && !isError && <PaperClipOutlined />}
+        </Flex>
+
+        <Flex vertical className="min-w-0 flex-1">
+          <Text className="ant-upload-list-item-name truncate" title={item.name}>
+            {item.name}
+          </Text>
+          <Text className="text-xs text-gray-500">{formatBytes(item.size)}</Text>
+        </Flex>
+
+        <Flex align="center" gap={4}>
+          {isError && (
+            <Button
+              type="text"
+              size="small"
+              icon={<ReloadOutlined />}
+              onClick={() => onRetry(item.id)}
+              className="ant-upload-list-item-action"
+              aria-label="Reenviar"
+            />
+          )}
+          <Button
+            type="text"
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={() => onRemove(item.id)}
+            className="ant-upload-list-item-action"
+            disabled={isUploading}
+            aria-label="Remover"
+          />
+        </Flex>
+      </Flex>
+
+      {item.progress > 0 && item.progress < 100 && (
+        <Flex className="ant-upload-list-item-progress">
+          <Progress percent={item.progress} showInfo={false} size={{ height: 2 }} />
+        </Flex>
+      )}
+    </Flex>
+  );
+};
 
 dayjs.locale("pt-br");
 
@@ -272,84 +345,18 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
 
           {!!items.length && (
             <Text className="ant-upload-wrapper upload-images">
-              <FixedSizeList
-                height={height}
-                width={width}
-                itemCount={items.length}
-                itemSize={44}
-                style={{ marginTop: 10 }}
-                className="ant-upload-list ant-upload-list-text"
-              >
-                {({ index, style }: { index: number; style: CSSProperties }) => {
-                  const item = items[index];
-                  const isUploading = item.status === "uploading";
-                  const isSuccess = item.status === "success";
-                  const isError = item.status === "error";
-
-                  return (
-                    <Flex
-                      justify="space-between"
-                      align="center"
-                      flex={1}
-                      style={style}
-                      className="ant-upload-list-item-container"
-                    >
-                      <Flex className="ant-upload-list-item w-full" align="center" gap={8}>
-                        <Flex className="ant-upload-icon">
-                          {isUploading && <LoadingOutlined />}
-                          {isSuccess && <CheckCircleOutlined className="text-green-500" />}
-                          {isError && <ExclamationCircleOutlined className="text-red-500" />}
-                          {!isUploading && !isSuccess && !isError && <PaperClipOutlined />}
-                        </Flex>
-
-                        <Flex vertical className="min-w-0 flex-1">
-                          <Text
-                            className="ant-upload-list-item-name truncate"
-                            title={item.name}
-                          >
-                            {item.name}
-                          </Text>
-                          <Text className="text-xs text-gray-500">
-                            {formatBytes(item.size)}
-                          </Text>
-                        </Flex>
-
-                        <Flex align="center" gap={4}>
-                          {isError && (
-                            <Button
-                              type="text"
-                              size="small"
-                              icon={<ReloadOutlined />}
-                              onClick={() => retryItem(item.id)}
-                              className="ant-upload-list-item-action"
-                              aria-label="Reenviar"
-                            />
-                          )}
-                          <Button
-                            type="text"
-                            size="small"
-                            icon={<DeleteOutlined />}
-                            onClick={() => handleRemoveItem(item.id)}
-                            className="ant-upload-list-item-action"
-                            disabled={isUploading}
-                            aria-label="Remover"
-                          />
-                        </Flex>
-                      </Flex>
-
-                      {item.progress > 0 && item.progress < 100 && (
-                        <Flex className="ant-upload-list-item-progress">
-                          <Progress
-                            percent={item.progress}
-                            showInfo={false}
-                            size={{ height: 2 }}
-                          />
-                        </Flex>
-                      )}
-                    </Flex>
-                  );
+              <List
+                rowComponent={UploadRow}
+                rowCount={items.length}
+                rowHeight={44}
+                rowProps={{
+                  items,
+                  onRemove: handleRemoveItem,
+                  onRetry: retryItem,
                 }}
-              </FixedSizeList>
+                className="ant-upload-list ant-upload-list-text"
+                style={{ height, width, marginTop: 10 }}
+              />
             </Text>
           )}
         </Form.Item>

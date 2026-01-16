@@ -1,6 +1,77 @@
+"use client";
+
+import { firebaseAuth } from "@/firebase";
+import { requestAccess } from "@/services/userServices";
+import { Form, Input, Modal, message } from "antd";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import styles from "./Login.module.scss";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRequestOpen, setIsRequestOpen] = useState(false);
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [requestForm] = Form.useForm();
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isLoading) return;
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") || "").trim();
+    const password = String(formData.get("password") || "");
+
+    if (!email || !password) {
+      message.error("Preencha email e senha.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const credential = await signInWithEmailAndPassword(
+        firebaseAuth,
+        email,
+        password
+      );
+      const tokenResult = await credential.user.getIdTokenResult(true);
+      const active = Boolean(tokenResult.claims.active);
+      const role = tokenResult.claims.role as string | undefined;
+
+      if (!active || !role) {
+        await signOut(firebaseAuth);
+        message.error("Seu acesso está inativo. Fale com a secretaria.");
+        return;
+      }
+
+      router.push("/management/albums");
+    } catch (error) {
+      console.error("Erro ao entrar:", error);
+      message.error("Não foi possível entrar. Verifique seus dados.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onRequestAccess = async () => {
+    try {
+      const values = await requestForm.validateFields();
+      setRequestLoading(true);
+      await requestAccess(values);
+      message.success("Solicitação enviada com sucesso!");
+      requestForm.resetFields();
+      setIsRequestOpen(false);
+    } catch (error) {
+      if (error) {
+        console.error("Erro ao solicitar acesso:", error);
+        message.error("Não foi possível enviar sua solicitação.");
+      }
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
   return (
     <main className={styles.page}>
       <div className={styles.background}>
@@ -47,7 +118,7 @@ export default function LoginPage() {
                   </p>
                 </div>
 
-                <form className={styles.form}>
+                <form className={styles.form} onSubmit={onSubmit}>
                   <div className={styles.field}>
                     <label htmlFor="email" className={styles.label}>
                       E-mail
@@ -59,6 +130,7 @@ export default function LoginPage() {
                       autoComplete="email"
                       placeholder="voce@dominio.com"
                       className={styles.input}
+                      required
                     />
                   </div>
 
@@ -78,6 +150,7 @@ export default function LoginPage() {
                       autoComplete="current-password"
                       placeholder="••••••••"
                       className={styles.input}
+                      required
                     />
                   </div>
 
@@ -89,9 +162,9 @@ export default function LoginPage() {
                     <span>Último acesso há 2 dias</span>
                   </div>
 
-                  <button type="submit" className={styles.submit}>
+                  <button type="submit" className={styles.submit} disabled={isLoading}>
                     <span className={styles.submitContent}>
-                      Entrar
+                      {isLoading ? "Aguarde..." : "Entrar"}
                       <svg
                         aria-hidden="true"
                         viewBox="0 0 20 20"
@@ -110,7 +183,11 @@ export default function LoginPage() {
 
                 <div className={styles.divider}>
                   Novo por aqui?{" "}
-                  <button type="button" className={styles.linkButton}>
+                  <button
+                    type="button"
+                    className={styles.linkButton}
+                    onClick={() => setIsRequestOpen(true)}
+                  >
                     Solicitar acesso
                   </button>
                 </div>
@@ -119,6 +196,36 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      <Modal
+        title="Solicitar acesso"
+        open={isRequestOpen}
+        onCancel={() => setIsRequestOpen(false)}
+        okText="Enviar"
+        confirmLoading={requestLoading}
+        onOk={onRequestAccess}
+        destroyOnClose
+      >
+        <Form form={requestForm} layout="vertical" requiredMark="optional">
+          <Form.Item
+            name="fullname"
+            label="Nome completo"
+            rules={[{ required: true, message: "Informe seu nome completo." }]}
+          >
+            <Input placeholder="Nome completo" />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: "Informe seu email." },
+              { type: "email", message: "Email inválido." },
+            ]}
+          >
+            <Input placeholder="email@dominio.com" type="email" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </main>
   );
 }

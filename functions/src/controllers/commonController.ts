@@ -1,6 +1,6 @@
 import {onRequest} from "firebase-functions/v2/https";
 import {deleteImageStorage} from "../helpers/common";
-import {corsHandler} from "../utils";
+import {corsHandler, requireAuth, requireRoles} from "../utils";
 
 // Common function configuration
 const COMMON_CONFIG = {
@@ -22,6 +22,11 @@ export const deleteUploadedImage = onRequest(
       if (request.method !== "DELETE") {
         response.set("Allow", "DELETE");
         response.status(405).send("Método não permitido. Use DELETE.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 

@@ -38,3 +38,5 @@ export const AlbumsTab = ({ albumId }: AlbumsTabProps) => {
     </Flex>
   );
 };
+
+export default AlbumsTab;

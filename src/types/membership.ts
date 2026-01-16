@@ -14,6 +14,7 @@ export interface MembershipValues {
   [MembershipFields.City]?: string;
   [MembershipFields.County]?: string;
   [MembershipFields.State]?: string;
+  [MembershipFields.Email]?: string;
   [MembershipFields.MotherName]?: string;
   [MembershipFields.FatherName]?: string;
   [MembershipFields.SpouseName]?: string;
@@ -27,6 +28,7 @@ export interface MembershipValues {
   [MembershipFields.Congregation]?: string;
   [MembershipFields.ChurchRole]?: string;
   [MembershipFields.BelongsTo]?: string;
+  [MembershipFields.IsActive]?: boolean;
 }
 
 export interface IPostalCode {

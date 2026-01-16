@@ -75,7 +75,7 @@ export const PersonalInfo = () => {
 
   return (
     <Row gutter={10}>
-      <Divider orientation="left">
+      <Divider orientation="vertical">
         <Title level={3} className="text-uppercase">
           Informações Pessoais
         </Title>
@@ -237,3 +237,5 @@ export const PersonalInfo = () => {
     </Row>
   );
 };
+
+export default PersonalInfo;

@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     const fileName = formData.get("fileName")?.toString();
     const mimeType = formData.get("mimeType")?.toString();
     const type = formData.get("type")?.toString() ?? "image";
+    const authorization = request.headers.get("authorization") || "";
 
     if (!file || !(file instanceof File)) {
       return NextResponse.json({ error: "Arquivo inválido" }, { status: 400 });
@@ -33,7 +34,10 @@ export async function POST(request: NextRequest) {
 
     const endpoint = type === "event" ? "/uploadEvent" : "/uploadImage";
     const response = await serverApi.post(endpoint, outbound, {
-      headers: outbound.getHeaders(),
+      headers: {
+        ...outbound.getHeaders(),
+        authorization,
+      },
     });
 
     return NextResponse.json(response.data, { status: response.status });

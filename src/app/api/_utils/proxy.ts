@@ -48,7 +48,8 @@ export async function proxyRequest(
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   endpoint: string,
   body?: any,
-  params?: Record<string, string>
+  params?: Record<string, string>,
+  headers?: Record<string, string>
 ) {
   try {
     const config: any = {
@@ -69,6 +70,10 @@ export async function proxyRequest(
       if (Object.keys(validParams).length > 0) {
         config.params = validParams;
       }
+    }
+
+    if (headers && Object.keys(headers).length > 0) {
+      config.headers = headers;
     }
 
     const response = await serverApi.request(config);

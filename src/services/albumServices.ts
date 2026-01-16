@@ -6,10 +6,12 @@ import {
   IAlbumUpdatePayload,
 } from "@/types/store";
 import axios from "axios";
+import { getAuthHeaders } from "./authHeaders";
 
 export const createAlbum = async (payload: IAlbumPayload) => {
   try {
-    const response = await axios.post("/api/albums", payload);
+    const headers = await getAuthHeaders();
+    const response = await axios.post("/api/albums", payload, { headers });
     return response.data;
   } catch (error) {
     throw new Error("Erro ao criar álbum");
@@ -18,7 +20,8 @@ export const createAlbum = async (payload: IAlbumPayload) => {
 
 export const updateAlbum = async (payload: IAlbumUpdatePayload) => {
   try {
-    const response = await axios.post("/api/albums", payload);
+    const headers = await getAuthHeaders();
+    const response = await axios.post("/api/albums", payload, { headers });
     return response.data;
   } catch (error) {
     throw new Error("Erro ao atualizar álbum");
@@ -76,13 +79,20 @@ export const getAlbumById = async (
 };
 
 export const deleteAlbum = async (id: string) => {
-  const response = await axios.delete("/api/albums", { params: { id } });
+  const headers = await getAuthHeaders();
+  const response = await axios.delete("/api/albums", {
+    params: { id },
+    headers,
+  });
   return response.data;
 };
 
 export const deleteImageFromAlbum = async (
   payload: DeleteImgFromAlbumPayload
 ) => {
-  const response = await axios.post("/api/albums/delete-image", payload);
+  const headers = await getAuthHeaders();
+  const response = await axios.post("/api/albums/delete-image", payload, {
+    headers,
+  });
   return response.data;
 };

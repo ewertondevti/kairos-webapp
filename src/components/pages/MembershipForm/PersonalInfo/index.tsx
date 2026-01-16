@@ -33,7 +33,9 @@ import { RcFile, UploadProps } from "antd/es/upload";
 export const PersonalInfo = () => {
   const form = Form.useFormInstance();
 
-  const imageUrl = Form.useWatch(MembershipFields.Photo, form);
+  const photoValue = Form.useWatch(MembershipFields.Photo, form);
+  const imageUrl =
+    typeof photoValue === "string" ? photoValue : photoValue?.file;
 
   const genderOptions = [
     { label: "Masculino", value: GenderEnum.Male },
@@ -75,7 +77,7 @@ export const PersonalInfo = () => {
 
   return (
     <Row gutter={10}>
-      <Divider orientation="left">
+      <Divider orientation="vertical">
         <Title level={3} className="text-uppercase">
           Informações Pessoais
         </Title>
@@ -108,6 +110,19 @@ export const PersonalInfo = () => {
                 format={dateFormat}
                 className="w-full"
               />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name={MembershipFields.Email}
+              label="Email"
+              rules={[
+                ...requiredRules,
+                { type: "email", message: "Email inválido." },
+              ]}
+            >
+              <Input placeholder="email@dominio.com" type="email" />
             </Form.Item>
           </Col>
 
@@ -144,6 +159,9 @@ export const PersonalInfo = () => {
               rules={[
                 () => ({
                   validator(_, value: string) {
+                    if (!value) {
+                      return Promise.resolve();
+                    }
                     if (value?.match(postalCodeRegex)) {
                       return Promise.resolve();
                     }

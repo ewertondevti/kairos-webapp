@@ -4,4 +4,6 @@ export enum DatabaseTableKeys {
   Presentations = "presentations",
   Events = "events",
   Members = "members",
+  Users = "users",
+  AccessRequests = "accessRequests",
 }

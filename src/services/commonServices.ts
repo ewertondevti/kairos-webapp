@@ -3,6 +3,7 @@ import { UploadCommonResponse } from "@/types/event";
 import axios from "axios";
 import { UploadProps } from "antd";
 import { RcFile } from "antd/es/upload";
+import { getAuthHeaders } from "./authHeaders";
 
 export const onRemoveImage =
   (dbKey: DatabaseTableKeys): UploadProps["onRemove"] =>
@@ -14,8 +15,10 @@ export const onRemoveImage =
 
 export const deleteUploadedImage = async (imagePath: string) => {
   try {
+    const headers = await getAuthHeaders();
     const response = await axios.delete("/api/upload/delete", {
       params: { imagePath },
+      headers,
     });
 
     return response.data;
@@ -32,20 +35,26 @@ export const uploadImageFile = async (
     onProgress?: (percent: number) => void;
   }
 ) => {
+  const headers = await getAuthHeaders();
   const formData = new FormData();
   formData.append("file", file);
   formData.append("fileName", file.name);
   formData.append("mimeType", file.type);
   formData.append("type", options?.type ?? "image");
 
-  const response = await axios.post<UploadCommonResponse>("/api/upload", formData, {
-    onUploadProgress: (event) => {
-      if (!options?.onProgress) return;
-      if (!event.total) return;
-      const percent = Math.round((event.loaded / event.total) * 100);
-      options.onProgress(percent);
-    },
-  });
+  const response = await axios.post<UploadCommonResponse>(
+    "/api/upload",
+    formData,
+    {
+      headers,
+      onUploadProgress: (event) => {
+        if (!options?.onProgress) return;
+        if (!event.total) return;
+        const percent = Math.round((event.loaded / event.total) * 100);
+        options.onProgress(percent);
+      },
+    }
+  );
 
   return response.data;
 };

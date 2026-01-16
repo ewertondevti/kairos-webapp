@@ -3,4 +3,6 @@ export enum QueryNames {
   GetAlbumById = "GetAlbumById",
   GetEvents = "GetEvents",
   GetVerse = "GetVerse",
+  GetUsers = "GetUsers",
+  GetUserProfile = "GetUserProfile",
 }

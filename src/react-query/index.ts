@@ -1,5 +1,6 @@
 import { getAlbumById, getAlbums } from "@/services/albumServices";
 import { getEvents } from "@/services/eventServices";
+import { getUserProfile, getUsers } from "@/services/userServices";
 import { getVerse } from "@/services/versesServices";
 import { IAlbumWithCursor } from "@/types/store";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -78,5 +79,25 @@ export const useGetVerse = (abbrev: string, chapter: string, verse: string) => {
     queryFn: async () => await getVerse(abbrev, chapter, verse),
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
+  });
+};
+
+export const useGetUsers = (enabled = true) => {
+  return useQuery({
+    queryKey: [QueryNames.GetUsers],
+    queryFn: async () => await getUsers(),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    enabled,
+  });
+};
+
+export const useGetUserProfile = (enabled = true) => {
+  return useQuery({
+    queryKey: [QueryNames.GetUserProfile],
+    queryFn: async () => await getUserProfile(),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    enabled,
   });
 };

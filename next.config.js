@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  distDir: "dist",
   images: {
-    domains: ["firebasestorage.googleapis.com"],
     remotePatterns: [
       {
         protocol: "https",

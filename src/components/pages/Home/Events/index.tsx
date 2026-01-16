@@ -76,7 +76,7 @@ export const Events = () => {
         <Row gutter={[24, 24]} justify="center">
           <Image.PreviewGroup
             preview={{
-              toolbarRender: (
+              actionsRender: (
                 _,
                 {
                   image,

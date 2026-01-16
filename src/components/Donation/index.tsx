@@ -69,7 +69,7 @@ export const Donation = () => {
                   maxWidth: "100%",
                 }}
               >
-                "{verse?.text}"
+                &quot;{verse?.text}&quot;
               </Title>
 
               <Space size="small">

@@ -122,3 +122,5 @@ export const Gallery = ({ albumId }: GalleryProps) => {
     </Layout>
   );
 };
+
+export default Gallery;

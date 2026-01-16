@@ -41,3 +41,5 @@ export const WorshipDays = () => {
     </Col>
   );
 };
+
+export default WorshipDays;

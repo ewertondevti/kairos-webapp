@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { IAlbumDTO } from "@/types/store";
 import { Flex, Typography } from "antd";
@@ -41,6 +42,7 @@ export const AlbumContent: FC<Props> = ({
           <img
             src={url}
             key={url}
+            alt={`${name} - imagem ${idx + 1}`}
             className={`${coverClasses[idx]} group-hover:scale-125 ${
               idx === 0 ? 'group-hover:-rotate-[15deg] group-hover:translate-x-[-60px] group-hover:translate-y-[-5px]' :
               idx === 1 ? '' :
@@ -60,3 +62,5 @@ export const AlbumContent: FC<Props> = ({
     </Flex>
   );
 };
+
+export default AlbumContent;

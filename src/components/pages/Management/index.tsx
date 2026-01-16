@@ -36,13 +36,14 @@ type ManagementProps = {
 const Management = ({ children }: ManagementProps) => {
   const router = useRouter();
   const pathname = usePathname();
+  const currentPath = pathname ?? "";
 
   const { data: albums } = useGetAlbums();
 
   const { selectedImages, mode, updateMode, updateSelectedImages } =
     useAppState();
 
-  const defaultKey = pathname.split("/").filter(Boolean)[1];
+  const defaultKey = currentPath.split("/").filter(Boolean)[1];
 
   const onChange: TabsProps["onChange"] = (key) => {
     updateMode("default");
@@ -115,7 +116,15 @@ const Management = ({ children }: ManagementProps) => {
                 {
                   key: ManagementRoutesEnums.Albums,
                   label: "Álbuns",
-                  children: <AlbumsTab albumId={pathname.includes('/albums/') ? pathname.split('/').pop() : undefined} />,
+                  children: (
+                    <AlbumsTab
+                      albumId={
+                        currentPath.includes("/albums/")
+                          ? currentPath.split("/").pop()
+                          : undefined
+                      }
+                    />
+                  ),
                 },
                 {
                   key: ManagementRoutesEnums.Events,

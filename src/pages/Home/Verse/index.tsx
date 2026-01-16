@@ -14,45 +14,57 @@ import { useEffect, useState } from "react";
 
 const { Title, Text } = Typography;
 
-export const Verse = () => {
+type VerseContentProps = {
+  abbrev: string | null;
+  chapter: string | null;
+  verseNumber: string | null;
+};
+
+const VerseContent = ({ abbrev, chapter, verseNumber }: VerseContentProps) => {
   const [verse, setVerse] = useState<IVerse>();
-  const [isLoading, setIsLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  const searchParams = useSearchParams();
-
   useEffect(() => {
-    if (copySuccess) {
-      setTimeout(() => {
-        setCopySuccess(false);
-      }, 5000);
-    }
+    if (!copySuccess) return;
+    const timeout = setTimeout(() => {
+      setCopySuccess(false);
+    }, 5000);
+
+    return () => clearTimeout(timeout);
   }, [copySuccess]);
 
   useEffect(() => {
-    const abbrev = searchParams?.get("abbrev");
-    const chapter = searchParams?.get("chapter");
-    const verse = searchParams?.get("verse");
+    let isMounted = true;
 
-    const updateVerse = (verse: IVerse) => {
-      if (verse.text.length < 50) {
+    const updateVerse = (nextVerse: IVerse) => {
+      if (!isMounted) return;
+
+      if (nextVerse.text.length < 50) {
         getRandomVerse().then(updateVerse);
-      } else {
-        setVerse(verse);
-        setIsLoading(false);
+        return;
       }
+
+      setVerse(nextVerse);
     };
 
-    setIsLoading(true);
+    const request = abbrev && chapter && verseNumber
+      ? getVerse(abbrev, chapter, verseNumber)
+      : getRandomVerse();
 
-    if (abbrev && chapter && verse)
-      getVerse(abbrev, chapter, verse).then(updateVerse);
-    else getRandomVerse().then(updateVerse);
-  }, [searchParams]);
+    request.then(updateVerse).catch((error) => {
+      console.error("Erro ao carregar versículo:", error);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [abbrev, chapter, verseNumber]);
 
   const handleCopy = async () => {
+    if (!verse) return;
+
     try {
-      await navigator.clipboard.writeText(verse!.text);
+      await navigator.clipboard.writeText(verse.text);
       setCopySuccess(true);
     } catch (error) {
       console.error(error);
@@ -61,12 +73,14 @@ export const Verse = () => {
   };
 
   const handleShare = async () => {
+    if (!verse) return;
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: "Este versículo me fez lembrar de você!",
-          text: verse?.text,
-          url: `https://bible-verses.vercel.app/?abbrev=${verse?.book.abbrev.pt}&chapter=${verse?.chapter}&verse=${verse?.number}`,
+          text: verse.text,
+          url: `https://bible-verses.vercel.app/?abbrev=${verse.book.abbrev.pt}&chapter=${verse.chapter}&verse=${verse.number}`,
         });
       } catch (error) {
         console.error("Erro ao compartilhar:", error);
@@ -76,7 +90,7 @@ export const Verse = () => {
     }
   };
 
-  if (isLoading) {
+  if (!verse) {
     return (
       <Col span={24}>
         <Divider />
@@ -113,13 +127,13 @@ export const Verse = () => {
           style={{ maxWidth: 600, textAlign: "center" }}
         >
           <Title level={5} italic>
-            "{verse?.text}"
+            &quot;{verse.text}&quot;
           </Title>
 
           <Space size="small">
-            <Text strong>{verse?.book.name}</Text>
+            <Text strong>{verse.book.name}</Text>
             <Text strong>
-              {verse?.chapter}:{verse?.number}
+              {verse.chapter}:{verse.number}
             </Text>
           </Space>
 
@@ -145,3 +159,22 @@ export const Verse = () => {
     </Col>
   );
 };
+
+export const Verse = () => {
+  const searchParams = useSearchParams();
+  const abbrev = searchParams?.get("abbrev") ?? null;
+  const chapter = searchParams?.get("chapter") ?? null;
+  const verseNumber = searchParams?.get("verse") ?? null;
+  const verseKey = `${abbrev ?? "random"}-${chapter ?? "random"}-${verseNumber ?? "random"}`;
+
+  return (
+    <VerseContent
+      key={verseKey}
+      abbrev={abbrev}
+      chapter={chapter}
+      verseNumber={verseNumber}
+    />
+  );
+};
+
+export default Verse;

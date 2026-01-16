@@ -34,6 +34,7 @@ export const AlbumCard: FC<Props> = ({
       <div className={styles.frame}>
         <div className={styles.photoWrap}>
           {coverImage ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={coverImage}
               alt={name}
