@@ -215,16 +215,13 @@ export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
               )}
             </Flex>
             <Flex gap={12} align="center" className={styles.actionsMeta}>
-              <Typography.Text
-                className={[
-                  styles.actionsCount,
-                  isSelecting ? styles.actionsCountActive : "",
-                ].join(" ")}
-              >
-                {isSelecting
-                  ? `Selecionadas: ${selectedImages.length}`
-                  : "Selecione imagens para download"}
-              </Typography.Text>
+              {isSelecting && (
+                <Typography.Text
+                  className={[styles.actionsCount, styles.actionsCountActive].join(" ")}
+                >
+                  {`Selecionadas: ${selectedImages.length}`}
+                </Typography.Text>
+              )}
               <Button
                 icon={<DownloadOutlined />}
                 onClick={onDownloadAlbum}
