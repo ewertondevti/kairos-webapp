@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint ."
   },
+  "packageManager": "pnpm@9.15.9",
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@fortawesome/fontawesome-free": "^7.1.0",
