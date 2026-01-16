@@ -43,7 +43,7 @@ const PortalLayout = ({
 
   const { user, role, loading } = useAuth();
 
-  const hasAccess = Boolean(role && allowedRoles.includes(role));
+  const hasAccess = role !== null && role !== undefined && allowedRoles.includes(role);
   const isMobile = !screens.lg;
 
   const selectedKey = useMemo(() => {
