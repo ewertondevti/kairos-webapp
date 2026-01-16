@@ -12,7 +12,7 @@ import { Albums } from "@/components/pages/Home/Albums";
 
 export default function HomePage() {
   return (
-    <AppLayout>
+    <AppLayout footer={<CustomFooter />}>
       <main className="min-h-screen">
         <Hero />
         <Events />
@@ -22,7 +22,6 @@ export default function HomePage() {
         </Suspense>
         <WorshipDays />
         <Donation />
-        <CustomFooter />
       </main>
     </AppLayout>
   );

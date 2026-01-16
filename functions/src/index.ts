@@ -14,18 +14,22 @@ import {
   getEvents,
   uploadEvent,
 } from "./controllers/eventController";
+import { createAuditLog } from "./controllers/auditController";
 import {
   createUser,
   getUserProfile,
   getUsers,
+  getAccessRequests,
   requestAccess,
   syncUserClaims,
   setUserRole,
   setUserActive,
   updateUserProfile,
+  updateAccessRequestStatus,
 } from "./controllers/userController";
 
 export {
+  createAuditLog,
   createAlbum,
   createEvents,
   createUser,
@@ -35,6 +39,7 @@ export {
   deleteUploadedImage,
   getUserProfile,
   getUsers,
+  getAccessRequests,
   getAlbumById,
   getAlbums,
   getEvents,
@@ -44,6 +49,7 @@ export {
   setUserActive,
   updateAlbum,
   updateUserProfile,
+  updateAccessRequestStatus,
   uploadEvent,
   uploadImage,
 };

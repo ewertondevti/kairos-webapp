@@ -1,6 +1,7 @@
 import { DatabaseTableKeys } from "@/enums/app";
 import { useGetListItemSize } from "@/hooks/app";
-import { useUploadQueue, type UploadQueueItem } from "@/hooks/useUploadQueue";
+import { useUploadQueue } from "@/hooks/useUploadQueue";
+import { UploadQueueItem } from "@/hooks/useUploadQueue.types";
 import { QueryNames } from "@/react-query/queryNames";
 import { createAlbum } from "@/services/albumServices";
 import { deleteUploadedImage } from "@/services/commonServices";
@@ -22,6 +23,7 @@ import {
   DatePicker,
   Flex,
   Form,
+  Grid,
   Input,
   message,
   Modal,
@@ -136,6 +138,8 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
   const [isTitleTouched, setIsTitleTouched] = useState(false);
   const limitWarningShownRef = useRef(false);
   const typeWarningShownRef = useRef(false);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
 
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
@@ -265,6 +269,11 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
       cancelButtonProps={{ disabled: isLoading }}
       className=""
       maskClosable={false}
+      width={isMobile ? "100%" : 720}
+      style={isMobile ? { top: 12 } : undefined}
+      bodyStyle={
+        isMobile ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" } : undefined
+      }
     >
       <Form
         form={form}

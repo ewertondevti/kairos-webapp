@@ -1,19 +1,15 @@
 import { getAlbumById, getAlbums } from "@/services/albumServices";
 import { getEvents } from "@/services/eventServices";
-import { getUserProfile, getUsers } from "@/services/userServices";
+import {
+  getAccessRequests,
+  getUserProfile,
+  getUsers,
+} from "@/services/userServices";
 import { getVerse } from "@/services/versesServices";
 import { IAlbumWithCursor } from "@/types/store";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { QueryNames } from "./queryNames";
-
-type AlbumQueryOptions = {
-  enabled?: boolean;
-};
-
-type AlbumPageOptions = {
-  enabled?: boolean;
-  limit?: number;
-};
+import { AlbumPageOptions, AlbumQueryOptions } from "./types";
 
 export const useGetAlbums = (options?: AlbumQueryOptions) => {
   return useQuery({
@@ -86,6 +82,16 @@ export const useGetUsers = (enabled = true) => {
   return useQuery({
     queryKey: [QueryNames.GetUsers],
     queryFn: async () => await getUsers(),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    enabled,
+  });
+};
+
+export const useGetAccessRequests = (enabled = true) => {
+  return useQuery({
+    queryKey: [QueryNames.GetAccessRequests],
+    queryFn: async () => await getAccessRequests(),
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
     enabled,

@@ -1,11 +1,14 @@
 import { MembershipFields } from "@/enums/membership";
 import { Dayjs } from "dayjs";
+import { MemberChild } from "./user";
 import { IMemberPhoto } from "./store";
 
 export type ChildFormValue = {
   name: string;
   birthDate?: Dayjs;
 };
+
+export type ChildInput = MemberChild | string;
 
 export interface MembershipValues {
   [MembershipFields.Photo]?: IMemberPhoto;

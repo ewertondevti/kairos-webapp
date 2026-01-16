@@ -1,9 +1,6 @@
 import dayjs from "dayjs";
-import { ChildFormValue } from "@/types/membership";
-import { MemberChild } from "@/types/user";
+import { ChildFormValue, ChildInput } from "@/types/membership";
 import { MemberChildPayload } from "@/types/store";
-
-type ChildInput = MemberChild | string;
 
 export const normalizeMemberChildren = (
   children?: ChildInput[]

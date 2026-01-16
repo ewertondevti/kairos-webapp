@@ -5,4 +5,5 @@ export enum QueryNames {
   GetVerse = "GetVerse",
   GetUsers = "GetUsers",
   GetUserProfile = "GetUserProfile",
+  GetAccessRequests = "GetAccessRequests",
 }

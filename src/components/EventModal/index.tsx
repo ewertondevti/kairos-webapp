@@ -7,7 +7,7 @@ import { CreateCommonPayload } from "@/types/store";
 import { getUploadUrl } from "@/utils/upload";
 import { InboxOutlined } from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { message, Modal, Upload, UploadFile, UploadProps } from "antd";
+import { Grid, message, Modal, Upload, UploadFile, UploadProps } from "antd";
 import { FC, useState } from "react";
 
 type Props = {
@@ -18,6 +18,8 @@ type Props = {
 export const EventModal: FC<Props> = ({ isOpen, onCancel }) => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
 
   const queryClient = useQueryClient();
 
@@ -59,6 +61,11 @@ export const EventModal: FC<Props> = ({ isOpen, onCancel }) => {
       destroyOnClose
       okText="Gravar"
       okButtonProps={{ loading: isLoading }}
+      width={isMobile ? "100%" : 720}
+      style={isMobile ? { top: 12 } : undefined}
+      bodyStyle={
+        isMobile ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" } : undefined
+      }
     >
       <Upload
         type="drag"

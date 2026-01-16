@@ -1,32 +1,11 @@
 import { uploadImageFile } from "@/services/commonServices";
-import { UploadCommonResponse } from "@/types/event";
+import {
+  AddFilesResult,
+  UploadQueueItem,
+  UploadQueueOptions,
+  UploadQueueStatus,
+} from "@/hooks/useUploadQueue.types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-export type UploadQueueStatus = "queued" | "uploading" | "success" | "error";
-
-export type UploadQueueItem = {
-  id: string;
-  file: File;
-  name: string;
-  size: number;
-  progress: number;
-  status: UploadQueueStatus;
-  response?: UploadCommonResponse;
-  error?: string;
-};
-
-type UploadQueueOptions = {
-  concurrency?: number;
-  type?: "event" | "image";
-  maxFiles?: number;
-  acceptedTypes?: string[];
-};
-
-type AddFilesResult = {
-  added: number;
-  rejectedByType: number;
-  rejectedByLimit: number;
-};
 
 const buildFileId = (file: File) =>
   `${file.name}_${file.size}_${file.lastModified}`;

@@ -24,6 +24,9 @@ type PhotoPayload = {
   type?: string;
 };
 
+const normalizeTimestamp = (value?: admin.firestore.Timestamp | null) =>
+  value ? value.toDate().toISOString() : null;
+
 const getUsersByRoles = async (roles: UserRole[]) => {
   const snapshot = await firestore
     .collection(DatabaseTableKeys.Users)
@@ -194,6 +197,109 @@ export const requestAccess = onRequest(
       } catch (error) {
         console.error("Erro ao solicitar acesso:", error);
         response.status(500).send("Erro ao solicitar acesso.");
+      }
+    });
+  }
+);
+
+export const getAccessRequests = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "GET") {
+        response.set("Allow", "GET");
+        response.status(405).send("Método não permitido. Use GET.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const snapshot = await firestore
+          .collection(DatabaseTableKeys.AccessRequests)
+          .get();
+
+        const requests = snapshot.docs.map((doc) => {
+          const data = doc.data() as IAccessRequest;
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: normalizeTimestamp(
+              data.createdAt as admin.firestore.Timestamp
+            ),
+            updatedAt: normalizeTimestamp(
+              data.updatedAt as admin.firestore.Timestamp
+            ),
+          };
+        });
+
+        response.status(200).json(requests);
+      } catch (error) {
+        console.error("Erro ao buscar solicitações:", error);
+        response.status(500).send("Erro ao buscar solicitações.");
+      }
+    });
+  }
+);
+
+export const updateAccessRequestStatus = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "PATCH") {
+        response.set("Allow", "PATCH");
+        response.status(405).send("Método não permitido. Use PATCH.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const { id, status } = request.body || {};
+        const normalizedStatus = String(status || "").trim();
+        const allowedStatuses = ["pending", "approved", "rejected"];
+
+        if (!id?.trim() || !allowedStatuses.includes(normalizedStatus)) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        const requestRef = firestore
+          .collection(DatabaseTableKeys.AccessRequests)
+          .doc(id);
+        const requestSnap = await requestRef.get();
+
+        if (!requestSnap.exists) {
+          response.status(404).send("Solicitação não encontrada.");
+          return;
+        }
+
+        await requestRef.update({
+          status: normalizedStatus,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedBy: context.uid,
+        });
+
+        response.status(200).send();
+      } catch (error) {
+        console.error("Erro ao atualizar solicitação:", error);
+        response.status(500).send("Erro ao atualizar solicitação.");
       }
     });
   }

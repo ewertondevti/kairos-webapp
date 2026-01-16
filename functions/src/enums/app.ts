@@ -5,6 +5,7 @@ export const DatabaseTableKeys = {
   Events: "events",
   Users: "users",
   AccessRequests: "accessRequests",
+  AuditLogs: "auditLogs",
 } as const;
 
 export type DatabaseTableKeys =

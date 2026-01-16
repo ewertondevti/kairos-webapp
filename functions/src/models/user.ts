@@ -50,4 +50,6 @@ export interface IAccessRequest {
   email: string;
   status: UserStatus;
   createdAt: FirebaseFirestore.FieldValue;
+  updatedAt?: FirebaseFirestore.FieldValue;
+  updatedBy?: string;
 }

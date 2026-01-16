@@ -5,3 +5,8 @@ export type AlbumValuesType = {
   albumId?: string;
   images?: IImageDTO[];
 };
+
+export type AlbumByIdParams = {
+  limit?: number;
+  cursor?: string;
+};

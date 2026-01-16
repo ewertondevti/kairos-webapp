@@ -15,6 +15,18 @@ export type CreateUserPayload = {
 
 export type UpdateUserPayload = Record<string, unknown>;
 
+export type AccessRequestStatus = "pending" | "approved" | "rejected";
+
+export type AccessRequest = {
+  id: string;
+  fullname: string;
+  email: string;
+  status: AccessRequestStatus;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+};
+
 export const requestAccess = async (payload: RequestAccessPayload) => {
   const response = await axios.post("/api/access-request", payload);
   return response.data;
@@ -24,6 +36,25 @@ export const getUsers = async (): Promise<UserProfile[]> => {
   const headers = await getAuthHeaders();
   const response = await axios.get("/api/users", { headers });
   return Array.isArray(response.data) ? response.data : [];
+};
+
+export const getAccessRequests = async (): Promise<AccessRequest[]> => {
+  const headers = await getAuthHeaders();
+  const response = await axios.get("/api/access-requests", { headers });
+  return Array.isArray(response.data) ? response.data : [];
+};
+
+export const updateAccessRequestStatus = async (
+  id: string,
+  status: AccessRequestStatus
+) => {
+  const headers = await getAuthHeaders();
+  const response = await axios.patch(
+    "/api/access-requests",
+    { id, status },
+    { headers }
+  );
+  return response.data;
 };
 
 export const createUser = async (payload: CreateUserPayload) => {
@@ -71,13 +102,15 @@ export const getUserProfile = async (): Promise<{ user: UserProfile }> => {
   return response.data;
 };
 
-export const syncUserClaims = async () => {
+export const syncUserClaims = async (token?: string) => {
   if (!process.env.NEXT_PUBLIC_PROJECT_ID) {
     console.warn("NEXT_PUBLIC_PROJECT_ID não configurado.");
     return null;
   }
 
-  const headers = await getAuthHeaders();
+  const headers = token
+    ? { Authorization: `Bearer ${token}` }
+    : await getAuthHeaders();
   try {
     const response = await axios.post("/api/users/sync-claims", undefined, {
       headers,
