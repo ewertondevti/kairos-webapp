@@ -43,7 +43,13 @@ jobs:
 
       - name: Configure Firebase service account
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}' > "$HOME/firebase-service-account.json"
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" ]; then
+            echo "Missing FIREBASE_SERVICE_ACCOUNT_KEY secret."
+            exit 1
+          fi
+          cat <<'EOF' > "$HOME/firebase-service-account.json"
+          ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          EOF
 
       - name: Enable webframeworks experiment
         env:
