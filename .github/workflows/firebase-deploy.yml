@@ -42,14 +42,14 @@ jobs:
         run: pnpm run build
 
       - name: Configure Firebase service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
         run: |
-          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" ]; then
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_KEY" ]; then
             echo "Missing FIREBASE_SERVICE_ACCOUNT_KEY secret."
             exit 1
           fi
-          cat <<'EOF' > "$HOME/firebase-service-account.json"
-          ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
-          EOF
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_KEY" > "$HOME/firebase-service-account.json"
 
       - name: Enable webframeworks experiment
         env:
