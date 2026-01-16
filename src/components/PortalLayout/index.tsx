@@ -3,6 +3,7 @@
 import { PortalNavItem } from "@/config/portalNavigation";
 import { useAuth } from "@/store";
 import { UserRole } from "@/types/user";
+import { MenuOutlined } from "@ant-design/icons";
 import {
   Button,
   Drawer,
@@ -13,7 +14,6 @@ import {
   Spin,
   Typography,
 } from "antd";
-import { MenuOutlined } from "@ant-design/icons";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./PortalLayout.module.scss";
@@ -48,9 +48,7 @@ const PortalLayout = ({
 
   const selectedKey = useMemo(() => {
     if (!pathname) return undefined;
-    const activeItem = navItems.find((item) =>
-      pathname.startsWith(item.href)
-    );
+    const activeItem = navItems.find((item) => pathname.startsWith(item.href));
     return activeItem?.key;
   }, [navItems, pathname]);
 
@@ -92,7 +90,7 @@ const PortalLayout = ({
           title="Acesso restrito"
           subTitle="Você não possui permissão para acessar este portal."
           extra={
-            <Button type="primary" onClick={() => router.push("/")}>
+            <Button type="primary" href="/">
               Voltar ao início
             </Button>
           }
@@ -144,7 +142,9 @@ const PortalLayout = ({
                 <Title level={2} className={styles.pageTitle}>
                   {title}
                 </Title>
-                {subtitle && <Text className={styles.pageSubtitle}>{subtitle}</Text>}
+                {subtitle && (
+                  <Text className={styles.pageSubtitle}>{subtitle}</Text>
+                )}
               </div>
             </div>
           </header>

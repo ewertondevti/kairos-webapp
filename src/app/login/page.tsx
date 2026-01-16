@@ -16,7 +16,8 @@ export default function LoginPage() {
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestForm] = Form.useForm();
   const { message } = App.useApp();
-  const onBack = () => router.back();
+  const onBack = () => router.push("/");
+  const onForgotPassword = () => router.push("/password-recovery");
   const parseRole = (value: unknown): UserRole | null => {
     if (typeof value === "number" && [0, 1, 2].includes(value)) {
       return value as UserRole;
@@ -76,13 +77,7 @@ export default function LoginPage() {
         return;
       }
 
-      const redirectTo =
-        role === UserRole.Admin
-          ? "/admin"
-          : role === UserRole.Secretaria
-          ? "/secretaria"
-          : "/management/albums";
-      router.push(redirectTo);
+      router.push("/");
     } catch (error) {
       console.error("Erro ao entrar:", error);
       message.error("Não foi possível entrar. Verifique seus dados.");
@@ -183,7 +178,11 @@ export default function LoginPage() {
                       <label htmlFor="password" className={styles.label}>
                         Senha
                       </label>
-                      <button type="button" className={styles.forgot}>
+                      <button
+                        type="button"
+                        className={styles.forgot}
+                        onClick={onForgotPassword}
+                      >
                         Esqueci minha senha
                       </button>
                     </div>
