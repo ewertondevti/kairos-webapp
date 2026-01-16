@@ -55,6 +55,7 @@ const roleOptions = [
   { label: "Admin", value: UserRole.Admin },
   { label: "Secretaria", value: UserRole.Secretaria },
   { label: "Mídia", value: UserRole.Midia },
+  { label: "Membro", value: UserRole.Member },
 ];
 
 const getRoleLabel = (role?: UserRole) =>
@@ -267,16 +268,18 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
 
   const openCreateUser = () => {
     setSelectedAccessRequest(null);
-    setCreateInitialValues(null);
     createForm.resetFields();
+    setCreateInitialValues({ role: UserRole.Member });
     setCreateOpen(true);
   };
 
   const openCreateFromRequest = (request: AccessRequest) => {
     setSelectedAccessRequest(request);
+    createForm.resetFields();
     setCreateInitialValues({
       fullname: request.fullname,
       email: request.email,
+      role: UserRole.Member,
     });
     setCreateOpen(true);
   };
@@ -351,7 +354,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
       const createPayload = {
         fullname: values?.[MembershipFields.Fullname],
         email: values?.[MembershipFields.Email],
-        role: UserRole.Midia,
+        role: UserRole.Member,
       };
 
       const createdUser = await createUser(createPayload);
@@ -483,6 +486,8 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
               ? "blue"
               : value === UserRole.Midia
               ? "purple"
+              : value === UserRole.Member
+              ? "green"
               : "gold"
           }
         >

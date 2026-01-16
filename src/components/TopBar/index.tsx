@@ -17,7 +17,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueryClient } from "@tanstack/react-query";
-import { Button, Col, Flex, message, Popconfirm, Row, Tooltip } from "antd";
+import { App, Button, Col, Flex, List, message, Row, Tooltip, Typography } from "antd";
 
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -35,6 +35,7 @@ export const TopBar = () => {
   const router = useRouter();
 
   const { user, role, active } = useAuth();
+  const { modal } = App.useApp();
   const { data: events } = useGetEvents();
   const { data: album } = useGetAlbumById(albumId);
 
@@ -126,11 +127,67 @@ export const TopBar = () => {
     }
   };
 
+  const getSelectedImageNames = () =>
+    selectedImages.map((image, index) => image.name || `Imagem ${index + 1}`);
+
+  const openDeleteAlbumConfirm = () => {
+    const albumName = album?.name?.trim() || "Sem nome";
+    modal.confirm({
+      title: "Apagar álbum",
+      content: (
+        <Flex vertical gap={12}>
+          <Typography.Text>
+            Tem certeza que deseja apagar este álbum? Todas as imagens serão
+            removidas.
+          </Typography.Text>
+          <Flex vertical gap={4}>
+            <Typography.Text type="secondary">Álbum</Typography.Text>
+            <Typography.Text strong>{albumName}</Typography.Text>
+          </Flex>
+        </Flex>
+      ),
+      okText: "Apagar",
+      okButtonProps: { danger: true },
+      cancelText: "Cancelar",
+      onOk: onDeleteAlbum,
+    });
+  };
+
+  const openDeleteImagesConfirm = () => {
+    const names = getSelectedImageNames();
+    modal.confirm({
+      title: "Apagar imagens",
+      content: (
+        <Flex vertical gap={12}>
+          <Typography.Text>
+            Tem certeza que deseja apagar as imagens selecionadas?
+          </Typography.Text>
+          <List
+            size="small"
+            bordered
+            dataSource={names}
+            style={{ maxHeight: 220, overflowY: "auto" }}
+            renderItem={(name) => (
+              <List.Item>
+                <Typography.Text>{name}</Typography.Text>
+              </List.Item>
+            )}
+          />
+        </Flex>
+      ),
+      okText: "Apagar",
+      okButtonProps: { danger: true },
+      cancelText: "Cancelar",
+      onOk: () => {
+        if (isAlbums) return onDeleteFromAlbum();
+        if (isEvents) return onDeleteFrom(DatabaseTableKeys.Events);
+      },
+    });
+  };
+
   const onDelete = () => {
-    if (albumId && selectedImages.length === album?.images?.length) {
-      onDeleteAlbum();
-    } else if (isAlbums) onDeleteFromAlbum();
-    else if (isEvents) onDeleteFrom(DatabaseTableKeys.Events);
+    if (!selectedImages.length) return;
+    openDeleteImagesConfirm();
   };
 
   const onCancelSelection = () => {
@@ -162,19 +219,6 @@ export const TopBar = () => {
     }
   };
 
-  const getConfirmMessage = () => {
-    let message = "Tens a certeza que deseja apagar ";
-
-    if (selectedImages.length) {
-      if (selectedImages.length > 1) message += "as imagens";
-      else message += "as imagens";
-    }
-
-    message += " selecionadas?";
-
-    return message;
-  };
-
   return (
     <>
       <Row gutter={[0, 16]}>
@@ -187,6 +231,16 @@ export const TopBar = () => {
                 onClick={() => toogleEditAlbumModal(true)}
               >
                 Editar álbum
+              </Button>
+            )}
+            {!!albumId && canManageMedia && (
+              <Button
+                danger
+                icon={<FontAwesomeIcon icon={faTrash} />}
+                onClick={openDeleteAlbumConfirm}
+                loading={isLoading}
+              >
+                Apagar álbum
               </Button>
             )}
 
@@ -215,20 +269,14 @@ export const TopBar = () => {
         <Col>
           <Flex gap={8}>
             {!!selectedImages.length && canManageMedia && (
-              <Popconfirm
-                title={getConfirmMessage()}
-                onConfirm={onDelete}
-                okText="Apagar"
-                okButtonProps={{ danger: true }}
-              >
-                <Tooltip title="Apagar">
-                  <Button
-                    danger
-                    icon={<FontAwesomeIcon icon={faTrash} />}
-                    loading={isLoading}
-                  />
-                </Tooltip>
-              </Popconfirm>
+              <Tooltip title="Apagar">
+                <Button
+                  danger
+                  icon={<FontAwesomeIcon icon={faTrash} />}
+                  loading={isLoading}
+                  onClick={onDelete}
+                />
+              </Tooltip>
             )}
 
             {mode === "select" && (

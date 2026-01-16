@@ -81,12 +81,14 @@ export default function LoginPage() {
   const onBack = () => router.push("/");
   const onForgotPassword = () => router.push("/password-recovery");
   const parseRole = (value: unknown): UserRole | null => {
-    if (typeof value === "number" && [0, 1, 2].includes(value)) {
+    if (typeof value === "number" && [0, 1, 2, 3].includes(value)) {
       return value as UserRole;
     }
 
     const parsedValue = Number(value);
-    return [0, 1, 2].includes(parsedValue) ? (parsedValue as UserRole) : null;
+    return [0, 1, 2, 3].includes(parsedValue)
+      ? (parsedValue as UserRole)
+      : null;
   };
 
   useEffect(() => {
