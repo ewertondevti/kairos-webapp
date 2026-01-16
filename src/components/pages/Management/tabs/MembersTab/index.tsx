@@ -25,7 +25,7 @@ import {
   Tag,
 } from "antd";
 import dayjs from "dayjs";
-import { useRef, useState } from "react";
+import { useRef, useState, type Key } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { QueryNames } from "@/react-query/queryNames";
 import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/EcclesiasticalInfo";
@@ -33,7 +33,11 @@ import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
 import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
 import { SearchOutlined } from "@ant-design/icons";
 import { churchRoleOptions } from "@/constants/churchRoles";
-import type { FilterDropdownProps } from "antd/es/table/interface";
+import type {
+  ColumnType,
+  ColumnsType,
+  FilterDropdownProps,
+} from "antd/es/table/interface";
 
 type CreateFormValues = {
   fullname: string;
@@ -190,7 +194,9 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     }
   };
 
-  const getColumnSearchProps = (dataIndex: keyof UserProfile) => ({
+  const getColumnSearchProps = (
+    dataIndex: keyof UserProfile
+  ): ColumnType<UserProfile> => ({
     filterDropdown: ({
       setSelectedKeys,
       selectedKeys,
@@ -232,7 +238,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     filterIcon: (filtered: boolean) => (
       <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
     ),
-    onFilter: (value: string, record: UserProfile) =>
+    onFilter: (value: Key | boolean, record: UserProfile) =>
       String(record[dataIndex] ?? "")
         .toLowerCase()
         .includes(String(value).toLowerCase()),
@@ -243,7 +249,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     },
   });
 
-  const columns = [
+  const columns: ColumnsType<UserProfile> = [
     {
       title: "Nome",
       dataIndex: "fullname",
@@ -270,8 +276,10 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
               text: option.label,
               value: option.value,
             })),
-            onFilter: (value: UserRole, record: UserProfile) =>
-              record.role === value,
+            onFilter: (value: Key | boolean, record: UserProfile) =>
+              typeof value === "boolean"
+                ? false
+                : record.role === Number(value),
             sorter: (a: UserProfile, b: UserProfile) =>
               getRoleLabel(a.role).localeCompare(getRoleLabel(b.role)),
             render: (value: UserRole, record: UserProfile) =>
@@ -306,8 +314,11 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
               { text: "Ativo", value: true },
               { text: "Inativo", value: false },
             ],
-            onFilter: (value: boolean, record: UserProfile) =>
-              record.active === value,
+            onFilter: (value: Key | boolean, record: UserProfile) => {
+              const normalizedValue =
+                typeof value === "boolean" ? value : value === "true" || value === "1";
+              return record.active === normalizedValue;
+            },
             sorter: (a: UserProfile, b: UserProfile) =>
               Number(a.active) - Number(b.active),
             render: (value: boolean) =>
