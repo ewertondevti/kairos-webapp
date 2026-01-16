@@ -1,6 +1,10 @@
 "use client";
 
+import { AccessRequestsTable } from "@/components/pages/Management/tabs/MembersTab/AccessRequestsTable";
+import { CreateUserModal } from "@/components/pages/Management/tabs/MembersTab/CreateUserModal";
+import { MemberFormDrawer } from "@/components/pages/Management/tabs/MembersTab/MemberFormDrawer";
 import { CreateFormValues } from "@/components/pages/Management/tabs/MembersTab/types";
+import { UsersTable } from "@/components/pages/Management/tabs/MembersTab/UsersTable";
 import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/EcclesiasticalInfo";
 import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
 import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
@@ -28,17 +32,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   App,
   Button,
-  Drawer,
   Empty,
   Form,
   Grid,
   Input,
   InputRef,
   message,
-  Modal,
   Select,
   Space,
-  Table,
   Tag,
 } from "antd";
 import type {
@@ -46,9 +47,8 @@ import type {
   ColumnType,
   FilterDropdownProps,
 } from "antd/es/table/interface";
-import Title from "antd/es/typography/Title";
 import dayjs from "dayjs";
-import { useRef, useState, type Key } from "react";
+import { useEffect, useRef, useState, type Key } from "react";
 
 const roleOptions = [
   { label: "Admin", value: UserRole.Admin },
@@ -110,6 +110,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const { role } = useAuth();
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
+  const drawerSize = screens.md ? "large" : "default";
   const canViewUsers =
     (mode === "admin" && role === UserRole.Admin) ||
     (mode === "secretaria" &&
@@ -135,6 +136,8 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [selectedAccessRequest, setSelectedAccessRequest] =
     useState<AccessRequest | null>(null);
+  const [createInitialValues, setCreateInitialValues] =
+    useState<Partial<CreateFormValues> | null>(null);
   const [createForm] = Form.useForm<CreateFormValues>();
   const [createMemberForm] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -265,18 +268,24 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
 
   const openCreateUser = () => {
     setSelectedAccessRequest(null);
+    setCreateInitialValues(null);
     createForm.resetFields();
     setCreateOpen(true);
   };
 
   const openCreateFromRequest = (request: AccessRequest) => {
     setSelectedAccessRequest(request);
-    createForm.setFieldsValue({
+    setCreateInitialValues({
       fullname: request.fullname,
       email: request.email,
     });
     setCreateOpen(true);
   };
+
+  useEffect(() => {
+    if (!createOpen || !createInitialValues) return;
+    createForm.setFieldsValue(createInitialValues);
+  }, [createForm, createInitialValues, createOpen]);
 
   const onUpdateUser = async () => {
     if (!editingUser) return;
@@ -573,52 +582,14 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     (request) => request.status === "pending"
   );
 
-  const accessRequestColumns: ColumnsType<AccessRequest> = [
-    {
-      title: "Nome",
-      dataIndex: "fullname",
-      key: "fullname",
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: "Solicitado em",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (value?: string | null) =>
-        value ? dayjs(value).format("DD/MM/YYYY HH:mm") : "-",
-    },
-    {
-      title: "Ações",
-      key: "actions",
-      render: (_: unknown, record: AccessRequest) => (
-        <Button type="primary" onClick={() => openCreateFromRequest(record)}>
-          Criar usuário
-        </Button>
-      ),
-    },
-  ];
-
   return (
     <>
       {isAdminView && (
-        <>
-          <Title level={4}>Solicitações de acesso</Title>
-          <Table
-            style={{ marginBottom: 24 }}
-            rowKey={(record) => record.id}
-            dataSource={pendingAccessRequests}
-            columns={accessRequestColumns}
-            locale={{
-              emptyText: "Nenhuma solicitação pendente.",
-            }}
-            scroll={{ x: "max-content" }}
-            size={isMobile ? "small" : "middle"}
-          />
-        </>
+        <AccessRequestsTable
+          requests={pendingAccessRequests}
+          isMobile={isMobile}
+          onCreateFromRequest={openCreateFromRequest}
+        />
       )}
 
       {(canCreateUsers || canCreateMembers) && (
@@ -636,129 +607,62 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
         </Space>
       )}
 
-      <Table
-        style={{ marginTop: 16 }}
-        childrenColumnName="__children"
-        rowKey={(record) => record.authUid ?? record.id}
-        loading={isLoading}
-        dataSource={tableUsers}
+      <UsersTable
+        users={tableUsers}
         columns={columns}
-        scroll={{ x: "max-content" }}
-        size={isMobile ? "small" : "middle"}
+        isLoading={isLoading}
+        isMobile={isMobile}
       />
 
       {canCreateUsers && (
-        <Modal
-          title="Criar usuário"
+        <CreateUserModal
           open={createOpen}
+          isMobile={isMobile}
+          form={createForm}
+          roleOptions={roleOptions}
+          onOk={onCreateUser}
           onCancel={() => {
             setCreateOpen(false);
             setSelectedAccessRequest(null);
+            setCreateInitialValues(null);
           }}
-          onOk={onCreateUser}
-          okText="Criar"
-          destroyOnHidden
-          width={isMobile ? "100%" : 520}
-          style={isMobile ? { top: 12 } : undefined}
-          styles={{
-            body: isMobile
-              ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" }
-              : undefined,
-          }}
-        >
-          <Form form={createForm} layout="vertical">
-            <Form.Item
-              name="fullname"
-              label="Nome completo"
-              rules={[{ required: true, message: "Informe o nome." }]}
-            >
-              <Input placeholder="Nome completo" />
-            </Form.Item>
-            <Form.Item
-              name="email"
-              label="Email"
-              rules={[
-                { required: true, message: "Informe o email." },
-                { type: "email", message: "Email inválido." },
-              ]}
-            >
-              <Input placeholder="email@dominio.com" type="email" />
-            </Form.Item>
-            <Form.Item
-              name="role"
-              label="Perfil"
-              rules={[{ required: true, message: "Selecione o perfil." }]}
-            >
-              <Select options={roleOptions} placeholder="Selecione o perfil" />
-            </Form.Item>
-            <div style={{ marginTop: 8, color: "#667085", fontSize: 12 }}>
-              A senha do usuário será gerada automaticamente.
-            </div>
-          </Form>
-        </Modal>
+        />
       )}
 
       {canCreateMembers && (
-        <Drawer
+        <MemberFormDrawer
           title="Nova ficha de membro"
           open={createMemberOpen}
           onClose={() => setCreateMemberOpen(false)}
-          size={isMobile ? "large" : "default"}
-          extra={
-            <Space className="drawer-actions" wrap>
-              <Button onClick={() => setCreateMemberOpen(false)}>
-                Cancelar
-              </Button>
-              <Button
-                type="primary"
-                onClick={onCreateMember}
-                loading={creatingMember}
-              >
-                Salvar
-              </Button>
-            </Space>
-          }
-          destroyOnHidden
-        >
-          <Form
-            form={createMemberForm}
-            layout="vertical"
-            initialValues={{
-              [MembershipFields.Children]: normalizeMemberChildren([]),
-            }}
-          >
-            <PersonalInfo />
-            <ParentInfo />
-            <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
-          </Form>
-        </Drawer>
-      )}
-
-      <Drawer
-        title={`Editar dados do ${isAdminView ? "usuario" : "membro"}`}
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        size={isMobile ? "large" : "default"}
-        extra={
-          <Space className="drawer-actions" wrap>
-            <Button onClick={() => setEditOpen(false)}>Cancelar</Button>
-            <Button type="primary" onClick={onUpdateUser}>
-              Salvar
-            </Button>
-          </Space>
-        }
-        destroyOnHidden
-      >
-        <Form
-          form={editForm}
-          layout="vertical"
-          initialValues={{ [MembershipFields.Children]: [] }}
+          onSubmit={onCreateMember}
+          submitLabel="Salvar"
+          submitLoading={creatingMember}
+          size={drawerSize}
+          form={createMemberForm}
+          initialValues={{
+            [MembershipFields.Children]: normalizeMemberChildren([]),
+          }}
         >
           <PersonalInfo />
           <ParentInfo />
           <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
-        </Form>
-      </Drawer>
+        </MemberFormDrawer>
+      )}
+
+      <MemberFormDrawer
+        title={`Editar dados do ${isAdminView ? "usuario" : "membro"}`}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSubmit={onUpdateUser}
+        submitLabel="Salvar"
+        size={drawerSize}
+        form={editForm}
+        initialValues={{ [MembershipFields.Children]: [] }}
+      >
+        <PersonalInfo />
+        <ParentInfo />
+        <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
+      </MemberFormDrawer>
     </>
   );
 };
