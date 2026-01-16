@@ -8,6 +8,7 @@ import {corsHandler, requireAuth, requireRoles, UserRole} from "../utils";
 
 const USER_CONFIG = {
   maxInstances: 10,
+  invoker: "public",
 };
 
 const getUsersByRoles = async (roles: UserRole[]) => {

@@ -17,6 +17,7 @@ const IMAGE_UPLOAD_CONFIG = {
   memory: "2GiB" as const,
   timeoutSeconds: 600,
   maxInstances: 20,
+  invoker: "public",
 };
 
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
@@ -75,7 +76,7 @@ export const uploadEvent = onRequest(
  * Creates multiple events
  */
 export const createEvents = onRequest(
-  {maxInstances: 10},
+  {maxInstances: 10, invoker: "public"},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -129,7 +130,7 @@ export const createEvents = onRequest(
  * Retrieves all events with their image URLs
  */
 export const getEvents = onRequest(
-  {maxInstances: 10},
+  {maxInstances: 10, invoker: "public"},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -192,7 +193,7 @@ export const getEvents = onRequest(
  * Deletes multiple events and their associated images
  */
 export const deleteEvents = onRequest(
-  {maxInstances: 10},
+  {maxInstances: 10, invoker: "public"},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {

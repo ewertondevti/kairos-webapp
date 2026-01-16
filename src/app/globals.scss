@@ -208,7 +208,6 @@ h6,
     #2d7a47 100%
   );
   background-size: 260% 100%;
-  animation: kairos-label-sweep 4.5s ease-in-out infinite;
   color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
@@ -226,7 +225,6 @@ h6,
     #1a5d2e 100%
   );
   background-size: 240% 100%;
-  animation: kairos-label-sweep 4s ease-in-out infinite;
   color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
@@ -235,7 +233,13 @@ h6,
 }
 
 .kairos-logo-underline {
-  background: #1a5d2e;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(26, 93, 46, 0.85) 20%,
+    rgba(26, 93, 46, 0.85) 80%,
+    transparent 100%
+  );
 }
 
 .kairos-logo-ring {
@@ -248,16 +252,6 @@ h6,
     #1a5d2e 100%
   );
   background-size: 240% 240%;
-  animation: kairos-label-sweep 5s ease-in-out infinite;
-}
-
-@keyframes kairos-label-sweep {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 200% 50%;
-  }
 }
 
 @keyframes kairos-light-sweep {

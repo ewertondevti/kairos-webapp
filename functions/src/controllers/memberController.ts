@@ -13,6 +13,7 @@ const MEMBER_CONFIG = {
   memory: "1GiB" as const,
   timeoutSeconds: 300,
   maxInstances: 10,
+  invoker: "public",
 };
 
 /**

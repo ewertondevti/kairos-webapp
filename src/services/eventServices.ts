@@ -24,6 +24,9 @@ export const getEvents = async (): Promise<ICommonDTO[]> => {
 
 export const deleteEvents = async (payload: DeleteCommonPayload) => {
   const headers = await getAuthHeaders();
-  const response = await axios.delete("/api/events", { data: payload, headers });
+  const response = await axios.delete("/api/events", {
+    data: payload,
+    headers,
+  });
   return response.data;
 };

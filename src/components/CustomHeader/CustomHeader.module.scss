@@ -84,16 +84,6 @@
   background-size: 240% 240%;
   border: 1px solid rgba(26, 93, 46, 0.5);
   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
-  animation: kairos-ring-sweep 5s ease-in-out infinite;
-}
-
-@keyframes kairos-ring-sweep {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 200% 50%;
-  }
 }
 
 .innerRing {

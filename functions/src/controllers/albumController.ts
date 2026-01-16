@@ -22,6 +22,7 @@ const IMAGE_UPLOAD_CONFIG = {
   memory: "2GiB" as const,
   timeoutSeconds: 600,
   maxInstances: 20,
+  invoker: "public",
 };
 
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;

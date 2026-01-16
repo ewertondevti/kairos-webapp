@@ -5,6 +5,7 @@ import {corsHandler, requireAuth, requireRoles} from "../utils";
 // Common function configuration
 const COMMON_CONFIG = {
   maxInstances: 10,
+  invoker: "public",
 };
 
 /**
