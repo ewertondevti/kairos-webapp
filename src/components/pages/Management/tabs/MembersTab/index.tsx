@@ -277,7 +277,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
             onFilter: (value: UserRole, record: UserProfile) =>
               record.role === value,
             sorter: (a: UserProfile, b: UserProfile) =>
-              a.role.localeCompare(b.role),
+              getRoleLabel(a.role).localeCompare(getRoleLabel(b.role)),
             render: (value: UserRole, record: UserProfile) =>
               canUpdateRole ? (
                 <Select
