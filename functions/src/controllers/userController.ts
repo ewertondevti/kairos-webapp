@@ -118,6 +118,25 @@ const uploadUserPhoto = async (photo: PhotoPayload, uid: string) => {
   return { url, storagePath: destination };
 };
 
+const getPhotoUrlFromStoragePath = async (storagePath?: string) => {
+  const normalizedPath = storagePath?.trim();
+  if (!normalizedPath) {
+    return undefined;
+  }
+
+  try {
+    const fileRef = storage.bucket().file(normalizedPath);
+    const [url] = await fileRef.getSignedUrl({
+      action: "read",
+      expires: Date.now() + USER_PHOTO_URL_EXPIRES_MS,
+    });
+    return url;
+  } catch (error) {
+    console.warn("Erro ao gerar URL da foto:", error);
+    return undefined;
+  }
+};
+
 const findUserByNormalized = async (fullname: string, email: string) => {
   const normalizedFullname = normalizeComparable(fullname);
   const normalizedEmail = normalizeComparable(email);
@@ -866,10 +885,21 @@ export const getUsers = onRequest(USER_CONFIG, async (request, response) => {
         .orderBy("fullname")
         .get();
 
-      const users = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as IUser),
-      }));
+      const users = await Promise.all(
+        snapshot.docs.map(async (doc) => {
+          const data = doc.data() as IUser;
+          const fallbackPhoto =
+            !data.photo && data.photoStoragePath
+              ? await getPhotoUrlFromStoragePath(data.photoStoragePath)
+              : undefined;
+
+          return {
+            id: doc.id,
+            ...data,
+            photo: data.photo || fallbackPhoto,
+          };
+        })
+      );
 
       response.status(200).json(users);
     } catch (error) {
@@ -918,9 +948,17 @@ export const getUserProfile = onRequest(
         }
 
         const user = userSnap.data() as IUser;
+        const fallbackPhoto =
+          !user.photo && user.photoStoragePath
+            ? await getPhotoUrlFromStoragePath(user.photoStoragePath)
+            : undefined;
 
         response.status(200).json({
-          user: { id: userSnap.id, ...user },
+          user: {
+            id: userSnap.id,
+            ...user,
+            photo: user.photo || fallbackPhoto,
+          },
         });
       } catch (error) {
         console.error("Erro ao buscar perfil:", error);

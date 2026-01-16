@@ -28,10 +28,15 @@ import {
   mapChildrenToPayload,
   normalizeMemberChildren,
 } from "@/utils/membership";
-import { ExclamationCircleOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+  ExclamationCircleOutlined,
+  SearchOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   App,
+  Avatar,
   Button,
   Empty,
   Form,
@@ -50,6 +55,7 @@ import type {
 } from "antd/es/table/interface";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState, type Key } from "react";
+import styles from "./MembersTab.module.scss";
 
 const roleOptions = [
   { label: "Admin", value: UserRole.Admin },
@@ -64,6 +70,16 @@ const getRoleLabel = (role?: UserRole) =>
 const getChurchRoleLabel = (role?: string) =>
   churchRoleOptions.find((option) => option.value === role)?.label ??
   "Sem cargo";
+
+const getUserInitials = (user: UserProfile) => {
+  const name = user.fullname?.trim() || user.email?.trim() || "";
+  if (!name) return "";
+  const parts = name.split(" ").filter(Boolean);
+  const first = parts[0]?.charAt(0) ?? "";
+  const last =
+    parts.length > 1 ? parts[parts.length - 1]?.charAt(0) ?? "" : "";
+  return `${first}${last}`.toUpperCase();
+};
 
 type MembersTabProps = {
   mode?: "admin" | "secretaria";
@@ -549,7 +565,29 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
       value ? <Tag color="green">Ativo</Tag> : <Tag color="red">Inativo</Tag>,
   };
 
+  const photoColumn: ColumnsType<UserProfile>[number] = {
+    title: "Foto",
+    dataIndex: "photo",
+    key: "photo",
+    width: isMobile ? 56 : 72,
+    align: "center",
+    render: (_: string | undefined, record: UserProfile) => (
+      <div className={styles.photoCell}>
+        <Avatar
+          src={record.photo || undefined}
+          size={isMobile ? 32 : 40}
+          className={styles.photoAvatar}
+          aria-label={`Foto de ${record.fullname || record.email || "usuário"}`}
+          icon={<UserOutlined />}
+        >
+          {getUserInitials(record)}
+        </Avatar>
+      </div>
+    ),
+  };
+
   const columns: ColumnsType<UserProfile> = [
+    photoColumn,
     {
       title: "Nome",
       dataIndex: "fullname",
