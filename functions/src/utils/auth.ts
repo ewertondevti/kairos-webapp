@@ -9,8 +9,8 @@ type RequestLike = {
 };
 
 type ResponseLike = {
-  status: (code: number) => ResponseLike;
-  send: (body?: string) => void;
+  status: (_code: number) => ResponseLike;
+  send: (_body?: string) => void;
 };
 
 export type AuthContext = {

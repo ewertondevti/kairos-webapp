@@ -46,7 +46,7 @@ export const processHeicToJpeg = async (
 export const mapWithConcurrency = async <T, R>(
   items: T[],
   limit: number,
-  worker: (item: T, index: number) => Promise<R>
+  worker: (_item: T, _index: number) => Promise<R>
 ): Promise<R[]> => {
   const results: R[] = [];
   let currentIndex = 0;
