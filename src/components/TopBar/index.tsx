@@ -7,6 +7,7 @@ import { useGetAlbumById, useGetEvents } from "@/react-query";
 import { deleteAlbum, deleteImageFromAlbum } from "@/services/albumServices";
 import { deleteEvents } from "@/services/eventServices";
 import { useAppState, useAuth } from "@/store";
+import { UserRole } from "@/types/user";
 import {
   faImages,
   faObjectGroup,
@@ -49,7 +50,7 @@ export const TopBar = () => {
   const isEvents = pathname.includes(ManagementRoutesEnums.Events);
 
   const canManageMedia =
-    !!user && !!active && (role === "admin" || role === "midia");
+    !!user && !!active && (role === UserRole.Admin || role === UserRole.Midia);
   const showSelectBtn = canManageMedia && mode === "default";
 
   const showModal = () => setIsOpen(true);

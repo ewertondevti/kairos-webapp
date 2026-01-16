@@ -55,6 +55,16 @@ export const setUserActive = async (uid: string, active: boolean) => {
   return response.data;
 };
 
+export const setUserRole = async (uid: string, role: UserRole) => {
+  const headers = await getAuthHeaders();
+  const response = await axios.patch(
+    "/api/users/role",
+    { uid, role },
+    { headers }
+  );
+  return response.data;
+};
+
 export const getUserProfile = async (): Promise<{
   user: UserProfile;
   member: MemberProfile | null;
@@ -62,4 +72,25 @@ export const getUserProfile = async (): Promise<{
   const headers = await getAuthHeaders();
   const response = await axios.get("/api/users/profile", { headers });
   return response.data;
+};
+
+export const syncUserClaims = async () => {
+  if (!process.env.NEXT_PUBLIC_PROJECT_ID) {
+    console.warn("NEXT_PUBLIC_PROJECT_ID não configurado.");
+    return null;
+  }
+
+  const headers = await getAuthHeaders();
+  try {
+    const response = await axios.post("/api/users/sync-claims", undefined, {
+      headers,
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      console.warn("Endpoint syncUserClaims indisponível.");
+      return null;
+    }
+    throw error;
+  }
 };

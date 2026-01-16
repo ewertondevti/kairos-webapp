@@ -1,0 +1,101 @@
+.portalLayout {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0b2214 0%, #0f3a1c 45%, #143e22 100%);
+}
+
+.sider {
+  background: rgba(6, 18, 10, 0.95);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 24px 16px;
+}
+
+.brand {
+  margin-bottom: 24px;
+}
+
+.brandSubtitle {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.brandTitle {
+  color: #ffffff !important;
+  margin: 4px 0 0;
+}
+
+.menu {
+  background: transparent !important;
+  border-inline-end: none !important;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.content {
+  padding: 24px;
+}
+
+.header {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+}
+
+.headerLeft {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.menuButton {
+  color: #ffffff;
+}
+
+.pageTitle {
+  color: #ffffff !important;
+  margin: 0;
+}
+
+.pageSubtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.page {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  min-height: calc(100vh - 200px);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+}
+
+.loadingWrap {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blockedWrap {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+  }
+
+  .page {
+    padding: 16px;
+  }
+}

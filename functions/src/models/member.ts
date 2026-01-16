@@ -30,8 +30,6 @@ export interface IMemberPayload {
   churchRole?: string;
   belongsTo?: string;
   isActive?: boolean;
-  normalizedFullname?: string;
-  normalizedEmail?: string;
 }
 
 export interface IMember {
@@ -60,6 +58,4 @@ export interface IMember {
   churchRole?: string;
   belongsTo?: string;
   isActive?: boolean;
-  normalizedFullname?: string;
-  normalizedEmail?: string;
 }

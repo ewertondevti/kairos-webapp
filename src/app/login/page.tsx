@@ -1,8 +1,9 @@
 "use client";
 
 import { firebaseAuth } from "@/firebase";
-import { requestAccess } from "@/services/userServices";
-import { Form, Input, Modal, message } from "antd";
+import { requestAccess, syncUserClaims } from "@/services/userServices";
+import { UserRole } from "@/types/user";
+import { App, Form, Input, Modal } from "antd";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -14,6 +15,16 @@ export default function LoginPage() {
   const [isRequestOpen, setIsRequestOpen] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestForm] = Form.useForm();
+  const { message } = App.useApp();
+  const onBack = () => router.back();
+  const parseRole = (value: unknown): UserRole | null => {
+    if (typeof value === "number" && [0, 1, 2].includes(value)) {
+      return value as UserRole;
+    }
+
+    const parsedValue = Number(value);
+    return [0, 1, 2].includes(parsedValue) ? (parsedValue as UserRole) : null;
+  };
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,17 +46,43 @@ export default function LoginPage() {
         email,
         password
       );
-      const tokenResult = await credential.user.getIdTokenResult(true);
-      const active = Boolean(tokenResult.claims.active);
-      const role = tokenResult.claims.role as string | undefined;
+      const initialToken = await credential.user.getIdTokenResult(true);
+      let activeClaim = initialToken.claims.active as boolean | undefined;
+      let role = parseRole(initialToken.claims.role);
 
-      if (!active || !role) {
+      if (role === null || typeof activeClaim !== "boolean") {
+        try {
+          await syncUserClaims();
+          const refreshedToken = await credential.user.getIdTokenResult(true);
+          activeClaim = refreshedToken.claims.active as boolean | undefined;
+          role = parseRole(refreshedToken.claims.role);
+        } catch (syncError) {
+          console.error("Erro ao sincronizar claims:", syncError);
+        }
+      }
+
+      const active = Boolean(activeClaim);
+      const hasActiveClaim = typeof activeClaim === "boolean";
+
+      if (role === null || !hasActiveClaim) {
+        await signOut(firebaseAuth);
+        message.error("Seu acesso ainda não está configurado.");
+        return;
+      }
+
+      if (!active) {
         await signOut(firebaseAuth);
         message.error("Seu acesso está inativo. Fale com a secretaria.");
         return;
       }
 
-      router.push("/management/albums");
+      const redirectTo =
+        role === UserRole.Admin
+          ? "/admin"
+          : role === UserRole.Secretaria
+          ? "/secretaria"
+          : "/management/albums";
+      router.push(redirectTo);
     } catch (error) {
       console.error("Erro ao entrar:", error);
       message.error("Não foi possível entrar. Verifique seus dados.");
@@ -112,6 +149,13 @@ export default function LoginPage() {
             <div className={styles.formWrap}>
               <div className={styles.card}>
                 <div>
+                  <button
+                    type="button"
+                    className={styles.backButton}
+                    onClick={onBack}
+                  >
+                    Voltar
+                  </button>
                   <h2 className={styles.cardTitle}>Entrar</h2>
                   <p className={styles.cardSubtitle}>
                     Use seu e-mail e senha cadastrados.
@@ -162,7 +206,11 @@ export default function LoginPage() {
                     <span>Último acesso há 2 dias</span>
                   </div>
 
-                  <button type="submit" className={styles.submit} disabled={isLoading}>
+                  <button
+                    type="submit"
+                    className={styles.submit}
+                    disabled={isLoading}
+                  >
                     <span className={styles.submitContent}>
                       {isLoading ? "Aguarde..." : "Entrar"}
                       <svg
@@ -204,7 +252,7 @@ export default function LoginPage() {
         okText="Enviar"
         confirmLoading={requestLoading}
         onOk={onRequestAccess}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={requestForm} layout="vertical" requiredMark="optional">
           <Form.Item

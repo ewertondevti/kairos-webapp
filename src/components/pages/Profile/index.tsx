@@ -7,6 +7,7 @@ import { MembershipFields } from "@/enums/membership";
 import { useGetUserProfile } from "@/react-query";
 import { updateUserProfile } from "@/services/userServices";
 import { firebaseAuth } from "@/firebase";
+import { churchRoleOptions } from "@/constants/churchRoles";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -131,7 +132,7 @@ export const ProfilePage = () => {
           <Form form={form} layout="vertical" initialValues={{ [MembershipFields.Children]: [] }}>
             <PersonalInfo />
             <ParentInfo />
-            <EcclesiasticalInfo />
+            <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
 
             <Flex justify="flex-end">
               <Button type="primary" onClick={onSaveProfile} loading={saving}>

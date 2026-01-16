@@ -5,6 +5,7 @@ import { useGetUsers } from "@/react-query";
 import {
   createUser,
   setUserActive,
+  setUserRole,
   updateUserProfile,
 } from "@/services/userServices";
 import { useAuth } from "@/store";
@@ -15,6 +16,7 @@ import {
   Empty,
   Form,
   Input,
+  InputRef,
   message,
   Modal,
   Select,
@@ -23,12 +25,14 @@ import {
   Tag,
 } from "antd";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { QueryNames } from "@/react-query/queryNames";
 import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/EcclesiasticalInfo";
 import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
 import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
+import { SearchOutlined } from "@ant-design/icons";
+import { churchRoleOptions } from "@/constants/churchRoles";
 
 type CreateFormValues = {
   fullname: string;
@@ -37,10 +41,17 @@ type CreateFormValues = {
 };
 
 const roleOptions = [
-  { label: "Admin", value: "admin" },
-  { label: "Secretaria", value: "secretaria" },
-  { label: "Mídia", value: "midia" },
+  { label: "Admin", value: UserRole.Admin },
+  { label: "Secretaria", value: UserRole.Secretaria },
+  { label: "Mídia", value: UserRole.Midia },
 ];
+
+const getRoleLabel = (role?: UserRole) =>
+  roleOptions.find((option) => option.value === role)?.label ?? "Sem perfil";
+
+type MembersTabProps = {
+  mode?: "admin" | "secretaria";
+};
 
 const mapMemberToForm = (user: UserProfile) => {
   const member = user.member;
@@ -80,21 +91,27 @@ const mapMemberToForm = (user: UserProfile) => {
   };
 };
 
-export const MembersTab = () => {
+export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const queryClient = useQueryClient();
   const { role } = useAuth();
-  const { data: users = [], isLoading } = useGetUsers(
-    role === "admin" || role === "secretaria"
-  );
+  const canViewUsers =
+    (mode === "admin" && role === UserRole.Admin) ||
+    (mode === "secretaria" &&
+      (role === UserRole.Admin || role === UserRole.Secretaria));
+  const { data: users = [], isLoading } = useGetUsers(canViewUsers);
+
+  const isAdminView = mode === "admin";
+  const canCreateUsers = isAdminView && role === UserRole.Admin;
+  const canToggleActive = isAdminView && role === UserRole.Admin;
+  const canEditMembers = canViewUsers;
+  const canUpdateRole = isAdminView && role === UserRole.Admin;
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [createForm] = Form.useForm<CreateFormValues>();
   const [editForm] = Form.useForm();
-
-  const canManageUsers = role === "admin" || role === "secretaria";
-  const canCreateUsers = role === "admin";
+  const searchInput = useRef<InputRef>(null);
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: [QueryNames.GetUsers] });
@@ -113,6 +130,17 @@ export const MembersTab = () => {
     } catch (error) {
       console.error(error);
       message.error("Não foi possível atualizar o status.");
+    }
+  };
+
+  const onUpdateRole = async (user: UserProfile, nextRole: UserRole) => {
+    try {
+      await setUserRole(user.authUid || user.id, nextRole);
+      message.success("Perfil atualizado com sucesso!");
+      refresh();
+    } catch (error) {
+      console.error(error);
+      message.error("Não foi possível atualizar o perfil.");
     }
   };
 
@@ -161,114 +189,224 @@ export const MembersTab = () => {
     }
   };
 
+  const getColumnSearchProps = (dataIndex: keyof UserProfile) => ({
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+    }: {
+      setSelectedKeys: (keys: string[]) => void;
+      selectedKeys: string[];
+      confirm: () => void;
+      clearFilters?: () => void;
+    }) => (
+      <div style={{ padding: 8 }}>
+        <Input
+          ref={searchInput}
+          placeholder="Buscar..."
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() => confirm()}
+          style={{ marginBottom: 8, display: "block" }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm()}
+            icon={<SearchOutlined />}
+            size="small"
+          >
+            Filtrar
+          </Button>
+          <Button
+            onClick={() => {
+              clearFilters?.();
+              confirm();
+            }}
+            size="small"
+          >
+            Limpar
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
+    ),
+    onFilter: (value: string, record: UserProfile) =>
+      String(record[dataIndex] ?? "")
+        .toLowerCase()
+        .includes(String(value).toLowerCase()),
+    onFilterDropdownOpenChange: (visible: boolean) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+  });
+
   const columns = [
     {
       title: "Nome",
       dataIndex: "fullname",
       key: "fullname",
+      sorter: (a: UserProfile, b: UserProfile) =>
+        a.fullname.localeCompare(b.fullname),
+      ...getColumnSearchProps("fullname"),
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      sorter: (a: UserProfile, b: UserProfile) =>
+        a.email.localeCompare(b.email),
+      ...getColumnSearchProps("email"),
     },
-    {
-      title: "Perfil",
-      dataIndex: "role",
-      key: "role",
-      render: (value: UserRole) => (
-        <Tag
-          color={value === "admin" ? "blue" : value === "midia" ? "purple" : "gold"}
-        >
-          {value}
-        </Tag>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "active",
-      key: "active",
-      render: (value: boolean) =>
-        value ? <Tag color="green">Ativo</Tag> : <Tag color="red">Inativo</Tag>,
-    },
+    ...(isAdminView
+      ? [
+          {
+            title: "Perfil",
+            dataIndex: "role",
+            key: "role",
+            filters: roleOptions.map((option) => ({
+              text: option.label,
+              value: option.value,
+            })),
+            onFilter: (value: string, record: UserProfile) =>
+              record.role === value,
+            sorter: (a: UserProfile, b: UserProfile) =>
+              a.role.localeCompare(b.role),
+            render: (value: UserRole, record: UserProfile) =>
+              canUpdateRole ? (
+                <Select
+                  value={value}
+                  options={roleOptions}
+                  onChange={(nextRole) =>
+                    onUpdateRole(record, nextRole as UserRole)
+                  }
+                  style={{ minWidth: 140 }}
+                />
+              ) : (
+                <Tag
+                  color={
+                    value === UserRole.Admin
+                      ? "blue"
+                      : value === UserRole.Midia
+                      ? "purple"
+                      : "gold"
+                  }
+                >
+                  {getRoleLabel(value)}
+                </Tag>
+              ),
+          },
+          {
+            title: "Status",
+            dataIndex: "active",
+            key: "active",
+            filters: [
+              { text: "Ativo", value: true },
+              { text: "Inativo", value: false },
+            ],
+            onFilter: (value: boolean, record: UserProfile) =>
+              record.active === value,
+            sorter: (a: UserProfile, b: UserProfile) =>
+              Number(a.active) - Number(b.active),
+            render: (value: boolean) =>
+              value ? (
+                <Tag color="green">Ativo</Tag>
+              ) : (
+                <Tag color="red">Inativo</Tag>
+              ),
+          },
+        ]
+      : []),
     {
       title: "Ações",
       key: "actions",
       render: (_: unknown, record: UserProfile) => (
         <Space>
-          <Button onClick={() => openEdit(record)} disabled={!canManageUsers}>
+          <Button onClick={() => openEdit(record)} disabled={!canEditMembers}>
             Editar
           </Button>
-          <Button
-            type={record.active ? "default" : "primary"}
-            danger={record.active}
-            onClick={() => onToggleActive(record)}
-            disabled={!canManageUsers}
-          >
-            {record.active ? "Desativar" : "Ativar"}
-          </Button>
+          {canToggleActive && (
+            <Button
+              type={record.active ? "default" : "primary"}
+              danger={record.active}
+              onClick={() => onToggleActive(record)}
+            >
+              {record.active ? "Desativar" : "Ativar"}
+            </Button>
+          )}
         </Space>
       ),
     },
   ];
 
-  if (!canManageUsers) {
+  if (!canViewUsers) {
     return <Empty description="Sem permissão para visualizar esta área." />;
   }
 
   return (
     <>
-      <Space className="mb-4">
-        <Button type="primary" onClick={() => setCreateOpen(true)} disabled={!canCreateUsers}>
-          Criar usuário
-        </Button>
-      </Space>
+      {canCreateUsers && (
+        <Space className="mb-4">
+          <Button type="primary" onClick={() => setCreateOpen(true)}>
+            Criar usuário
+          </Button>
+        </Space>
+      )}
 
       <Table
         rowKey={(record) => record.id}
         loading={isLoading}
         dataSource={users}
         columns={columns}
+        scroll={{ x: "max-content" }}
       />
 
-      <Modal
-        title="Criar usuário"
-        open={createOpen}
-        onCancel={() => setCreateOpen(false)}
-        onOk={onCreateUser}
-        okText="Criar"
-        destroyOnClose
-      >
-        <Form form={createForm} layout="vertical">
-          <Form.Item
-            name="fullname"
-            label="Nome completo"
-            rules={[{ required: true, message: "Informe o nome." }]}
-          >
-            <Input placeholder="Nome completo" />
-          </Form.Item>
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: "Informe o email." },
-              { type: "email", message: "Email inválido." },
-            ]}
-          >
-            <Input placeholder="email@dominio.com" type="email" />
-          </Form.Item>
-          <Form.Item
-            name="role"
-            label="Perfil"
-            rules={[{ required: true, message: "Selecione o perfil." }]}
-          >
-            <Select options={roleOptions} placeholder="Selecione o perfil" />
-          </Form.Item>
-        </Form>
-      </Modal>
+      {canCreateUsers && (
+        <Modal
+          title="Criar usuário"
+          open={createOpen}
+          onCancel={() => setCreateOpen(false)}
+          onOk={onCreateUser}
+          okText="Criar"
+          destroyOnClose
+        >
+          <Form form={createForm} layout="vertical">
+            <Form.Item
+              name="fullname"
+              label="Nome completo"
+              rules={[{ required: true, message: "Informe o nome." }]}
+            >
+              <Input placeholder="Nome completo" />
+            </Form.Item>
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: "Informe o email." },
+                { type: "email", message: "Email inválido." },
+              ]}
+            >
+              <Input placeholder="email@dominio.com" type="email" />
+            </Form.Item>
+            <Form.Item
+              name="role"
+              label="Perfil"
+              rules={[{ required: true, message: "Selecione o perfil." }]}
+            >
+              <Select options={roleOptions} placeholder="Selecione o perfil" />
+            </Form.Item>
+          </Form>
+        </Modal>
+      )}
 
       <Drawer
-        title="Editar dados do usuário"
+        title={`Editar dados do ${isAdminView ? "usuario" : "membro"}`}
         open={editOpen}
         onClose={() => setEditOpen(false)}
         width={720}
@@ -285,7 +423,7 @@ export const MembersTab = () => {
         <Form form={editForm} layout="vertical" initialValues={{ [MembershipFields.Children]: [] }}>
           <PersonalInfo />
           <ParentInfo />
-          <EcclesiasticalInfo />
+          <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
         </Form>
       </Drawer>
     </>

@@ -15,6 +15,7 @@ import {
   mapWithConcurrency,
   requireAuth,
   requireRoles,
+  UserRole,
 } from "../utils";
 
 // Common function configuration for image uploads
@@ -82,7 +83,10 @@ export const uploadImage = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+      if (
+        !context ||
+        !requireRoles(context, [UserRole.Admin, UserRole.Midia], response)
+      ) {
         return;
       }
 
@@ -128,7 +132,10 @@ export const createAlbum = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+      if (
+        !context ||
+        !requireRoles(context, [UserRole.Admin, UserRole.Midia], response)
+      ) {
         return;
       }
 
@@ -178,7 +185,10 @@ export const updateAlbum = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+      if (
+        !context ||
+        !requireRoles(context, [UserRole.Admin, UserRole.Midia], response)
+      ) {
         return;
       }
 
@@ -439,7 +449,10 @@ export const deleteImageFromAlbum = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+      if (
+        !context ||
+        !requireRoles(context, [UserRole.Admin, UserRole.Midia], response)
+      ) {
         return;
       }
 
@@ -514,7 +527,10 @@ export const deleteAlbum = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+      if (
+        !context ||
+        !requireRoles(context, [UserRole.Admin, UserRole.Midia], response)
+      ) {
         return;
       }
 

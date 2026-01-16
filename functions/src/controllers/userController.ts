@@ -4,6 +4,7 @@ import {DatabaseTableKeys} from "../enums/app";
 import {auth, firestore} from "../firebaseAdmin";
 import {generateSecurePassword, normalizeText} from "../helpers/common";
 import {IAccessRequest, IUser} from "../models";
+import {IMember} from "../models/member";
 import {corsHandler, requireAuth, requireRoles, UserRole} from "../utils";
 
 const USER_CONFIG = {
@@ -38,38 +39,57 @@ const sendMail = async (to: string[], subject: string, html: string) => {
   });
 };
 
-const findMemberByNormalized = async (
-  fullname: string,
-  email: string,
-  normalizedFullname: string,
-  normalizedEmail: string
-) => {
-  const normalizedSnapshot = await firestore
+const normalizeComparable = (value?: string) => normalizeText(value ?? "");
+
+const findMemberByNormalized = async (fullname: string, email: string) => {
+  const normalizedFullname = normalizeComparable(fullname);
+  const normalizedEmail = normalizeComparable(email);
+
+  const snapshot = await firestore
     .collection(DatabaseTableKeys.Members)
-    .where("normalizedFullname", "==", normalizedFullname)
-    .where("normalizedEmail", "==", normalizedEmail)
-    .limit(1)
     .get();
 
-  if (!normalizedSnapshot.empty) {
-    const doc = normalizedSnapshot.docs[0];
-    return {id: doc.id, data: doc.data()};
-  }
+  const match = snapshot.docs.find((doc) => {
+    const member = doc.data() as IMember;
+    return (
+      normalizeComparable(member.fullname) === normalizedFullname &&
+      normalizeComparable(member.email) === normalizedEmail
+    );
+  });
 
-  const legacySnapshot = await firestore
-    .collection(DatabaseTableKeys.Members)
-    .where("fullname", "==", fullname)
-    .where("email", "==", email)
-    .limit(1)
-    .get();
-
-  if (legacySnapshot.empty) {
-    return null;
-  }
-
-  const doc = legacySnapshot.docs[0];
-  return {id: doc.id, data: doc.data()};
+  return match ? {id: match.id, data: match.data()} : null;
 };
+
+const findUserByNormalized = async (fullname: string, email: string) => {
+  const normalizedFullname = normalizeComparable(fullname);
+  const normalizedEmail = normalizeComparable(email);
+
+  const snapshot = await firestore
+    .collection(DatabaseTableKeys.Users)
+    .get();
+
+  const match = snapshot.docs.find((doc) => {
+    const user = doc.data() as IUser;
+    return (
+      normalizeComparable(user.fullname) === normalizedFullname &&
+      normalizeComparable(user.email) === normalizedEmail
+    );
+  });
+
+  return match ? {id: match.id, data: match.data()} : null;
+};
+
+const parseUserRole = (value: unknown) => {
+  if (typeof value === "number" && [0, 1, 2].includes(value)) {
+    return value as UserRole;
+  }
+
+  const roleValue = Number(value);
+  return [0, 1, 2].includes(roleValue) ? (roleValue as UserRole) : null;
+};
+
+const isValidUserRole = (value: unknown): value is UserRole =>
+  typeof value === "number" && [0, 1, 2].includes(value);
 
 const getMemberById = async (memberId?: string) => {
   if (!memberId) {
@@ -111,14 +131,9 @@ export const requestAccess = onRequest(
           return;
         }
 
-        const normalizedFullname = normalizeText(fullname);
-        const normalizedEmail = normalizeText(email);
-
         const accessRequest: IAccessRequest = {
           fullname: fullname.trim(),
           email: email.trim(),
-          normalizedFullname,
-          normalizedEmail,
           status: "pending",
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         };
@@ -127,7 +142,10 @@ export const requestAccess = onRequest(
           .collection(DatabaseTableKeys.AccessRequests)
           .add(accessRequest);
 
-        const recipients = await getUsersByRoles(["admin", "secretaria"]);
+        const recipients = await getUsersByRoles([
+          UserRole.Admin,
+          UserRole.Secretaria,
+        ]);
 
         await sendMail(
           recipients,
@@ -141,6 +159,105 @@ export const requestAccess = onRequest(
       } catch (error) {
         console.error("Erro ao solicitar acesso:", error);
         response.status(500).send("Erro ao solicitar acesso.");
+      }
+    });
+  }
+);
+
+export const syncUserClaims = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "POST") {
+        response.set("Allow", "POST");
+        response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      const authorization = request.headers.authorization || "";
+      if (!authorization.startsWith("Bearer ")) {
+        response.status(401).send("Token não fornecido.");
+        return;
+      }
+
+      try {
+        const token = authorization.replace("Bearer ", "").trim();
+        const decoded = await auth.verifyIdToken(token);
+
+        const userRef = firestore
+          .collection(DatabaseTableKeys.Users)
+          .doc(decoded.uid);
+        const userSnap = await userRef.get();
+
+        const safeFullname =
+          decoded.name?.trim() || decoded.email?.trim() || "Usuário";
+        const safeEmail = decoded.email?.trim() || "";
+
+        if (!userSnap.exists) {
+          const userDoc: IUser = {
+            authUid: decoded.uid,
+            fullname: safeFullname,
+            email: safeEmail,
+            role: UserRole.Admin,
+            active: true,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdBy: decoded.uid,
+          };
+
+          await userRef.set(userDoc);
+
+          await auth.setCustomUserClaims(decoded.uid, {
+            role: UserRole.Admin,
+            active: true,
+          });
+
+          response.status(200).json({
+            role: UserRole.Admin,
+            active: true,
+          });
+          return;
+        }
+
+        const user = userSnap.data() as IUser;
+        const role = isValidUserRole(user.role) ? user.role : UserRole.Admin;
+        const active = typeof user.active === "boolean" ? user.active : true;
+        const fullname = user.fullname?.trim() || safeFullname;
+        const email = user.email?.trim() || safeEmail;
+        const shouldUpdate =
+          role !== user.role ||
+          active !== user.active ||
+          fullname !== user.fullname ||
+          email !== user.email;
+
+        if (shouldUpdate) {
+          await userRef.update({
+            role,
+            active,
+            fullname,
+            email,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+
+        await auth.setCustomUserClaims(decoded.uid, {
+          role,
+          active,
+        });
+
+        if (!active) {
+          await auth.revokeRefreshTokens(decoded.uid);
+        }
+
+        response.status(200).json({ role, active });
+      } catch (error) {
+        console.error("Erro ao sincronizar claims:", error);
+        response.status(500).send("Erro ao sincronizar claims.");
       }
     });
   }
@@ -162,39 +279,27 @@ export const createUser = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin"], response)) {
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
         return;
       }
 
       try {
         const {fullname, email, role} = request.body || {};
-        const allowedRoles: UserRole[] = ["admin", "secretaria", "midia"];
-        const roleValue = String(role || "").trim().toLowerCase();
+        const normalizedRole = parseUserRole(role);
 
-        if (!fullname?.trim() || !email?.trim() || !roleValue) {
+        if (!fullname?.trim() || !email?.trim() || normalizedRole === null) {
           response.status(400).send("Dados incompletos ou inválidos!");
           return;
         }
 
-        const normalizedRole = roleValue as UserRole;
-
-        if (!allowedRoles.includes(normalizedRole)) {
-          response.status(400).send("Perfil inválido.");
-          return;
-        }
-
-        const normalizedFullname = normalizeText(fullname);
-        const normalizedEmail = normalizeText(email);
         const password = generateSecurePassword();
 
-        const existing = await firestore
-          .collection(DatabaseTableKeys.Users)
-          .where("normalizedEmail", "==", normalizedEmail)
-          .where("normalizedFullname", "==", normalizedFullname)
-          .limit(1)
-          .get();
+        const existing = await findUserByNormalized(
+          fullname.trim(),
+          email.trim()
+        );
 
-        if (!existing.empty) {
+        if (existing) {
           response.status(409).send("Usuário já existe.");
           return;
         }
@@ -207,9 +312,7 @@ export const createUser = onRequest(
 
         const memberMatch = await findMemberByNormalized(
           fullname.trim(),
-          email.trim(),
-          normalizedFullname,
-          normalizedEmail
+          email.trim()
         );
 
         const userDoc: IUser = {
@@ -219,8 +322,6 @@ export const createUser = onRequest(
           role: normalizedRole,
           active: true,
           memberId: memberMatch?.id,
-          normalizedFullname,
-          normalizedEmail,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           createdBy: context.uid,
@@ -242,8 +343,6 @@ export const createUser = onRequest(
             .doc(memberMatch.id)
             .update({
               isActive: true,
-              normalizedFullname,
-              normalizedEmail,
             });
         }
 
@@ -261,6 +360,64 @@ export const createUser = onRequest(
       } catch (error) {
         console.error("Erro ao criar usuário:", error);
         response.status(500).send("Erro ao criar usuário.");
+      }
+    });
+  }
+);
+
+export const setUserRole = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "PATCH") {
+        response.set("Allow", "PATCH");
+        response.status(405).send("Método não permitido. Use PATCH.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const {uid, role} = request.body || {};
+        const normalizedRole = parseUserRole(role);
+
+        if (!uid?.trim() || normalizedRole === null) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        const userRef = firestore.collection(DatabaseTableKeys.Users).doc(uid);
+        const userSnap = await userRef.get();
+
+        if (!userSnap.exists) {
+          response.status(404).send("Usuário não encontrado.");
+          return;
+        }
+
+        const user = userSnap.data() as IUser;
+
+        await userRef.update({
+          role: normalizedRole,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        await auth.setCustomUserClaims(uid, {
+          role: normalizedRole,
+          active: user.active,
+        });
+
+        response.status(200).send();
+      } catch (error) {
+        console.error("Erro ao atualizar perfil:", error);
+        response.status(500).send("Erro ao atualizar perfil.");
       }
     });
   }
@@ -284,7 +441,11 @@ export const updateUserProfile = onRequest(
       const context = await requireAuth(request, response);
       if (
         !context ||
-        !requireRoles(context, ["admin", "secretaria", "midia"], response)
+        !requireRoles(
+          context,
+          [UserRole.Admin, UserRole.Secretaria, UserRole.Midia],
+          response
+        )
       ) {
         return;
       }
@@ -298,7 +459,7 @@ export const updateUserProfile = onRequest(
           return;
         }
 
-        if (targetUid !== context.uid && context.role === "midia") {
+        if (targetUid !== context.uid && context.role === UserRole.Midia) {
           response.status(403).send("Permissão insuficiente.");
           return;
         }
@@ -316,9 +477,6 @@ export const updateUserProfile = onRequest(
         const user = userSnap.data() as IUser;
         const fullname = payload.fullname?.trim() || user.fullname;
         const email = payload.email?.trim() || user.email;
-        const normalizedFullname = normalizeText(fullname);
-        const normalizedEmail = normalizeText(email);
-
         const {active, role, ...safePayload} = payload;
         void active;
         void role;
@@ -326,8 +484,6 @@ export const updateUserProfile = onRequest(
           ...safePayload,
           fullname,
           email,
-          normalizedFullname,
-          normalizedEmail,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
 
@@ -348,8 +504,6 @@ export const updateUserProfile = onRequest(
               ...safePayload,
               fullname,
               email,
-              normalizedFullname,
-              normalizedEmail,
             });
         }
 
@@ -380,7 +534,11 @@ export const setUserActive = onRequest(
       const context = await requireAuth(request, response);
       if (
         !context ||
-        !requireRoles(context, ["admin", "secretaria"], response)
+        !requireRoles(
+          context,
+          [UserRole.Admin, UserRole.Secretaria],
+          response
+        )
       ) {
         return;
       }
@@ -453,7 +611,7 @@ export const getUsers = onRequest(
       const context = await requireAuth(request, response);
       if (
         !context ||
-        !requireRoles(context, ["admin", "secretaria"], response)
+        !requireRoles(context, [UserRole.Admin, UserRole.Secretaria], response)
       ) {
         return;
       }
@@ -503,7 +661,11 @@ export const getUserProfile = onRequest(
       const context = await requireAuth(request, response);
       if (
         !context ||
-        !requireRoles(context, ["admin", "secretaria", "midia"], response)
+        !requireRoles(
+          context,
+          [UserRole.Admin, UserRole.Secretaria, UserRole.Midia],
+          response
+        )
       ) {
         return;
       }

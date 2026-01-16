@@ -9,8 +9,6 @@ export interface IUser {
   role: UserRole;
   active: boolean;
   memberId?: string;
-  normalizedFullname: string;
-  normalizedEmail: string;
   createdAt: FirebaseFirestore.FieldValue;
   updatedAt: FirebaseFirestore.FieldValue;
   createdBy: string;
@@ -19,8 +17,6 @@ export interface IUser {
 export interface IAccessRequest {
   fullname: string;
   email: string;
-  normalizedFullname: string;
-  normalizedEmail: string;
   status: UserStatus;
   createdAt: FirebaseFirestore.FieldValue;
 }

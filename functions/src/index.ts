@@ -20,6 +20,8 @@ import {
   getUserProfile,
   getUsers,
   requestAccess,
+  syncUserClaims,
+  setUserRole,
   setUserActive,
   updateUserProfile,
 } from "./controllers/userController";
@@ -39,6 +41,8 @@ export {
   getAlbums,
   getEvents,
   requestAccess,
+  syncUserClaims,
+  setUserRole,
   setUserActive,
   updateAlbum,
   updateUserProfile,

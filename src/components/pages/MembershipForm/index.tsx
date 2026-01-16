@@ -1,13 +1,16 @@
 "use client";
 
 import { MembershipFields } from "@/enums/membership";
+import { useGetUserProfile } from "@/react-query";
 import { createNewMember, getAddress } from "@/services/membershipServices";
+import { useAuth } from "@/store";
 import { MembershipValues } from "@/types/membership";
 import { MemberPayload } from "@/types/store";
 import { postalCodeRegex } from "@/utils/app";
 import { Button, Card, Flex, Form, FormProps, Layout, message } from "antd";
 import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
+import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { EcclesiasticalInfo } from "./EcclesiasticalInfo";
 import styles from "./MembershipForm.module.scss";
@@ -18,8 +21,52 @@ export const MembershipForm = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [form] = Form.useForm();
+  const { user } = useAuth();
+  const { data: profileData } = useGetUserProfile(Boolean(user));
 
   const postalCodeValue = Form.useWatch(MembershipFields.PostalCode, form);
+
+  useEffect(() => {
+    if (!profileData?.user) return;
+    if (form.isFieldsTouched()) return;
+
+    const member = profileData.member;
+    const userData = profileData.user;
+
+    form.setFieldsValue({
+      [MembershipFields.Fullname]: member?.fullname ?? userData.fullname,
+      [MembershipFields.Email]: member?.email ?? userData.email,
+      [MembershipFields.BirthDate]: member?.birthDate
+        ? dayjs(member.birthDate)
+        : undefined,
+      [MembershipFields.Gender]: member?.gender,
+      [MembershipFields.MaritalStatus]: member?.maritalStatus,
+      [MembershipFields.PostalCode]: member?.postalCode,
+      [MembershipFields.Address]: member?.address,
+      [MembershipFields.City]: member?.city,
+      [MembershipFields.County]: member?.county,
+      [MembershipFields.State]: member?.state,
+      [MembershipFields.MotherName]: member?.motherName,
+      [MembershipFields.FatherName]: member?.fatherName,
+      [MembershipFields.SpouseName]: member?.spouseName,
+      [MembershipFields.WeddingDate]: member?.weddingDate
+        ? dayjs(member.weddingDate)
+        : undefined,
+      [MembershipFields.Children]: member?.children ?? [],
+      [MembershipFields.BaptismChurch]: member?.baptismChurch,
+      [MembershipFields.BaptismDate]: member?.baptismDate
+        ? dayjs(member.baptismDate)
+        : undefined,
+      [MembershipFields.AdmissionType]: member?.admissionType,
+      [MembershipFields.BaptizedPastor]: member?.baptizedPastor,
+      [MembershipFields.AdmissionDate]: member?.admissionDate
+        ? dayjs(member.admissionDate)
+        : undefined,
+      [MembershipFields.Congregation]: member?.congregation,
+      [MembershipFields.BelongsTo]: member?.belongsTo,
+      [MembershipFields.Photo]: member?.photo,
+    });
+  }, [form, profileData]);
 
   useEffect(() => {
     if (postalCodeValue?.match(postalCodeRegex)) {
@@ -100,7 +147,7 @@ export const MembershipForm = () => {
 
               <ParentInfo />
 
-              <EcclesiasticalInfo />
+              <EcclesiasticalInfo showChurchRole={false} />
 
               <Flex justify="flex-end">
                 <Button type="primary" htmlType="submit" loading={isLoading}>

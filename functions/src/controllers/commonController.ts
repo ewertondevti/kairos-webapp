@@ -1,6 +1,6 @@
 import {onRequest} from "firebase-functions/v2/https";
 import {deleteImageStorage} from "../helpers/common";
-import {corsHandler, requireAuth, requireRoles} from "../utils";
+import {corsHandler, requireAuth, requireRoles, UserRole} from "../utils";
 
 // Common function configuration
 const COMMON_CONFIG = {
@@ -27,7 +27,10 @@ export const deleteUploadedImage = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+      if (
+        !context ||
+        !requireRoles(context, [UserRole.Admin, UserRole.Midia], response)
+      ) {
         return;
       }
 

@@ -7,6 +7,7 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { App as AntdApp } from "antd";
 import { Poppins, Playfair_Display } from "next/font/google";
 import { PrimeReactProvider } from "primereact/api";
 import { useState } from "react";
@@ -62,16 +63,18 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <PrimeReactProvider>
-            <QueryClientProvider client={queryClient}>
-              <AuthProvider>
-                <AppProvider>
-                  {children}
-                  <ReactQueryDevtools initialIsOpen={false} />
-                </AppProvider>
-              </AuthProvider>
-            </QueryClientProvider>
-          </PrimeReactProvider>
+          <AntdApp>
+            <PrimeReactProvider>
+              <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                  <AppProvider>
+                    {children}
+                    <ReactQueryDevtools initialIsOpen={false} />
+                  </AppProvider>
+                </AuthProvider>
+              </QueryClientProvider>
+            </PrimeReactProvider>
+          </AntdApp>
         </ThemeProvider>
       </body>
     </html>

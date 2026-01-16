@@ -3,6 +3,7 @@
 import { RoutesEnums } from "@/enums/routesEnums";
 import { firebaseAuth } from "@/firebase";
 import { useAuth } from "@/store";
+import { UserRole } from "@/types/user";
 import {
   faGears,
   faImages,
@@ -25,8 +26,11 @@ type Props = {
 export const MenuContent: FC<Props> = ({ onClose }) => {
   const router = useRouter();
 
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const isAuthenticated = useMemo(() => !!user, [user]);
+  const canAccessSecretariaPortal =
+    role === UserRole.Admin || role === UserRole.Secretaria;
+  const canAccessAdminPortal = role === UserRole.Admin;
 
   const onLogout = async () => {
     await signOut(firebaseAuth);
@@ -82,16 +86,30 @@ export const MenuContent: FC<Props> = ({ onClose }) => {
         </Button>
       </Col>
 
-      {isAuthenticated && (
+      {isAuthenticated && canAccessSecretariaPortal && (
         <Col span={24}>
           <Button
             type="text"
             icon={<FontAwesomeIcon icon={faGears} />}
             className={styles.menuButton}
-            onClick={() => onRedirect(`/${RoutesEnums.Management}`)}
+            onClick={() => onRedirect("/secretaria")}
             block
           >
-            Gerenciamento
+            Secretaria
+          </Button>
+        </Col>
+      )}
+
+      {isAuthenticated && canAccessAdminPortal && (
+        <Col span={24}>
+          <Button
+            type="text"
+            icon={<FontAwesomeIcon icon={faUsers} />}
+            className={styles.menuButton}
+            onClick={() => onRedirect("/admin")}
+            block
+          >
+            Portal Admin
           </Button>
         </Col>
       )}

@@ -1,9 +1,17 @@
 import { MembershipFields } from "@/enums/membership";
 import { dateFormat, disabledDate } from "@/utils/app";
-import { Col, DatePicker, Divider, Form, Input, Row } from "antd";
+import { Col, DatePicker, Divider, Form, Input, Row, Select } from "antd";
 import Title from "antd/es/typography/Title";
 
-export const EcclesiasticalInfo = () => {
+type EcclesiasticalInfoProps = {
+  showChurchRole?: boolean;
+  churchRoleOptions?: { label: string; value: string }[];
+};
+
+export const EcclesiasticalInfo = ({
+  showChurchRole = true,
+  churchRoleOptions,
+}: EcclesiasticalInfoProps) => {
   return (
     <>
       <Divider orientation="vertical">
@@ -72,14 +80,24 @@ export const EcclesiasticalInfo = () => {
           </Form.Item>
         </Col>
 
-        <Col xs={24} sm={8}>
-          <Form.Item
-            name={MembershipFields.ChurchRole}
-            label="Função na igreja"
-          >
-            <Input placeholder="Função na igreja..." />
-          </Form.Item>
-        </Col>
+        {showChurchRole && (
+          <Col xs={24} sm={8}>
+            <Form.Item
+              name={MembershipFields.ChurchRole}
+              label="Cargo na igreja"
+            >
+              {churchRoleOptions ? (
+                <Select
+                  options={churchRoleOptions}
+                  placeholder="Selecione o cargo"
+                  allowClear
+                />
+              ) : (
+                <Input placeholder="Cargo na igreja..." />
+              )}
+            </Form.Item>
+          </Col>
+        )}
 
         <Col xs={24} sm={8}>
           <Form.Item

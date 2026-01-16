@@ -2,6 +2,7 @@
 
 import { RoutesEnums } from "@/enums/routesEnums";
 import { useAuth } from "@/store";
+import { UserRole } from "@/types/user";
 import { MenuOutlined } from "@ant-design/icons";
 import { Button, Drawer, Flex, Layout, Menu, Typography } from "antd";
 import Image from "next/image";
@@ -19,11 +20,15 @@ export const CustomHeader = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   const onRedirect = () => router.push(RoutesEnums.Home);
 
   const isAuthenticated = useMemo(() => !!user, [user]);
+
+  const canAccessSecretariaPortal =
+    role === UserRole.Admin || role === UserRole.Secretaria;
+  const canAccessAdminPortal = role === UserRole.Admin;
 
   const navItems = [
     { key: RoutesEnums.Home, label: "Início" },
@@ -31,7 +36,12 @@ export const CustomHeader = () => {
     { key: `/${RoutesEnums.MembershipForm}`, label: "Ficha de Membro" },
     ...(isAuthenticated
       ? [
-          { key: `/${RoutesEnums.Management}`, label: "Gerenciamento" },
+          ...(canAccessSecretariaPortal
+            ? [{ key: "/secretaria", label: "Secretaria" }]
+            : []),
+          ...(canAccessAdminPortal
+            ? [{ key: "/admin", label: "Portal Admin" }]
+            : []),
           { key: `/${RoutesEnums.Profile}`, label: "Perfil" },
         ]
       : []),

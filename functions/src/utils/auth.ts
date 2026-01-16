@@ -1,6 +1,10 @@
 import { auth } from "../firebaseAdmin";
 
-export type UserRole = "admin" | "secretaria" | "midia";
+export enum UserRole {
+  Admin = 0,
+  Secretaria = 1,
+  Midia = 2,
+}
 
 type RequestLike = {
   headers: {

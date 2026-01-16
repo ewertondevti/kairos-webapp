@@ -4,7 +4,7 @@ import * as os from "os";
 import * as path from "path";
 import {DatabaseTableKeys} from "../enums/app";
 import {firestore, storage} from "../firebaseAdmin";
-import {generateUniqueFileName, normalizeText} from "../helpers/common";
+import {generateUniqueFileName} from "../helpers/common";
 import {IMember, IMemberPayload} from "../models/member";
 import {corsHandler} from "../utils";
 
@@ -59,15 +59,10 @@ export const createNewMember = onRequest(
           return;
         }
 
-        const normalizedFullname = normalizeText(body.fullname);
-        const normalizedEmail = normalizeText(body.email);
-
         const member: IMember = {
           ...body,
           photo: undefined,
           isActive: body.isActive ?? true,
-          normalizedFullname,
-          normalizedEmail,
         };
         let tempFilePath: string | null = null;
 

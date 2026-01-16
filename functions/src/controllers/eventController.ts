@@ -10,6 +10,7 @@ import {
   mapWithConcurrency,
   requireAuth,
   requireRoles,
+  UserRole,
 } from "../utils";
 
 // Common function configuration for image uploads
@@ -45,7 +46,10 @@ export const uploadEvent = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+      if (
+        !context ||
+        !requireRoles(context, [UserRole.Admin, UserRole.Midia], response)
+      ) {
         return;
       }
 
@@ -91,7 +95,10 @@ export const createEvents = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+      if (
+        !context ||
+        !requireRoles(context, [UserRole.Admin, UserRole.Midia], response)
+      ) {
         return;
       }
 
@@ -208,7 +215,10 @@ export const deleteEvents = onRequest(
       }
 
       const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+      if (
+        !context ||
+        !requireRoles(context, [UserRole.Admin, UserRole.Midia], response)
+      ) {
         return;
       }
 
