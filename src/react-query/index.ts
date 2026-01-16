@@ -1,6 +1,12 @@
-import { getAlbumById, getAlbums } from "@/services/albumServices";
+import {
+  getAlbumById,
+  getAlbumImages,
+  getAlbums,
+  getAlbumsPaged,
+} from "@/services/albumServices";
 import { getEvents } from "@/services/eventServices";
 import { getAuditLogs } from "@/services/auditService";
+import { getStorageImages } from "@/services/storageServices";
 import {
   getAccessRequests,
   getUserProfile,
@@ -21,6 +27,21 @@ export const useGetAlbums = (options?: AlbumQueryOptions) => {
     retry: 2,
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: options?.enabled ?? true,
+  });
+};
+
+export const useGetAlbumsInfinite = (options?: AlbumPageOptions) => {
+  const limit = options?.limit ?? 24;
+
+  return useInfiniteQuery({
+    queryKey: [QueryNames.GetAlbumsPaged, limit],
+    queryFn: async ({ pageParam }) =>
+      getAlbumsPaged({ limit, cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage?.nextCursor,
+    enabled: options?.enabled ?? true,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -61,10 +82,36 @@ export const useGetAlbumImagesInfinite = (
   });
 };
 
+export const useGetAlbumImagesIndexInfinite = (
+  options?: AlbumPageOptions
+) => {
+  const limit = options?.limit ?? 48;
+
+  return useInfiniteQuery({
+    queryKey: [QueryNames.GetAlbumImages, limit],
+    queryFn: async ({ pageParam }) =>
+      getAlbumImages({ limit, cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage?.nextCursor,
+    enabled: options?.enabled ?? true,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+};
+
 export const useGetEvents = () => {
   return useQuery({
     queryKey: [QueryNames.GetEvents],
     queryFn: async () => await getEvents(),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useGetStorageImages = () => {
+  return useQuery({
+    queryKey: [QueryNames.GetStorageImages],
+    queryFn: async () => await getStorageImages(),
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
   });

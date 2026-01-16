@@ -14,7 +14,8 @@ type Props = IAlbumDTO & {
 export const AlbumContent: FC<Props> = ({
   id,
   name,
-  images,
+  coverUrl,
+  imagesCount,
   basePath = "",
   index = 0,
 }) => {
@@ -23,7 +24,7 @@ export const AlbumContent: FC<Props> = ({
   const tilt = rotationOptions[index % rotationOptions.length];
   const cardStyle = { ["--tilt"]: `${tilt}deg` } as CSSProperties;
 
-  const coverImage = images?.[0]?.url;
+  const coverImage = coverUrl;
 
   const onRedirect = () => router.push(`${basePath}/${id}`);
 
@@ -50,6 +51,7 @@ export const AlbumContent: FC<Props> = ({
             )}
           </div>
           <div className={styles.caption}>{name}</div>
+          <div className={styles.countBadge}>{imagesCount} imagens</div>
         </div>
       </div>
     </button>

@@ -2,8 +2,11 @@ import {
   createAlbum,
   deleteAlbum,
   deleteImageFromAlbum,
+  getAlbumImages,
   getAlbumById,
   getAlbums,
+  getAlbumsPaged,
+  migrateAlbumImages,
   updateAlbum,
   uploadImage,
 } from "./controllers/albumController";
@@ -16,6 +19,7 @@ import {
 } from "./controllers/eventController";
 import { createAuditLog, getAuditLogs } from "./controllers/auditController";
 import {
+  createNewMember,
   createUser,
   getUserProfile,
   getUsers,
@@ -34,6 +38,7 @@ export {
   getAuditLogs,
   createAlbum,
   createEvents,
+  createNewMember,
   createUser,
   deleteAlbum,
   deleteEvents,
@@ -43,8 +48,11 @@ export {
   getUsers,
   getAccessRequests,
   getAlbumById,
+  getAlbumImages,
   getAlbums,
+  getAlbumsPaged,
   getEvents,
+  migrateAlbumImages,
   requestAccess,
   syncUserClaims,
   setUserRole,

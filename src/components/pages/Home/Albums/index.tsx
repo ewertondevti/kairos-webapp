@@ -1,7 +1,7 @@
 "use client";
 
 import { RoutesEnums } from "@/enums/routesEnums";
-import { useGetAlbums } from "@/react-query";
+import { useGetAlbumsInfinite } from "@/react-query";
 import { Button, Flex, Spin, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import { AlbumCard } from "./AlbumCard";
@@ -12,7 +12,7 @@ const { Title } = Typography;
 
 export const Albums = () => {
   const router = useRouter();
-  const { data: albums, isLoading } = useGetAlbums();
+  const { data, isLoading, hasNextPage } = useGetAlbumsInfinite({ limit: 12 });
   const { ref, isVisible } = useScrollReveal();
 
   if (isLoading) {
@@ -27,7 +27,9 @@ export const Albums = () => {
     );
   }
 
-  if (!albums?.length) return null;
+  const albums = data?.pages?.flatMap((page) => page?.albums ?? []) ?? [];
+
+  if (!albums.length) return null;
 
   return (
     <section
@@ -56,7 +58,7 @@ export const Albums = () => {
           ))}
         </div>
 
-        {albums.length > 6 && (
+        {(albums.length > 6 || hasNextPage) && (
           <Flex justify="center">
             <Button
               type="primary"

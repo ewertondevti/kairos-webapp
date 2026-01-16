@@ -28,3 +28,24 @@ export const secretariaPortalNav: PortalNavItem[] = [
     href: "/secretaria/membros",
   },
 ];
+
+export const mediaPortalNav: PortalNavItem[] = [
+  {
+    key: "media-albums",
+    label: "Álbuns",
+    description: "Crie, edite e organize álbuns de mídia",
+    href: "/midia/albums",
+  },
+  {
+    key: "media-images",
+    label: "Imagens",
+    description: "Gerencie imagens e desassociações",
+    href: "/midia/images",
+  },
+  {
+    key: "media-events",
+    label: "Eventos",
+    description: "Gerencie os próximos eventos",
+    href: "/midia/events",
+  },
+];

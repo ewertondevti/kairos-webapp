@@ -4,7 +4,6 @@ import { EditAlbumModal } from "@/components/EditAlbumModal";
 import { TopBar } from "@/components/TopBar";
 import { ManagementRoutesEnums } from "@/enums/routesEnums";
 import { onDownload } from "@/helpers/app";
-import { useGetAlbums } from "@/react-query";
 import { useAppState } from "@/store";
 import {
   DownloadOutlined,
@@ -37,8 +36,6 @@ const Management = ({ children }: ManagementProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const currentPath = pathname ?? "";
-
-  const { data: albums } = useGetAlbums();
 
   const { selectedImages, mode, updateMode, updateSelectedImages } =
     useAppState();

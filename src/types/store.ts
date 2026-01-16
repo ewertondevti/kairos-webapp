@@ -5,14 +5,18 @@ export interface ICommon {
 }
 
 export interface IImageDTO {
+  id?: string;
   url: string;
   name: string;
+  storagePath?: string;
 }
 
 export interface IAlbumDTO extends ICommon {
   name: string;
   eventDate?: string;
-  images: IImageDTO[];
+  images?: IImageDTO[];
+  imagesCount: number;
+  coverUrl?: string;
 }
 
 export interface IAlbumWithCursor extends IAlbumDTO {
@@ -21,6 +25,7 @@ export interface IAlbumWithCursor extends IAlbumDTO {
 
 export type AlbumImagePayload = {
   name: string;
+  storagePath?: string;
 };
 
 export interface IAlbumPayload {

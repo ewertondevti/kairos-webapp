@@ -8,8 +8,8 @@ import {
   normalizeText,
 } from "../helpers/common";
 import { IAccessRequest, IUser } from "../models";
-import { logAuditEvent } from "../utils/audit";
 import { corsHandler, requireAuth, requireRoles, UserRole } from "../utils";
+import { logAuditEvent } from "../utils/audit";
 
 const USER_CONFIG = {
   maxInstances: 10,
@@ -154,17 +154,24 @@ const findUserByNormalized = async (fullname: string, email: string) => {
   return match ? { id: match.id, data: match.data() } : null;
 };
 
+const USER_ROLE_VALUES: UserRole[] = [
+  UserRole.Admin,
+  UserRole.Secretaria,
+  UserRole.Midia,
+  UserRole.Member,
+];
+
 const parseUserRole = (value: unknown) => {
-  if (typeof value === "number" && [0, 1, 2].includes(value)) {
+  if (typeof value === "number" && USER_ROLE_VALUES.includes(value)) {
     return value as UserRole;
   }
 
   const roleValue = Number(value);
-  return [0, 1, 2].includes(roleValue) ? (roleValue as UserRole) : null;
+  return USER_ROLE_VALUES.includes(roleValue) ? (roleValue as UserRole) : null;
 };
 
 const isValidUserRole = (value: unknown): value is UserRole =>
-  typeof value === "number" && [0, 1, 2].includes(value);
+  typeof value === "number" && USER_ROLE_VALUES.includes(value);
 
 export const requestAccess = onRequest(
   USER_CONFIG,
@@ -522,10 +529,7 @@ export const createUser = onRequest(USER_CONFIG, async (request, response) => {
     }
 
     const context = await requireAuth(request, response);
-    if (
-      !context ||
-      !requireRoles(context, [UserRole.Admin, UserRole.Secretaria], response)
-    ) {
+    if (!context || !requireRoles(context, [UserRole.Admin], response)) {
       return;
     }
 
@@ -604,6 +608,131 @@ export const createUser = onRequest(USER_CONFIG, async (request, response) => {
     }
   });
 });
+
+export const createNewMember = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "POST") {
+        response.set("Allow", "POST");
+        response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const { fullname, email, payload } = request.body || {};
+
+        if (!fullname?.trim() || !email?.trim()) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        const existing = await findUserByNormalized(
+          fullname.trim(),
+          email.trim()
+        );
+
+        if (existing) {
+          response.status(409).send("Usuário já existe.");
+          return;
+        }
+
+        const password = generateSecurePassword();
+
+        const authUser = await auth.createUser({
+          email: email.trim(),
+          password,
+          displayName: fullname.trim(),
+        });
+
+        const normalizedPayload =
+          payload && typeof payload === "object" ? payload : {};
+        const { active, role, photo, ...safePayload } =
+          normalizedPayload as Record<string, unknown>;
+        void active;
+        void role;
+
+        const userDoc: IUser = {
+          authUid: authUser.uid,
+          fullname: fullname.trim(),
+          email: email.trim(),
+          role: UserRole.Member,
+          active: true,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdBy: context.uid,
+          ...safePayload,
+        };
+
+        if (isPhotoPayload(photo)) {
+          const uploadedPhoto = await uploadUserPhoto(photo, authUser.uid);
+          if (uploadedPhoto) {
+            userDoc.photo = uploadedPhoto.url;
+            userDoc.photoStoragePath = uploadedPhoto.storagePath;
+          }
+        } else if (typeof photo === "string" && photo.trim()) {
+          if (photo.startsWith("data:image/")) {
+            const uploadedPhoto = await uploadUserPhoto(
+              { file: photo, filename: "profile" },
+              authUser.uid
+            );
+            if (uploadedPhoto) {
+              userDoc.photo = uploadedPhoto.url;
+              userDoc.photoStoragePath = uploadedPhoto.storagePath;
+            }
+          } else if (isRemotePhotoUrl(photo)) {
+            userDoc.photo = photo;
+          }
+        }
+
+        await firestore
+          .collection(DatabaseTableKeys.Users)
+          .doc(authUser.uid)
+          .set(userDoc);
+
+        await auth.setCustomUserClaims(authUser.uid, {
+          role: UserRole.Member,
+          active: true,
+        });
+
+        void logAuditEvent(
+          {
+            action: "member.create",
+            targetType: "user",
+            targetId: authUser.uid,
+            metadata: { email: userDoc.email, fullname: userDoc.fullname },
+          },
+          context
+        );
+
+        await sendMail(
+          [userDoc.email],
+          "Seus dados de acesso",
+          `<p>Olá, ${userDoc.fullname}.</p>
+           <p>Seu acesso foi criado com sucesso.</p>
+           <p><strong>Email:</strong> ${userDoc.email}</p>
+           <p><strong>Senha temporária:</strong> ${password}</p>
+           <p>Recomendamos alterar a senha após o primeiro acesso.</p>`
+        );
+
+        response.status(201).send({ uid: authUser.uid });
+      } catch (error) {
+        console.error("Erro ao criar membro:", error);
+        response.status(500).send("Erro ao criar membro.");
+      }
+    });
+  }
+);
 
 export const setUserRole = onRequest(USER_CONFIG, async (request, response) => {
   corsHandler(request, response, async () => {

@@ -7,7 +7,7 @@ import { createAlbum } from "@/services/albumServices";
 import { deleteUploadedImage } from "@/services/commonServices";
 import { IAlbumPayload } from "@/types/store";
 import { dateInputFormat, requiredRules } from "@/utils/app";
-import { formatBytes, getUploadUrl } from "@/utils/upload";
+import { formatBytes, getUploadFileName, getUploadUrl } from "@/utils/upload";
 import {
   CheckCircleOutlined,
   DeleteOutlined,
@@ -162,7 +162,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
   });
 
   const refresh = () =>
-    queryClient.refetchQueries({ queryKey: [QueryNames.GetAlbums] });
+    queryClient.refetchQueries({ queryKey: [QueryNames.GetAlbumsPaged] });
 
   const formatEventTitle = (date: Dayjs) => {
     const formatted = new Intl.DateTimeFormat("pt-BR", {
@@ -195,10 +195,15 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
     () =>
       items
         .filter((item) => item.status === "success")
-        .map((item) => ({
-          name: item.name,
-          url: getUploadUrl(item.response),
-        }))
+        .map((item) => {
+          const responseName = getUploadFileName(item.response);
+          const fileName = responseName || item.name;
+          return {
+            name: fileName,
+            storagePath: `${DatabaseTableKeys.Images}/${fileName}`,
+            url: getUploadUrl(item.response),
+          };
+        })
         .filter((item) => item.url),
     [items]
   );
@@ -207,7 +212,9 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
     const target = items.find((item) => item.id === itemId);
     if (target?.status === "success") {
       try {
-        await deleteUploadedImage(`${DatabaseTableKeys.Images}/${target.name}`);
+        const responseName = getUploadFileName(target.response);
+        const fileName = responseName || target.name;
+        await deleteUploadedImage(`${DatabaseTableKeys.Images}/${fileName}`);
       } catch (error) {
         console.error(error);
       }
@@ -241,7 +248,10 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
     const payload: IAlbumPayload = {
       name: values.name,
       eventDate: values.eventDate?.toISOString(),
-      images: uploadedImages.map((image) => ({ name: image.name })),
+      images: uploadedImages.map((image) => ({
+        name: image.name,
+        storagePath: image.storagePath,
+      })),
     };
 
     await createAlbum(payload)
@@ -263,7 +273,7 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
       open={isOpen}
       onCancel={isLoading ? undefined : handleCancel}
       onOk={() => form.submit()}
-      destroyOnClose
+      destroyOnHidden
       okText="Gravar"
       confirmLoading={isLoading}
       cancelButtonProps={{ disabled: isLoading }}
@@ -271,9 +281,11 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
       maskClosable={false}
       width={isMobile ? "100%" : 720}
       style={isMobile ? { top: 12 } : undefined}
-      bodyStyle={
-        isMobile ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" } : undefined
-      }
+      styles={{
+        body: isMobile
+          ? { maxHeight: "calc(100vh - 160px)", overflowY: "auto" }
+          : undefined,
+      }}
     >
       <Form
         form={form}

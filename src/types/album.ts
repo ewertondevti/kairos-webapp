@@ -1,4 +1,4 @@
-import { IImageDTO } from "./store";
+import { IAlbumDTO, IImageDTO } from "./store";
 
 export type AlbumValuesType = {
   name: string;
@@ -9,4 +9,9 @@ export type AlbumValuesType = {
 export type AlbumByIdParams = {
   limit?: number;
   cursor?: string;
+};
+
+export type AlbumListResponse = {
+  albums: IAlbumDTO[];
+  nextCursor?: string;
 };

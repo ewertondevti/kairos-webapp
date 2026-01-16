@@ -9,7 +9,7 @@ import {
   DeleteImgFromAlbumPayload,
   UpdateAlbumPayload,
 } from "../models";
-import {IAlbum, IImage} from "../models/album";
+import {IAlbum, IAlbumImage} from "../models/album";
 import {
   corsHandler,
   mapWithConcurrency,
@@ -40,10 +40,64 @@ type SignedUrlCacheEntry = {
 
 const signedUrlCache = new Map<string, SignedUrlCacheEntry>();
 
-const normalizeImages = (images?: Partial<IImage>[]) =>
+const ALBUM_IMAGES_COLLECTION = "images";
+
+const buildStoragePath = (name: string) =>
+  `${DatabaseTableKeys.Images}/${name}`;
+
+const normalizeImages = (images?: Partial<IAlbumImage>[]) =>
   (images || [])
     .filter((img) => img?.name?.trim())
-    .map((img) => ({name: img.name!.trim()}));
+    .map((img) => {
+      const name = img.name!.trim();
+      const storagePath = img.storagePath?.trim() || buildStoragePath(name);
+      return {name, storagePath};
+    });
+
+const encodeCursor = (createdAt: admin.firestore.Timestamp, name: string) =>
+  Buffer.from(
+    JSON.stringify({createdAt: createdAt.toMillis(), name})
+  ).toString("base64");
+
+const decodeCursor = (cursor?: string) => {
+  if (!cursor) return null;
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(cursor, "base64").toString("utf8")
+    ) as {createdAt: number; name: string};
+    if (!parsed?.createdAt || !parsed?.name) return null;
+    return {
+      createdAt: admin.firestore.Timestamp.fromMillis(parsed.createdAt),
+      name: parsed.name,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const encodeAlbumCursor = (
+  createdAt: admin.firestore.Timestamp,
+  id: string
+) =>
+  Buffer.from(
+    JSON.stringify({createdAt: createdAt.toMillis(), id})
+  ).toString("base64");
+
+const decodeAlbumCursor = (cursor?: string) => {
+  if (!cursor) return null;
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(cursor, "base64").toString("utf8")
+    ) as {createdAt: number; id: string};
+    if (!parsed?.createdAt || !parsed?.id) return null;
+    return {
+      createdAt: admin.firestore.Timestamp.fromMillis(parsed.createdAt),
+      id: parsed.id,
+    };
+  } catch {
+    return null;
+  }
+};
 
 const getSignedUrlCached = async (storagePath: string) => {
   const cached = signedUrlCache.get(storagePath);
@@ -103,15 +157,6 @@ export const uploadImage = onRequest(
         );
 
         console.log(`Imagem enviada com sucesso: ${result.fileName}`);
-        void logAuditEvent(
-          {
-            action: "image.upload",
-            targetType: "image",
-            targetId: result.fileName,
-            metadata: { storage: DatabaseTableKeys.Images },
-          },
-          context
-        );
         response.status(200).send({url: result.url, fileName: result.fileName});
       } catch (error: any) {
         console.error("Erro ao processar o arquivo:", error);
@@ -151,22 +196,40 @@ export const createAlbum = onRequest(
 
       try {
         const body = request.body as CreateAlbumPayload;
+        const normalizedImages = normalizeImages(body?.images);
 
-        if (!body?.name?.trim() || !body.images?.length) {
+        if (!body?.name?.trim() || !normalizedImages.length) {
           response.status(400).send("Dados incompletos ou inválidos!");
           return;
         }
 
-        const newAlbum: Omit<IAlbum, "id"> = {
+        const albumRef = firestore
+          .collection(DatabaseTableKeys.Albums)
+          .doc();
+        const now = admin.firestore.Timestamp.now();
+        const newAlbum: IAlbum = {
           name: body.name.trim(),
           eventDate: body.eventDate?.trim(),
-          images: normalizeImages(body.images),
+          imagesCount: normalizedImages.length,
+          coverImageName: normalizedImages[0]?.name,
           creationDate: admin.firestore.FieldValue.serverTimestamp(),
         };
 
-        const albumRef = await firestore
-          .collection(DatabaseTableKeys.Albums)
-          .add(newAlbum);
+        const batch = firestore.batch();
+        batch.set(albumRef, newAlbum);
+
+        normalizedImages.forEach((image) => {
+          const imageRef = albumRef
+            .collection(ALBUM_IMAGES_COLLECTION)
+            .doc();
+          batch.set(imageRef, {
+            name: image.name,
+            storagePath: image.storagePath,
+            createdAt: now,
+          });
+        });
+
+        await batch.commit();
 
         console.log(`Álbum criado com sucesso: ${body.name}`);
         void logAuditEvent(
@@ -174,7 +237,7 @@ export const createAlbum = onRequest(
             action: "album.create",
             targetType: "album",
             targetId: albumRef.id,
-            metadata: { name: newAlbum.name, images: newAlbum.images.length },
+            metadata: { name: newAlbum.name, images: newAlbum.imagesCount },
           },
           context
         );
@@ -215,6 +278,7 @@ export const updateAlbum = onRequest(
 
       try {
         const body = request.body as UpdateAlbumPayload;
+        const normalizedImages = normalizeImages(body?.images);
 
         if (!body?.id || !body.name?.trim()) {
           response.status(400).send("Dados incompletos ou inválidos!");
@@ -241,11 +305,24 @@ export const updateAlbum = onRequest(
               updatedDate: admin.firestore.FieldValue.serverTimestamp(),
             };
 
-            if (body.images?.length) {
-              updatedAlbum.images = [
-                ...(album.images || []),
-                ...normalizeImages(body.images),
-              ];
+            if (normalizedImages.length) {
+              const now = admin.firestore.Timestamp.now();
+              normalizedImages.forEach((image) => {
+                const imageRef = albumRef
+                  .collection(ALBUM_IMAGES_COLLECTION)
+                  .doc();
+                transaction.set(imageRef, {
+                  name: image.name,
+                  storagePath: image.storagePath,
+                  createdAt: now,
+                });
+              });
+
+              const currentCount = album.imagesCount || 0;
+              updatedAlbum.imagesCount = currentCount + normalizedImages.length;
+              if (!album.coverImageName) {
+                updatedAlbum.coverImageName = normalizedImages[0]?.name;
+              }
             }
 
             transaction.update(albumRef, updatedAlbum);
@@ -315,34 +392,25 @@ export const getAlbums = onRequest(
           querySnapshot.docs.map(
             async (doc: admin.firestore.QueryDocumentSnapshot) => {
               const album = doc.data() as IAlbum;
-              const previewImages = (album.images || [])
-                .filter((img) => img.name)
-                .slice(0, 1);
-
-              const images = await mapWithConcurrency(
-                previewImages,
-                SIGNED_URL_CONCURRENCY,
-                async (img) => {
-                  if (!img.name) {
-                    return {...img, url: undefined};
-                  }
-
-                  try {
-                    const destination =
-                      `${DatabaseTableKeys.Images}/${img.name}`;
-                    const url = await getSignedUrlCached(destination);
-                    return {...img, url};
-                  } catch (error) {
-                    console.error(
-                      `Erro ao obter URL da imagem ${img.name}:`,
-                      error
-                    );
-                    return {...img, url: undefined};
-                  }
+              let coverUrl: string | undefined;
+              if (album.coverImageName) {
+                try {
+                  const destination = buildStoragePath(album.coverImageName);
+                  coverUrl = await getSignedUrlCached(destination);
+                } catch (error) {
+                  console.error(
+                    `Erro ao obter URL da capa ${album.coverImageName}:`,
+                    error
+                  );
                 }
-              );
+              }
 
-              return {...album, id: doc.id, images};
+              return {
+                ...album,
+                id: doc.id,
+                imagesCount: album.imagesCount || 0,
+                coverUrl,
+              };
             }
           )
         );
@@ -361,6 +429,99 @@ export const getAlbums = onRequest(
         response.status(200).json(sortedAlbums);
       } catch (error) {
         console.error("Erro ao buscar álbuns:", error);
+        response.status(500).send("Erro ao buscar álbuns.");
+      }
+    });
+  }
+);
+
+/**
+ * Retrieves paginated albums with cover images
+ */
+export const getAlbumsPaged = onRequest(
+  IMAGE_UPLOAD_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "GET") {
+        response.set("Allow", "GET");
+        response.status(405).send("Método não permitido. Use GET.");
+        return;
+      }
+
+      try {
+        const limitParam = request.query.limit as string | undefined;
+        const cursorParam = request.query.cursor as string | undefined;
+        const limit = limitParam ? Number(limitParam) : undefined;
+        const safeLimit =
+          typeof limit === "number" && Number.isFinite(limit) && limit > 0 ?
+            Math.min(limit, 200) :
+            24;
+        const decodedCursor = decodeAlbumCursor(cursorParam);
+
+        let albumsQuery = firestore
+          .collection(DatabaseTableKeys.Albums)
+          .orderBy("creationDate", "desc")
+          .orderBy(admin.firestore.FieldPath.documentId(), "desc");
+
+        if (decodedCursor) {
+          albumsQuery = albumsQuery.startAfter(
+            decodedCursor.createdAt,
+            decodedCursor.id
+          );
+        }
+
+        albumsQuery = albumsQuery.limit(safeLimit);
+
+        const querySnapshot = await albumsQuery.get();
+
+        if (querySnapshot.empty) {
+          response.status(200).json({ albums: [] });
+          return;
+        }
+
+        const albums = await Promise.all(
+          querySnapshot.docs.map(
+            async (doc: admin.firestore.QueryDocumentSnapshot) => {
+              const album = doc.data() as IAlbum;
+              let coverUrl: string | undefined;
+              if (album.coverImageName) {
+                try {
+                  const destination = buildStoragePath(album.coverImageName);
+                  coverUrl = await getSignedUrlCached(destination);
+                } catch (error) {
+                  console.error(
+                    `Erro ao obter URL da capa ${album.coverImageName}:`,
+                    error
+                  );
+                }
+              }
+
+              return {
+                ...album,
+                id: doc.id,
+                imagesCount: album.imagesCount || 0,
+                coverUrl,
+              };
+            }
+          )
+        );
+
+        const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+        const lastCreationDate =
+          lastDoc?.get("creationDate") as admin.firestore.Timestamp | undefined;
+        const nextCursor =
+          lastCreationDate ?
+            encodeAlbumCursor(lastCreationDate, lastDoc.id) :
+            undefined;
+
+        response.status(200).json({ albums, nextCursor });
+      } catch (error) {
+        console.error("Erro ao buscar álbuns paginados:", error);
         response.status(500).send("Erro ao buscar álbuns.");
       }
     });
@@ -404,7 +565,6 @@ export const getAlbumById = onRequest(
         }
 
         const album = docSnap.data() as IAlbum;
-        const albumImages = (album.images || []).filter((img) => img.name);
         const limitParam = request.query.limit as string | undefined;
         const cursorParam = request.query.cursor as string | undefined;
         const limit = limitParam ? Number(limitParam) : undefined;
@@ -412,52 +572,206 @@ export const getAlbumById = onRequest(
           typeof limit === "number" && Number.isFinite(limit) && limit > 0 ?
             Math.min(limit, 200) :
             undefined;
+        const decodedCursor = decodeCursor(cursorParam);
+        let imagesQuery = firestore
+          .collection(DatabaseTableKeys.Albums)
+          .doc(id.trim())
+          .collection(ALBUM_IMAGES_COLLECTION)
+          .orderBy("createdAt", "asc")
+          .orderBy("name", "asc");
 
-        const startIndex = cursorParam ?
-          Math.max(
-            albumImages.findIndex((img) => img.name === cursorParam) + 1,
-            0
-          ) :
-          0;
-        const pageImages =
-          safeLimit === undefined ?
-            albumImages :
-            albumImages.slice(startIndex, startIndex + safeLimit);
-        const hasNextPage =
-          safeLimit !== undefined &&
-          startIndex + safeLimit < albumImages.length;
-        const nextCursor =
-          hasNextPage && pageImages.length ?
-            pageImages[pageImages.length - 1].name :
-            undefined;
+        if (decodedCursor) {
+          imagesQuery = imagesQuery.startAfter(
+            decodedCursor.createdAt,
+            decodedCursor.name
+          );
+        }
 
-        // Get image URLs
+        if (safeLimit !== undefined) {
+          imagesQuery = imagesQuery.limit(safeLimit);
+        }
+
+        const imagesSnap = await imagesQuery.get();
+        const imageDocs = imagesSnap.docs;
+
         const images = await mapWithConcurrency(
-          pageImages,
+          imageDocs,
           SIGNED_URL_CONCURRENCY,
-          async (img) => {
-            if (!img.name) {
-              return {...img, url: undefined};
+          async (doc) => {
+            const image = doc.data() as IAlbumImage;
+            if (!image?.storagePath) {
+              return {
+                id: doc.id,
+                name: image?.name,
+                storagePath: image?.storagePath,
+                url: undefined,
+              };
             }
 
             try {
-              const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-              const url = await getSignedUrlCached(destination);
-
-              return {...img, url};
+              const url = await getSignedUrlCached(image.storagePath);
+              return {
+                id: doc.id,
+                name: image.name,
+                storagePath: image.storagePath,
+                url,
+              };
             } catch (error) {
-              console.error(`Erro ao obter URL da imagem ${img.name}:`, error);
-              return {...img, url: undefined};
+              console.error(
+                `Erro ao obter URL da imagem ${image.name}:`,
+                error
+              );
+              return {
+                id: doc.id,
+                name: image.name,
+                storagePath: image.storagePath,
+                url: undefined,
+              };
             }
           }
         );
 
+        const lastDoc = imageDocs[imageDocs.length - 1];
+        const lastData = lastDoc?.data() as IAlbumImage | undefined;
+        const nextCursor =
+          safeLimit !== undefined &&
+          imageDocs.length === safeLimit &&
+          lastData?.createdAt &&
+          lastData?.name ?
+            encodeCursor(
+              lastData.createdAt as admin.firestore.Timestamp,
+              lastData.name
+            ) :
+            undefined;
+
         response
           .status(200)
-          .json({id: docSnap.id, ...album, images, nextCursor});
+          .json({
+            id: docSnap.id,
+            ...album,
+            imagesCount: album.imagesCount || 0,
+            images,
+            nextCursor,
+          });
       } catch (error) {
         console.error("Erro ao buscar álbum:", error);
         response.status(500).send("Erro ao buscar álbum.");
+      }
+    });
+  }
+);
+
+/**
+ * Retrieves paginated images across all albums (media portal)
+ */
+export const getAlbumImages = onRequest(
+  IMAGE_UPLOAD_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "GET") {
+        response.set("Allow", "GET");
+        response.status(405).send("Método não permitido. Use GET.");
+        return;
+      }
+
+      try {
+        const limitParam = request.query.limit as string | undefined;
+        const cursorParam = request.query.cursor as string | undefined;
+        const limit = limitParam ? Number(limitParam) : undefined;
+        const safeLimit =
+          typeof limit === "number" && Number.isFinite(limit) && limit > 0 ?
+            Math.min(limit, 200) :
+            48;
+        const decodedCursor = decodeCursor(cursorParam);
+
+        let imagesQuery = firestore
+          .collectionGroup(ALBUM_IMAGES_COLLECTION)
+          .orderBy("createdAt", "desc")
+          .orderBy("name", "desc");
+
+        if (decodedCursor) {
+          imagesQuery = imagesQuery.startAfter(
+            decodedCursor.createdAt,
+            decodedCursor.name
+          );
+        }
+
+        imagesQuery = imagesQuery.limit(safeLimit);
+
+        const imagesSnap = await imagesQuery.get();
+        const imageDocs = imagesSnap.docs;
+
+        const albumRefs = Array.from(
+          new Set(
+            imageDocs
+              .map((doc) => doc.ref.parent.parent)
+              .filter(Boolean)
+          )
+        ) as admin.firestore.DocumentReference[];
+
+        const albumSnaps = albumRefs.length ?
+          await firestore.getAll(...albumRefs) :
+          [];
+        const albumMap = new Map(
+          albumSnaps.map((snap) => [
+            snap.id,
+            snap.data() as IAlbum | undefined,
+          ])
+        );
+
+        const images = await mapWithConcurrency(
+          imageDocs,
+          SIGNED_URL_CONCURRENCY,
+          async (doc) => {
+            const image = doc.data() as IAlbumImage;
+            const albumId = doc.ref.parent.parent?.id;
+            const album = albumId ? albumMap.get(albumId) : undefined;
+
+            let url: string | undefined;
+            if (image?.storagePath) {
+              try {
+                url = await getSignedUrlCached(image.storagePath);
+              } catch (error) {
+                console.error(
+                  `Erro ao obter URL da imagem ${image.name}:`,
+                  error
+                );
+              }
+            }
+
+            return {
+              id: doc.id,
+              name: image?.name,
+              storagePath: image?.storagePath,
+              url,
+              albumId,
+              albumName: album?.name,
+              eventDate: album?.eventDate,
+            };
+          }
+        );
+
+        const lastDoc = imageDocs[imageDocs.length - 1];
+        const lastData = lastDoc?.data() as IAlbumImage | undefined;
+        const nextCursor =
+          imageDocs.length === safeLimit &&
+          lastData?.createdAt &&
+          lastData?.name ?
+            encodeCursor(
+              lastData.createdAt as admin.firestore.Timestamp,
+              lastData.name
+            ) :
+            undefined;
+
+        response.status(200).json({images, nextCursor});
+      } catch (error) {
+        console.error("Erro ao buscar imagens dos álbuns:", error);
+        response.status(500).send("Erro ao buscar imagens.");
       }
     });
   }
@@ -500,8 +814,6 @@ export const deleteImageFromAlbum = onRequest(
         }
 
         const {albumId, images} = body;
-        const imageNamesToDelete = new Set(images.map((img) => img.name));
-
         const albumRef = firestore
           .collection(DatabaseTableKeys.Albums)
           .doc(albumId);
@@ -515,31 +827,99 @@ export const deleteImageFromAlbum = onRequest(
 
         const album = albumSnap.data() as IAlbum;
 
-        // Filter out images to be deleted
-        const remainingImages = album.images.filter(
-          (img) => img.name && !imageNamesToDelete.has(img.name)
+        const imageItems = (images || [])
+          .map((image) => {
+            const name = image?.name?.trim();
+            const storagePath =
+              image?.storagePath?.trim() ||
+              (name ? buildStoragePath(name) : "");
+            return {
+              id: image?.id,
+              name,
+              storagePath,
+            };
+          })
+          .filter((image) => image.storagePath);
+
+        if (!imageItems.length) {
+          response.status(400).send("Imagens inválidas para remoção!");
+          return;
+        }
+
+        const imageRefs = new Map<string, admin.firestore.DocumentReference>();
+
+        imageItems
+          .filter((image) => image.id)
+          .forEach((image) => {
+            imageRefs.set(
+              image.id!,
+              albumRef.collection(ALBUM_IMAGES_COLLECTION).doc(image.id!)
+            );
+          });
+
+        const storagePathsToResolve = imageItems
+          .filter((image) => !image.id)
+          .map((image) => image.storagePath);
+        const chunkSize = 10;
+        for (let i = 0; i < storagePathsToResolve.length; i += chunkSize) {
+          const chunk = storagePathsToResolve.slice(i, i + chunkSize);
+          const snap = await albumRef
+            .collection(ALBUM_IMAGES_COLLECTION)
+            .where("storagePath", "in", chunk)
+            .get();
+          snap.docs.forEach((doc) => {
+            imageRefs.set(doc.id, doc.ref);
+          });
+        }
+
+        const docsToDelete = Array.from(imageRefs.values());
+        const storagePaths = Array.from(
+          new Set(imageItems.map((image) => image.storagePath))
         );
 
-        // Update album with remaining images
-        await albumRef.update({images: remainingImages});
+        const deletedCount = docsToDelete.length;
+        const newImagesCount = Math.max(
+          0,
+          (album.imagesCount || 0) - deletedCount
+        );
 
-        // Delete images from storage
-        const paths = images
-          .filter((img) => img.name)
-          .map((img) => `${DatabaseTableKeys.Images}/${img.name!}`);
-        await deleteImageStorage(paths);
+        const coverStoragePath = album.coverImageName ?
+          buildStoragePath(album.coverImageName) :
+          undefined;
+        const removingCover = imageItems.some(
+          (image) =>
+            (image.name && image.name === album.coverImageName) ||
+            (coverStoragePath && image.storagePath === coverStoragePath)
+        );
+
+        const batch = firestore.batch();
+        docsToDelete.forEach((docRef) => batch.delete(docRef));
+        batch.update(albumRef, {
+          imagesCount: newImagesCount,
+          ...(removingCover ? {coverImageName: admin.firestore.FieldValue.delete()} : {}),
+        });
+
+        await batch.commit();
+        await deleteImageStorage(storagePaths);
+
+        if (removingCover && newImagesCount > 0) {
+          const coverSnap = await albumRef
+            .collection(ALBUM_IMAGES_COLLECTION)
+            .orderBy("createdAt", "desc")
+            .orderBy("name", "desc")
+            .limit(1)
+            .get();
+          const coverDoc = coverSnap.docs[0];
+          if (coverDoc) {
+            const coverData = coverDoc.data() as IAlbumImage;
+            await albumRef.update({
+              coverImageName: coverData.name,
+            });
+          }
+        }
 
         console.log(
-          `Imagens removidas do álbum ${albumId}: ${images.length} imagem(ns)`
-        );
-        void logAuditEvent(
-          {
-            action: "album.images.delete",
-            targetType: "album",
-            targetId: albumId,
-            metadata: { images: images.length },
-          },
-          context
+          `Imagens removidas do álbum ${albumId}: ${deletedCount} imagem(ns)`
         );
         response.status(200).send();
       } catch (error) {
@@ -594,17 +974,26 @@ export const deleteAlbum = onRequest(
           return;
         }
 
-        const album = albumSnap.data() as IAlbum;
+        const imagesSnap = await albumRef
+          .collection(ALBUM_IMAGES_COLLECTION)
+          .get();
+        const storagePaths = imagesSnap.docs
+          .map((doc) => (doc.data() as IAlbumImage)?.storagePath)
+          .filter(Boolean) as string[];
 
-        // Delete all images from storage if they exist
-        if (album.images?.length > 0) {
-          const paths = album.images
-            .filter((img) => img.name)
-            .map((img) => `${DatabaseTableKeys.Images}/${img.name!}`);
-          await deleteImageStorage(paths);
+        if (storagePaths.length) {
+          await deleteImageStorage(storagePaths);
         }
 
-        // Delete album document
+        const batchSize = 500;
+        for (let i = 0; i < imagesSnap.docs.length; i += batchSize) {
+          const batch = firestore.batch();
+          imagesSnap.docs.slice(i, i + batchSize).forEach((doc) => {
+            batch.delete(doc.ref);
+          });
+          await batch.commit();
+        }
+
         await albumRef.delete();
 
         console.log(`Álbum deletado com sucesso: ${id}`);
@@ -620,6 +1009,81 @@ export const deleteAlbum = onRequest(
       } catch (error) {
         console.error("Erro ao deletar álbum:", error);
         response.status(500).send("Houve um erro ao deletar o álbum.");
+      }
+    });
+  }
+);
+
+/**
+ * Migrates legacy album images array to subcollection
+ */
+export const migrateAlbumImages = onRequest(
+  {maxInstances: 1},
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "POST") {
+        response.set("Allow", "POST");
+        response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const albumsSnap = await firestore
+          .collection(DatabaseTableKeys.Albums)
+          .get();
+        let migrated = 0;
+        let updated = 0;
+
+        for (const doc of albumsSnap.docs) {
+          const data = doc.data() as IAlbum & {images?: Partial<IAlbumImage>[]};
+          const legacyImages = normalizeImages(data.images as Partial<IAlbumImage>[]);
+
+          if (legacyImages.length) {
+            const now = admin.firestore.Timestamp.now();
+            const batch = firestore.batch();
+            legacyImages.forEach((image) => {
+              const imageRef = doc.ref
+                .collection(ALBUM_IMAGES_COLLECTION)
+                .doc();
+              batch.set(imageRef, {
+                name: image.name,
+                storagePath: image.storagePath,
+                createdAt: now,
+              });
+            });
+            batch.update(doc.ref, {
+              imagesCount: legacyImages.length,
+              coverImageName: legacyImages[0]?.name,
+              images: admin.firestore.FieldValue.delete(),
+            });
+            await batch.commit();
+            migrated += 1;
+            continue;
+          }
+
+          if (data.imagesCount === undefined || (data as any).images) {
+            await doc.ref.update({
+              imagesCount: data.imagesCount ?? 0,
+              images: admin.firestore.FieldValue.delete(),
+            });
+            updated += 1;
+          }
+        }
+
+        response.status(200).send({migrated, updated});
+      } catch (error) {
+        console.error("Erro ao migrar imagens de álbuns:", error);
+        response.status(500).send("Erro ao migrar imagens de álbuns.");
       }
     });
   }

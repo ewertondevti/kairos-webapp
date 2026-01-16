@@ -1,0 +1,174 @@
+@use "../../../../styles/mixins" as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header {
+  gap: 16px;
+}
+
+.title {
+  margin: 0;
+  color: #ffffff !important;
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.actions {
+  flex-wrap: wrap;
+}
+
+.viewToggle {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.actionButton {
+  border-radius: 999px;
+}
+
+.empty {
+  padding: 40px 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: clamp(12px, 2vw, 20px);
+}
+
+.card {
+  position: relative;
+  border: none;
+  padding: 0;
+  text-align: left;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(8, 20, 12, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 32px rgba(0, 0, 0, 0.25);
+}
+
+.selected {
+  outline: 2px solid #4a9d63;
+}
+
+.thumbnail {
+  width: 100%;
+  height: clamp(180px, 26vw, 240px);
+  overflow: hidden;
+}
+
+.thumbnailImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardBody {
+  padding: 12px 14px 16px;
+}
+
+.cardTitle {
+  color: #ffffff;
+}
+
+.checkbox {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+  padding: 4px 6px;
+}
+
+.previewHidden {
+  display: none;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
+}
+
+.listItem {
+  display: grid;
+  grid-template-columns: 140px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  border: none;
+  padding: 12px;
+  text-align: left;
+  border-radius: 16px;
+  background: rgba(8, 20, 12, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.listItem:hover,
+.listItem:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 24px rgba(0, 0, 0, 0.22);
+}
+
+.listThumb {
+  width: 140px;
+  height: 96px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.listThumbImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.listContent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.listCheckbox {
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+  padding: 4px 6px;
+}
+
+@include media-up(md) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@include media-up(lg) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@include media-down(sm) {
+  .listItem {
+    grid-template-columns: 1fr;
+  }
+
+  .listThumb {
+    width: 100%;
+    height: 180px;
+  }
+}

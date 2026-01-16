@@ -6,6 +6,10 @@ export const getUploadUrl = (response?: UploadCommonResponse) => {
   return Array.isArray(url) ? url[0] : url;
 };
 
+export const getUploadFileName = (response?: UploadCommonResponse) => {
+  return response?.fileName?.trim() || "";
+};
+
 export const formatBytes = (bytes: number) => {
   if (bytes === 0) return "0 B";
   const k = 1024;

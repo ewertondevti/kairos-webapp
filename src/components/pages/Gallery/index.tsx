@@ -1,16 +1,14 @@
 "use client";
 
-import { onDownload } from "@/helpers/app";
-import { useGetAlbumById, useGetAlbums } from "@/react-query";
+import { useGetAlbumById, useGetAlbumsInfinite } from "@/react-query";
 import {
-  DownloadOutlined,
   LeftOutlined,
   RightOutlined,
   UndoOutlined,
   ZoomInOutlined,
   ZoomOutOutlined,
 } from "@ant-design/icons";
-import { Empty, Flex, Image, Space, Typography } from "antd";
+import { Button, Empty, Flex, Image, Space, Typography } from "antd";
 import { AlbumContent } from "../Management/tabs/AlbumsTab/AlbumContent";
 import { AlbumDetails } from "../Management/tabs/AlbumsTab/AlbumDetails";
 import styles from "./Gallery.module.scss";
@@ -23,8 +21,15 @@ type GalleryProps = {
 
 export const Gallery = ({ albumId }: GalleryProps) => {
   const isAlbumView = !!albumId;
-  const { data: albums, isLoading: isAlbumsLoading } = useGetAlbums({
+  const {
+    data,
+    isLoading: isAlbumsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useGetAlbumsInfinite({
     enabled: !isAlbumView,
+    limit: 18,
   });
   const { data: album } = useGetAlbumById(albumId, {
     enabled: isAlbumView,
@@ -38,7 +43,8 @@ export const Gallery = ({ albumId }: GalleryProps) => {
       return album?.name;
     }
 
-    if (!isAlbumView && albums) {
+    const albums = data?.pages?.flatMap((page) => page?.albums ?? []) ?? [];
+    if (!isAlbumView && albums.length) {
       if (albumId) {
         const albumFromList = albums.find((a) => a.id === albumId);
         if (albumFromList) return albumFromList?.name;
@@ -83,7 +89,9 @@ export const Gallery = ({ albumId }: GalleryProps) => {
             </div>
           )}
 
-          {!isAlbumsLoading && !albums?.length && !isAlbumView && (
+          {!isAlbumsLoading &&
+            !data?.pages?.some((page) => page?.albums?.length) &&
+            !isAlbumView && (
             <Flex justify="center" align="center" className={styles.centered}>
               <Empty description="Nenhum álbum encontrado" />
             </Flex>
@@ -112,11 +120,6 @@ export const Gallery = ({ albumId }: GalleryProps) => {
                         title="Próxima"
                         className={styles.toolbarIcon}
                       />
-                      <DownloadOutlined
-                        onClick={onDownload(image.url)}
-                        title="Fazer download da imagem"
-                        className={styles.toolbarIcon}
-                      />
                       <ZoomOutOutlined
                         disabled={scale === 1}
                         onClick={onZoomOut}
@@ -143,17 +146,33 @@ export const Gallery = ({ albumId }: GalleryProps) => {
             </Image.PreviewGroup>
           )}
 
-          {!albumId && albums && albums.length > 0 && (
+          {!albumId &&
+            data?.pages?.some((page) => page?.albums?.length) && (
             <div className={styles.grid}>
-              {albums.map((album, index) => (
-                <AlbumContent
-                  {...album}
-                  key={album.id}
-                  basePath="/gallery"
-                  index={index}
-                />
-              ))}
+              {data?.pages
+                ?.flatMap((page) => page?.albums ?? [])
+                .map((album, index) => (
+                  <AlbumContent
+                    {...album}
+                    key={album.id}
+                    basePath="/gallery"
+                    index={index}
+                  />
+                ))}
             </div>
+          )}
+
+          {!albumId && hasNextPage && (
+            <Flex justify="center" className={styles.loadMore}>
+              <Button
+                type="primary"
+                onClick={() => fetchNextPage()}
+                loading={isFetchingNextPage}
+                className={styles.loadMoreButton}
+              >
+                Carregar mais
+              </Button>
+            </Flex>
           )}
         </div>
       </div>
