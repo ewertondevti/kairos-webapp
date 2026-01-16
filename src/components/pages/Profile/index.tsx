@@ -9,6 +9,7 @@ import { firebaseAuth } from "@/firebase";
 import { useGetUserProfile } from "@/react-query";
 import { updateUserProfile } from "@/services/userServices";
 import { useAuth } from "@/store";
+import { mapChildrenToPayload, normalizeMemberChildren } from "@/utils/membership";
 import {
   Button,
   Card,
@@ -54,41 +55,43 @@ export const ProfilePage = () => {
   useEffect(() => {
     if (!data?.user) return;
 
-    const member = data.member;
-    const user = data.user;
+    const userProfile = data.user;
     form.setFieldsValue({
-      [MembershipFields.Fullname]: member?.fullname ?? user.fullname,
-      [MembershipFields.Email]: member?.email ?? user.email,
-      [MembershipFields.BirthDate]: member?.birthDate
-        ? dayjs(member.birthDate)
+      [MembershipFields.Fullname]: userProfile.fullname,
+      [MembershipFields.Email]: userProfile.email,
+      [MembershipFields.BirthDate]: userProfile.birthDate
+        ? dayjs(userProfile.birthDate)
         : undefined,
-      [MembershipFields.Gender]: member?.gender,
-      [MembershipFields.MaritalStatus]: member?.maritalStatus,
-      [MembershipFields.PostalCode]: member?.postalCode,
-      [MembershipFields.Address]: member?.address,
-      [MembershipFields.City]: member?.city,
-      [MembershipFields.County]: member?.county,
-      [MembershipFields.State]: member?.state,
-      [MembershipFields.MotherName]: member?.motherName,
-      [MembershipFields.FatherName]: member?.fatherName,
-      [MembershipFields.SpouseName]: member?.spouseName,
-      [MembershipFields.WeddingDate]: member?.weddingDate
-        ? dayjs(member.weddingDate)
+      [MembershipFields.Gender]: userProfile.gender,
+      [MembershipFields.MaritalStatus]: userProfile.maritalStatus,
+      [MembershipFields.PostalCode]: userProfile.postalCode,
+      [MembershipFields.Address]: userProfile.address,
+      [MembershipFields.AddressNumber]: userProfile.addressNumber,
+      [MembershipFields.AddressFloor]: userProfile.addressFloor,
+      [MembershipFields.AddressDoor]: userProfile.addressDoor,
+      [MembershipFields.City]: userProfile.city,
+      [MembershipFields.County]: userProfile.county,
+      [MembershipFields.State]: userProfile.state,
+      [MembershipFields.MotherName]: userProfile.motherName,
+      [MembershipFields.FatherName]: userProfile.fatherName,
+      [MembershipFields.SpouseName]: userProfile.spouseName,
+      [MembershipFields.WeddingDate]: userProfile.weddingDate
+        ? dayjs(userProfile.weddingDate)
         : undefined,
-      [MembershipFields.Children]: member?.children ?? [],
-      [MembershipFields.BaptismChurch]: member?.baptismChurch,
-      [MembershipFields.BaptismDate]: member?.baptismDate
-        ? dayjs(member.baptismDate)
+      [MembershipFields.Children]: normalizeMemberChildren(userProfile.children),
+      [MembershipFields.BaptismChurch]: userProfile.baptismChurch,
+      [MembershipFields.BaptismDate]: userProfile.baptismDate
+        ? dayjs(userProfile.baptismDate)
         : undefined,
-      [MembershipFields.AdmissionType]: member?.admissionType,
-      [MembershipFields.BaptizedPastor]: member?.baptizedPastor,
-      [MembershipFields.AdmissionDate]: member?.admissionDate
-        ? dayjs(member.admissionDate)
+      [MembershipFields.AdmissionType]: userProfile.admissionType,
+      [MembershipFields.BaptizedPastor]: userProfile.baptizedPastor,
+      [MembershipFields.AdmissionDate]: userProfile.admissionDate
+        ? dayjs(userProfile.admissionDate)
         : undefined,
-      [MembershipFields.Congregation]: member?.congregation,
-      [MembershipFields.ChurchRole]: member?.churchRole,
-      [MembershipFields.BelongsTo]: member?.belongsTo,
-      [MembershipFields.Photo]: member?.photo,
+      [MembershipFields.Congregation]: userProfile.congregation,
+      [MembershipFields.ChurchRole]: userProfile.churchRole,
+      [MembershipFields.BelongsTo]: userProfile.belongsTo,
+      [MembershipFields.Photo]: userProfile.photo,
     });
   }, [data, form]);
 
@@ -109,6 +112,9 @@ export const ProfilePage = () => {
           values?.[MembershipFields.BaptismDate]?.toISOString(),
         [MembershipFields.AdmissionDate]:
           values?.[MembershipFields.AdmissionDate]?.toISOString(),
+        [MembershipFields.Children]: mapChildrenToPayload(
+          values?.[MembershipFields.Children]
+        ),
         [MembershipFields.Photo]: safePhoto,
       };
 

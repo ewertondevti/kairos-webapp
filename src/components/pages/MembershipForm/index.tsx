@@ -2,11 +2,11 @@
 
 import { MembershipFields } from "@/enums/membership";
 import { useGetUserProfile } from "@/react-query";
-import { createNewMember, getAddress } from "@/services/membershipServices";
+import { updateUserProfile } from "@/services/userServices";
 import { useAuth } from "@/store";
 import { MembershipValues } from "@/types/membership";
 import { MemberPayload } from "@/types/store";
-import { postalCodeRegex } from "@/utils/app";
+import { mapChildrenToPayload, normalizeMemberChildren } from "@/utils/membership";
 import { Button, Card, Flex, Form, FormProps, Layout, message } from "antd";
 import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
@@ -24,75 +24,49 @@ export const MembershipForm = () => {
   const { user } = useAuth();
   const { data: profileData } = useGetUserProfile(Boolean(user));
 
-  const postalCodeValue = Form.useWatch(MembershipFields.PostalCode, form);
-
   useEffect(() => {
     if (!profileData?.user) return;
     if (form.isFieldsTouched()) return;
 
-    const member = profileData.member;
     const userData = profileData.user;
 
     form.setFieldsValue({
-      [MembershipFields.Fullname]: member?.fullname ?? userData.fullname,
-      [MembershipFields.Email]: member?.email ?? userData.email,
-      [MembershipFields.BirthDate]: member?.birthDate
-        ? dayjs(member.birthDate)
+      [MembershipFields.Fullname]: userData.fullname,
+      [MembershipFields.Email]: userData.email,
+      [MembershipFields.BirthDate]: userData.birthDate
+        ? dayjs(userData.birthDate)
         : undefined,
-      [MembershipFields.Gender]: member?.gender,
-      [MembershipFields.MaritalStatus]: member?.maritalStatus,
-      [MembershipFields.PostalCode]: member?.postalCode,
-      [MembershipFields.Address]: member?.address,
-      [MembershipFields.City]: member?.city,
-      [MembershipFields.County]: member?.county,
-      [MembershipFields.State]: member?.state,
-      [MembershipFields.MotherName]: member?.motherName,
-      [MembershipFields.FatherName]: member?.fatherName,
-      [MembershipFields.SpouseName]: member?.spouseName,
-      [MembershipFields.WeddingDate]: member?.weddingDate
-        ? dayjs(member.weddingDate)
+      [MembershipFields.Gender]: userData.gender,
+      [MembershipFields.MaritalStatus]: userData.maritalStatus,
+      [MembershipFields.PostalCode]: userData.postalCode,
+      [MembershipFields.Address]: userData.address,
+      [MembershipFields.AddressNumber]: userData.addressNumber,
+      [MembershipFields.AddressFloor]: userData.addressFloor,
+      [MembershipFields.AddressDoor]: userData.addressDoor,
+      [MembershipFields.City]: userData.city,
+      [MembershipFields.County]: userData.county,
+      [MembershipFields.State]: userData.state,
+      [MembershipFields.MotherName]: userData.motherName,
+      [MembershipFields.FatherName]: userData.fatherName,
+      [MembershipFields.SpouseName]: userData.spouseName,
+      [MembershipFields.WeddingDate]: userData.weddingDate
+        ? dayjs(userData.weddingDate)
         : undefined,
-      [MembershipFields.Children]: member?.children ?? [],
-      [MembershipFields.BaptismChurch]: member?.baptismChurch,
-      [MembershipFields.BaptismDate]: member?.baptismDate
-        ? dayjs(member.baptismDate)
+      [MembershipFields.Children]: normalizeMemberChildren(userData.children),
+      [MembershipFields.BaptismChurch]: userData.baptismChurch,
+      [MembershipFields.BaptismDate]: userData.baptismDate
+        ? dayjs(userData.baptismDate)
         : undefined,
-      [MembershipFields.AdmissionType]: member?.admissionType,
-      [MembershipFields.BaptizedPastor]: member?.baptizedPastor,
-      [MembershipFields.AdmissionDate]: member?.admissionDate
-        ? dayjs(member.admissionDate)
+      [MembershipFields.AdmissionType]: userData.admissionType,
+      [MembershipFields.BaptizedPastor]: userData.baptizedPastor,
+      [MembershipFields.AdmissionDate]: userData.admissionDate
+        ? dayjs(userData.admissionDate)
         : undefined,
-      [MembershipFields.Congregation]: member?.congregation,
-      [MembershipFields.BelongsTo]: member?.belongsTo,
-      [MembershipFields.Photo]: member?.photo,
+      [MembershipFields.Congregation]: userData.congregation,
+      [MembershipFields.BelongsTo]: userData.belongsTo,
+      [MembershipFields.Photo]: userData.photo,
     });
   }, [form, profileData]);
-
-  useEffect(() => {
-    if (postalCodeValue?.match(postalCodeRegex)) {
-      getAddress(postalCodeValue)
-        .then((res) => {
-          if (res.length) {
-            const { Morada, Freguesia, Concelho, Distrito } = res[0];
-
-            form.setFieldsValue({
-              [MembershipFields.Address]: Morada,
-              [MembershipFields.City]: Freguesia,
-              [MembershipFields.County]: Concelho,
-              [MembershipFields.State]: Distrito,
-            });
-          }
-        })
-        .catch(() => {
-          form.setFields([
-            {
-              name: MembershipFields.PostalCode,
-              errors: ["Código postal não encontrado!"],
-            },
-          ]);
-        });
-    }
-  }, [postalCodeValue, form]);
 
   const onSubmit: FormProps["onFinish"] = async (values: MembershipValues) => {
     setIsLoading(true);
@@ -108,21 +82,19 @@ export const MembershipForm = () => {
       [MembershipFields.WeddingDate]: weddingDate?.toISOString(),
       [MembershipFields.BaptismDate]: baptismDate?.toISOString(),
       [MembershipFields.AdmissionDate]: admissionDate?.toISOString(),
+      [MembershipFields.Children]: mapChildrenToPayload(
+        values?.[MembershipFields.Children]
+      ),
       [MembershipFields.Photo]: undefined,
     };
 
-    createNewMember(payload)
+    updateUserProfile(payload)
       .then(() => {
-        form.resetFields();
-        message.success(
-          "Novo membro da Kairós Portugal adicionado com sucesso!"
-        );
+        message.success("Dados atualizados com sucesso!");
       })
       .catch((error) => {
         console.error(error);
-        message.error(
-          "Não foi possível adicionar novo membro da Kairós Portugal!"
-        );
+        message.error("Não foi possível atualizar os dados.");
       })
       .finally(() => setIsLoading(false));
   };

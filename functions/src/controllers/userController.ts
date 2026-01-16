@@ -1,11 +1,10 @@
 import * as admin from "firebase-admin";
-import {onRequest} from "firebase-functions/v2/https";
-import {DatabaseTableKeys} from "../enums/app";
-import {auth, firestore} from "../firebaseAdmin";
-import {generateSecurePassword, normalizeText} from "../helpers/common";
-import {IAccessRequest, IUser} from "../models";
-import {IMember} from "../models/member";
-import {corsHandler, requireAuth, requireRoles, UserRole} from "../utils";
+import { onRequest } from "firebase-functions/v2/https";
+import { DatabaseTableKeys } from "../enums/app";
+import { auth, firestore } from "../firebaseAdmin";
+import { generateSecurePassword, normalizeText } from "../helpers/common";
+import { IAccessRequest, IUser } from "../models";
+import { corsHandler, requireAuth, requireRoles, UserRole } from "../utils";
 
 const USER_CONFIG = {
   maxInstances: 10,
@@ -41,32 +40,11 @@ const sendMail = async (to: string[], subject: string, html: string) => {
 
 const normalizeComparable = (value?: string) => normalizeText(value ?? "");
 
-const findMemberByNormalized = async (fullname: string, email: string) => {
-  const normalizedFullname = normalizeComparable(fullname);
-  const normalizedEmail = normalizeComparable(email);
-
-  const snapshot = await firestore
-    .collection(DatabaseTableKeys.Members)
-    .get();
-
-  const match = snapshot.docs.find((doc) => {
-    const member = doc.data() as IMember;
-    return (
-      normalizeComparable(member.fullname) === normalizedFullname &&
-      normalizeComparable(member.email) === normalizedEmail
-    );
-  });
-
-  return match ? {id: match.id, data: match.data()} : null;
-};
-
 const findUserByNormalized = async (fullname: string, email: string) => {
   const normalizedFullname = normalizeComparable(fullname);
   const normalizedEmail = normalizeComparable(email);
 
-  const snapshot = await firestore
-    .collection(DatabaseTableKeys.Users)
-    .get();
+  const snapshot = await firestore.collection(DatabaseTableKeys.Users).get();
 
   const match = snapshot.docs.find((doc) => {
     const user = doc.data() as IUser;
@@ -76,7 +54,7 @@ const findUserByNormalized = async (fullname: string, email: string) => {
     );
   });
 
-  return match ? {id: match.id, data: match.data()} : null;
+  return match ? { id: match.id, data: match.data() } : null;
 };
 
 const parseUserRole = (value: unknown) => {
@@ -90,23 +68,6 @@ const parseUserRole = (value: unknown) => {
 
 const isValidUserRole = (value: unknown): value is UserRole =>
   typeof value === "number" && [0, 1, 2].includes(value);
-
-const getMemberById = async (memberId?: string) => {
-  if (!memberId) {
-    return null;
-  }
-
-  const doc = await firestore
-    .collection(DatabaseTableKeys.Members)
-    .doc(memberId)
-    .get();
-
-  if (!doc.exists) {
-    return null;
-  }
-
-  return {id: doc.id, data: doc.data()};
-};
 
 export const requestAccess = onRequest(
   USER_CONFIG,
@@ -124,7 +85,7 @@ export const requestAccess = onRequest(
       }
 
       try {
-        const {fullname, email} = request.body || {};
+        const { fullname, email } = request.body || {};
 
         if (!fullname?.trim() || !email?.trim()) {
           response.status(400).send("Dados incompletos ou inválidos!");
@@ -263,165 +224,144 @@ export const syncUserClaims = onRequest(
   }
 );
 
-export const createUser = onRequest(
-  USER_CONFIG,
-  async (request, response) => {
-    corsHandler(request, response, async () => {
-      if (request.method === "OPTIONS") {
-        response.status(204).send();
+export const createUser = onRequest(USER_CONFIG, async (request, response) => {
+  corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
+    if (request.method !== "POST") {
+      response.set("Allow", "POST");
+      response.status(405).send("Método não permitido. Use POST.");
+      return;
+    }
+
+    const context = await requireAuth(request, response);
+    if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+      return;
+    }
+
+    try {
+      const { fullname, email, role } = request.body || {};
+      const normalizedRole = parseUserRole(role);
+
+      if (!fullname?.trim() || !email?.trim() || normalizedRole === null) {
+        response.status(400).send("Dados incompletos ou inválidos!");
         return;
       }
 
-      if (request.method !== "POST") {
-        response.set("Allow", "POST");
-        response.status(405).send("Método não permitido. Use POST.");
+      const password = generateSecurePassword();
+
+      const existing = await findUserByNormalized(
+        fullname.trim(),
+        email.trim()
+      );
+
+      if (existing) {
+        response.status(409).send("Usuário já existe.");
         return;
       }
 
-      const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
-        return;
-      }
+      const authUser = await auth.createUser({
+        email: email.trim(),
+        password,
+        displayName: fullname.trim(),
+      });
 
-      try {
-        const {fullname, email, role} = request.body || {};
-        const normalizedRole = parseUserRole(role);
+      const userDoc: IUser = {
+        authUid: authUser.uid,
+        fullname: fullname.trim(),
+        email: email.trim(),
+        role: normalizedRole,
+        active: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdBy: context.uid,
+      };
 
-        if (!fullname?.trim() || !email?.trim() || normalizedRole === null) {
-          response.status(400).send("Dados incompletos ou inválidos!");
-          return;
-        }
+      await firestore
+        .collection(DatabaseTableKeys.Users)
+        .doc(authUser.uid)
+        .set(userDoc);
 
-        const password = generateSecurePassword();
+      await auth.setCustomUserClaims(authUser.uid, {
+        role: normalizedRole,
+        active: true,
+      });
 
-        const existing = await findUserByNormalized(
-          fullname.trim(),
-          email.trim()
-        );
-
-        if (existing) {
-          response.status(409).send("Usuário já existe.");
-          return;
-        }
-
-        const authUser = await auth.createUser({
-          email: email.trim(),
-          password,
-          displayName: fullname.trim(),
-        });
-
-        const memberMatch = await findMemberByNormalized(
-          fullname.trim(),
-          email.trim()
-        );
-
-        const userDoc: IUser = {
-          authUid: authUser.uid,
-          fullname: fullname.trim(),
-          email: email.trim(),
-          role: normalizedRole,
-          active: true,
-          memberId: memberMatch?.id,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          createdBy: context.uid,
-        };
-
-        await firestore
-          .collection(DatabaseTableKeys.Users)
-          .doc(authUser.uid)
-          .set(userDoc);
-
-        await auth.setCustomUserClaims(authUser.uid, {
-          role: normalizedRole,
-          active: true,
-        });
-
-        if (memberMatch?.id) {
-          await firestore
-            .collection(DatabaseTableKeys.Members)
-            .doc(memberMatch.id)
-            .update({
-              isActive: true,
-            });
-        }
-
-        await sendMail(
-          [userDoc.email],
-          "Seus dados de acesso",
-          `<p>Olá, ${userDoc.fullname}.</p>
+      await sendMail(
+        [userDoc.email],
+        "Seus dados de acesso",
+        `<p>Olá, ${userDoc.fullname}.</p>
            <p>Seu acesso foi criado com sucesso.</p>
            <p><strong>Email:</strong> ${userDoc.email}</p>
            <p><strong>Senha temporária:</strong> ${password}</p>
            <p>Recomendamos alterar a senha após o primeiro acesso.</p>`
-        );
+      );
 
-        response.status(201).send({uid: authUser.uid});
-      } catch (error) {
-        console.error("Erro ao criar usuário:", error);
-        response.status(500).send("Erro ao criar usuário.");
-      }
-    });
-  }
-);
+      response.status(201).send({ uid: authUser.uid });
+    } catch (error) {
+      console.error("Erro ao criar usuário:", error);
+      response.status(500).send("Erro ao criar usuário.");
+    }
+  });
+});
 
-export const setUserRole = onRequest(
-  USER_CONFIG,
-  async (request, response) => {
-    corsHandler(request, response, async () => {
-      if (request.method === "OPTIONS") {
-        response.status(204).send();
+export const setUserRole = onRequest(USER_CONFIG, async (request, response) => {
+  corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
+
+    if (request.method !== "PATCH") {
+      response.set("Allow", "PATCH");
+      response.status(405).send("Método não permitido. Use PATCH.");
+      return;
+    }
+
+    const context = await requireAuth(request, response);
+    if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+      return;
+    }
+
+    try {
+      const { uid, role } = request.body || {};
+      const normalizedRole = parseUserRole(role);
+
+      if (!uid?.trim() || normalizedRole === null) {
+        response.status(400).send("Dados incompletos ou inválidos!");
         return;
       }
 
-      if (request.method !== "PATCH") {
-        response.set("Allow", "PATCH");
-        response.status(405).send("Método não permitido. Use PATCH.");
+      const userRef = firestore.collection(DatabaseTableKeys.Users).doc(uid);
+      const userSnap = await userRef.get();
+
+      if (!userSnap.exists) {
+        response.status(404).send("Usuário não encontrado.");
         return;
       }
 
-      const context = await requireAuth(request, response);
-      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
-        return;
-      }
+      const user = userSnap.data() as IUser;
 
-      try {
-        const {uid, role} = request.body || {};
-        const normalizedRole = parseUserRole(role);
+      await userRef.update({
+        role: normalizedRole,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
 
-        if (!uid?.trim() || normalizedRole === null) {
-          response.status(400).send("Dados incompletos ou inválidos!");
-          return;
-        }
+      await auth.setCustomUserClaims(uid, {
+        role: normalizedRole,
+        active: user.active,
+      });
 
-        const userRef = firestore.collection(DatabaseTableKeys.Users).doc(uid);
-        const userSnap = await userRef.get();
-
-        if (!userSnap.exists) {
-          response.status(404).send("Usuário não encontrado.");
-          return;
-        }
-
-        const user = userSnap.data() as IUser;
-
-        await userRef.update({
-          role: normalizedRole,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        await auth.setCustomUserClaims(uid, {
-          role: normalizedRole,
-          active: user.active,
-        });
-
-        response.status(200).send();
-      } catch (error) {
-        console.error("Erro ao atualizar perfil:", error);
-        response.status(500).send("Erro ao atualizar perfil.");
-      }
-    });
-  }
-);
+      response.status(200).send();
+    } catch (error) {
+      console.error("Erro ao atualizar perfil:", error);
+      response.status(500).send("Erro ao atualizar perfil.");
+    }
+  });
+});
 
 export const updateUserProfile = onRequest(
   USER_CONFIG,
@@ -451,7 +391,7 @@ export const updateUserProfile = onRequest(
       }
 
       try {
-        const {uid, payload} = request.body || {};
+        const { uid, payload } = request.body || {};
         const targetUid = uid || context.uid;
 
         if (!payload || !targetUid) {
@@ -477,7 +417,7 @@ export const updateUserProfile = onRequest(
         const user = userSnap.data() as IUser;
         const fullname = payload.fullname?.trim() || user.fullname;
         const email = payload.email?.trim() || user.email;
-        const {active, role, ...safePayload} = payload;
+        const { active, role, ...safePayload } = payload;
         void active;
         void role;
         const updatePayload = {
@@ -494,17 +434,6 @@ export const updateUserProfile = onRequest(
             email,
             displayName: fullname,
           });
-        }
-
-        if (user.memberId) {
-          await firestore
-            .collection(DatabaseTableKeys.Members)
-            .doc(user.memberId)
-            .update({
-              ...safePayload,
-              fullname,
-              email,
-            });
         }
 
         response.status(200).send();
@@ -534,26 +463,20 @@ export const setUserActive = onRequest(
       const context = await requireAuth(request, response);
       if (
         !context ||
-        !requireRoles(
-          context,
-          [UserRole.Admin, UserRole.Secretaria],
-          response
-        )
+        !requireRoles(context, [UserRole.Admin, UserRole.Secretaria], response)
       ) {
         return;
       }
 
       try {
-        const {uid, active} = request.body || {};
+        const { uid, active } = request.body || {};
 
         if (!uid || typeof active !== "boolean") {
           response.status(400).send("Dados incompletos ou inválidos!");
           return;
         }
 
-        const userRef = firestore
-          .collection(DatabaseTableKeys.Users)
-          .doc(uid);
+        const userRef = firestore.collection(DatabaseTableKeys.Users).doc(uid);
         const userSnap = await userRef.get();
 
         if (!userSnap.exists) {
@@ -577,13 +500,6 @@ export const setUserActive = onRequest(
           await auth.revokeRefreshTokens(uid);
         }
 
-        if (user.memberId) {
-          await firestore
-            .collection(DatabaseTableKeys.Members)
-            .doc(user.memberId)
-            .update({isActive: active});
-        }
-
         response.status(200).send();
       } catch (error) {
         console.error("Erro ao atualizar status:", error);
@@ -593,55 +509,45 @@ export const setUserActive = onRequest(
   }
 );
 
-export const getUsers = onRequest(
-  USER_CONFIG,
-  async (request, response) => {
-    corsHandler(request, response, async () => {
-      if (request.method === "OPTIONS") {
-        response.status(204).send();
-        return;
-      }
+export const getUsers = onRequest(USER_CONFIG, async (request, response) => {
+  corsHandler(request, response, async () => {
+    if (request.method === "OPTIONS") {
+      response.status(204).send();
+      return;
+    }
 
-      if (request.method !== "GET") {
-        response.set("Allow", "GET");
-        response.status(405).send("Método não permitido. Use GET.");
-        return;
-      }
+    if (request.method !== "GET") {
+      response.set("Allow", "GET");
+      response.status(405).send("Método não permitido. Use GET.");
+      return;
+    }
 
-      const context = await requireAuth(request, response);
-      if (
-        !context ||
-        !requireRoles(context, [UserRole.Admin, UserRole.Secretaria], response)
-      ) {
-        return;
-      }
+    const context = await requireAuth(request, response);
+    if (
+      !context ||
+      !requireRoles(context, [UserRole.Admin, UserRole.Secretaria], response)
+    ) {
+      return;
+    }
 
-      try {
-        const snapshot = await firestore
-          .collection(DatabaseTableKeys.Users)
-          .orderBy("fullname")
-          .get();
+    try {
+      const snapshot = await firestore
+        .collection(DatabaseTableKeys.Users)
+        .orderBy("fullname")
+        .get();
 
-        const users = await Promise.all(
-          snapshot.docs.map(async (doc) => {
-            const user = doc.data() as IUser;
-            const member = await getMemberById(user.memberId);
-            return {
-              id: doc.id,
-              ...user,
-              member: member ? {id: member.id, ...member.data} : null,
-            };
-          })
-        );
+      const users = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as IUser),
+      }));
 
-        response.status(200).json(users);
-      } catch (error) {
-        console.error("Erro ao buscar usuários:", error);
-        response.status(500).send("Erro ao buscar usuários.");
-      }
-    });
-  }
-);
+      response.status(200).json(users);
+    } catch (error) {
+      console.error("Erro ao buscar usuários:", error);
+      response.status(500).send("Erro ao buscar usuários.");
+    }
+  });
+});
 
 export const getUserProfile = onRequest(
   USER_CONFIG,
@@ -671,10 +577,10 @@ export const getUserProfile = onRequest(
       }
 
       try {
-        const userSnap = await firestore
+        const userRef = firestore
           .collection(DatabaseTableKeys.Users)
-          .doc(context.uid)
-          .get();
+          .doc(context.uid);
+        const userSnap = await userRef.get();
 
         if (!userSnap.exists) {
           response.status(404).send("Usuário não encontrado.");
@@ -682,11 +588,9 @@ export const getUserProfile = onRequest(
         }
 
         const user = userSnap.data() as IUser;
-        const member = await getMemberById(user.memberId);
 
         response.status(200).json({
-          user: {id: userSnap.id, ...user},
-          member: member ? {id: member.id, ...member.data} : null,
+          user: { id: userSnap.id, ...user },
         });
       } catch (error) {
         console.error("Erro ao buscar perfil:", error);

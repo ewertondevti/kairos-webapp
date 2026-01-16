@@ -2,6 +2,11 @@ import { MembershipFields } from "@/enums/membership";
 import { Dayjs } from "dayjs";
 import { IMemberPhoto } from "./store";
 
+export type ChildFormValue = {
+  name: string;
+  birthDate?: Dayjs;
+};
+
 export interface MembershipValues {
   [MembershipFields.Photo]?: IMemberPhoto;
   [MembershipFields.Id]?: string;
@@ -11,6 +16,9 @@ export interface MembershipValues {
   [MembershipFields.MaritalStatus]?: number;
   [MembershipFields.PostalCode]?: string;
   [MembershipFields.Address]?: string;
+  [MembershipFields.AddressNumber]?: string;
+  [MembershipFields.AddressFloor]?: string;
+  [MembershipFields.AddressDoor]?: string;
   [MembershipFields.City]?: string;
   [MembershipFields.County]?: string;
   [MembershipFields.State]?: string;
@@ -19,7 +27,7 @@ export interface MembershipValues {
   [MembershipFields.FatherName]?: string;
   [MembershipFields.SpouseName]?: string;
   [MembershipFields.WeddingDate]?: Dayjs;
-  [MembershipFields.Children]?: string[];
+  [MembershipFields.Children]?: ChildFormValue[];
   [MembershipFields.BaptismChurch]?: string;
   [MembershipFields.BaptismDate]?: Dayjs;
   [MembershipFields.AdmissionType]?: string;

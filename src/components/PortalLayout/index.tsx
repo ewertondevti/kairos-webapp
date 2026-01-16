@@ -3,7 +3,7 @@
 import { PortalNavItem } from "@/config/portalNavigation";
 import { useAuth } from "@/store";
 import { UserRole } from "@/types/user";
-import { MenuOutlined } from "@ant-design/icons";
+import { HomeOutlined, MenuOutlined } from "@ant-design/icons";
 import {
   Button,
   Drawer,
@@ -63,6 +63,11 @@ const PortalLayout = ({
     if (target) {
       router.push(target.href);
     }
+    setDrawerOpen(false);
+  };
+
+  const onGoHome = () => {
+    router.push("/");
     setDrawerOpen(false);
   };
 
@@ -147,6 +152,15 @@ const PortalLayout = ({
                 )}
               </div>
             </div>
+            <div className={styles.headerRight}>
+              <Button
+                className={styles.homeButton}
+                icon={<HomeOutlined />}
+                onClick={onGoHome}
+              >
+                Voltar ao início
+              </Button>
+            </div>
           </header>
 
           <section className={styles.page}>{children}</section>
@@ -160,6 +174,13 @@ const PortalLayout = ({
         width={280}
         title={title}
       >
+        <Button
+          className={styles.drawerHomeButton}
+          icon={<HomeOutlined />}
+          onClick={onGoHome}
+        >
+          Voltar ao início
+        </Button>
         {menu}
       </Drawer>
     </Layout>

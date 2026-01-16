@@ -6,19 +6,20 @@ import {
 import { beforeUpload, convertFileToBase64 } from "@/helpers/app";
 import { IMemberPhoto } from "@/types/store";
 import {
-  dateFormat,
+  dateInputFormat,
   disabledDate,
+  formatPostalCode,
   postalCodeRegex,
   requiredRules,
 } from "@/utils/app";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { useQuery } from "@tanstack/react-query";
 import {
   Avatar,
   Button,
   ButtonProps,
   Col,
   DatePicker,
-  Divider,
   Flex,
   Form,
   Input,
@@ -29,13 +30,134 @@ import {
 } from "antd";
 import Title from "antd/es/typography/Title";
 import { RcFile, UploadProps } from "antd/es/upload";
+import axios from "axios";
+import { useEffect, useMemo } from "react";
+
+type PostalAddressRecord = {
+  district: string;
+  county: string;
+  parish: string;
+  address: string;
+  addressNumber?: string;
+  addressFloor?: string;
+  addressDoor?: string;
+};
+
+const toStringValue = (value: unknown) => {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : undefined;
+  }
+  if (typeof value === "number") {
+    return String(value);
+  }
+  return undefined;
+};
+
+const pickValue = (item: Record<string, unknown>, keys: string[]) =>
+  keys.map((key) => item[key]).find((value) => toStringValue(value));
+
+const normalizePostalRecord = (
+  item: Record<string, unknown>
+): PostalAddressRecord | null => {
+  const district = toStringValue(
+    pickValue(item, ["Distrito", "distrito", "district"])
+  );
+  const county = toStringValue(
+    pickValue(item, ["Concelho", "concelho", "municipio", "county"])
+  );
+  const parish = toStringValue(
+    pickValue(item, ["Freguesia", "freguesia", "parish", "localidade"])
+  );
+  const address = toStringValue(
+    pickValue(item, ["Morada", "morada", "address", "rua"])
+  );
+  const addressNumber = toStringValue(
+    pickValue(item, ["numero", "numeroMorada", "numero_morada", "Numero"])
+  );
+  const addressFloor = toStringValue(
+    pickValue(item, ["andar", "piso", "floor", "Andar"])
+  );
+  const addressDoor = toStringValue(
+    pickValue(item, [
+      "porta",
+      "door",
+      "numeroPorta",
+      "numero_porta",
+      "NumeroPorta",
+    ])
+  );
+
+  if (!district || !county || !parish || !address) {
+    return null;
+  }
+
+  return {
+    district,
+    county,
+    parish,
+    address,
+    addressNumber,
+    addressFloor,
+    addressDoor,
+  };
+};
+
+const normalizePostalResponse = (data: unknown): PostalAddressRecord[] => {
+  if (!data) return [];
+  const raw =
+    Array.isArray(data) && data.length
+      ? data
+      : typeof data === "object" && data !== null
+      ? (data as { data?: unknown; results?: unknown }).data ??
+        (data as { results?: unknown }).results ??
+        data
+      : [];
+
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map((item) =>
+      item && typeof item === "object"
+        ? normalizePostalRecord(item as Record<string, unknown>)
+        : null
+    )
+    .filter((item): item is PostalAddressRecord => Boolean(item));
+};
 
 export const PersonalInfo = () => {
   const form = Form.useFormInstance();
 
   const photoValue = Form.useWatch(MembershipFields.Photo, form);
-  const imageUrl =
-    typeof photoValue === "string" ? photoValue : photoValue?.file;
+  const postalCodeValue = Form.useWatch(MembershipFields.PostalCode, form);
+  const districtValue = Form.useWatch(MembershipFields.State, form);
+  const countyValue = Form.useWatch(MembershipFields.County, form);
+  const parishValue = Form.useWatch(MembershipFields.City, form);
+  const addressValue = Form.useWatch(MembershipFields.Address, form);
+  const addressNumberValue = Form.useWatch(
+    MembershipFields.AddressNumber,
+    form
+  );
+  const addressFloorValue = Form.useWatch(MembershipFields.AddressFloor, form);
+  const addressDoorValue = Form.useWatch(MembershipFields.AddressDoor, form);
+  const imageUrl = useMemo(() => {
+    if (!photoValue) {
+      return undefined;
+    }
+    if (typeof photoValue === "string") {
+      return photoValue;
+    }
+    if (typeof photoValue === "object") {
+      const maybePhoto = photoValue as { file?: string; url?: string };
+      return maybePhoto.file ?? maybePhoto.url;
+    }
+    return undefined;
+  }, [photoValue]);
 
   const genderOptions = [
     { label: "Masculino", value: GenderEnum.Male },
@@ -48,6 +170,273 @@ export const PersonalInfo = () => {
     { label: "Solteiro(a)", value: MaritalStatusEnum.Single },
     { label: "Divorciado(a)", value: MaritalStatusEnum.Divorced },
   ];
+
+  const normalizedPostalCode = useMemo(
+    () => formatPostalCode(postalCodeValue),
+    [postalCodeValue]
+  );
+
+  const postalDigits = useMemo(
+    () => normalizedPostalCode?.replace(/\D/g, "") ?? "",
+    [normalizedPostalCode]
+  );
+
+  const uniqueOptions = (values: string[]) =>
+    Array.from(new Set(values)).map((value) => ({
+      label: value,
+      value,
+    }));
+
+  const ensureOptionValue = (
+    options: Array<{ label: string; value: string }>,
+    value?: string
+  ) => {
+    if (!value) return options;
+    if (options.some((option) => option.value === value)) {
+      return options;
+    }
+    return [{ label: value, value }, ...options];
+  };
+
+  const uniqueValues = (values: Array<string | undefined>) =>
+    Array.from(new Set(values.filter(Boolean) as string[]));
+
+  const { data: postalRecords = [], isFetching: postalRequestLoading } =
+    useQuery({
+      queryKey: ["postal-address", postalDigits],
+      queryFn: async () => {
+        const response = await axios.get("/api/address", {
+          params: { postalCode: postalDigits },
+        });
+        return normalizePostalResponse(response.data);
+      },
+      enabled: postalDigits.length === 7,
+      staleTime: 5 * 60 * 1000,
+    });
+
+  const activePostalRecords = useMemo(
+    () => (postalDigits.length === 7 ? postalRecords : []),
+    [postalDigits, postalRecords]
+  );
+
+  const postalLoading = postalDigits.length === 7 && postalRequestLoading;
+
+  const districtOptions = useMemo(() => {
+    const options = uniqueOptions(
+      activePostalRecords.map((record) => record.district)
+    );
+    return ensureOptionValue(options, districtValue);
+  }, [activePostalRecords, districtValue]);
+
+  const recordsByDistrict = useMemo(() => {
+    if (!districtValue) return [];
+    return activePostalRecords.filter(
+      (record) => record.district === districtValue
+    );
+  }, [activePostalRecords, districtValue]);
+
+  const countyOptions = useMemo(() => {
+    const options = districtValue
+      ? uniqueOptions(recordsByDistrict.map((record) => record.county))
+      : [];
+    return ensureOptionValue(options, countyValue);
+  }, [districtValue, recordsByDistrict, countyValue]);
+
+  const recordsByCounty = useMemo(() => {
+    if (!countyValue) return [];
+    return recordsByDistrict.filter((record) => record.county === countyValue);
+  }, [recordsByDistrict, countyValue]);
+
+  const parishOptions = useMemo(() => {
+    const options = countyValue
+      ? uniqueOptions(recordsByCounty.map((record) => record.parish))
+      : [];
+    return ensureOptionValue(options, parishValue);
+  }, [countyValue, recordsByCounty, parishValue]);
+
+  const recordsByParish = useMemo(() => {
+    if (!parishValue) return [];
+    return recordsByCounty.filter((record) => record.parish === parishValue);
+  }, [recordsByCounty, parishValue]);
+
+  const addressOptions = useMemo(() => {
+    const options = parishValue
+      ? uniqueOptions(recordsByParish.map((record) => record.address))
+      : [];
+    return ensureOptionValue(options, addressValue);
+  }, [parishValue, recordsByParish, addressValue]);
+
+  useEffect(() => {
+    if (!postalDigits || postalDigits.length !== 7) {
+      form.setFieldsValue({
+        [MembershipFields.State]: undefined,
+        [MembershipFields.County]: undefined,
+        [MembershipFields.City]: undefined,
+        [MembershipFields.Address]: undefined,
+        [MembershipFields.AddressNumber]: undefined,
+        [MembershipFields.AddressFloor]: undefined,
+        [MembershipFields.AddressDoor]: undefined,
+      });
+    }
+  }, [form, postalDigits]);
+
+  useEffect(() => {
+    const districtValues = districtOptions.map((option) => option.value);
+    if (
+      districtValue &&
+      districtValues.length &&
+      !districtValues.includes(districtValue)
+    ) {
+      form.setFieldsValue({
+        [MembershipFields.State]: undefined,
+        [MembershipFields.County]: undefined,
+        [MembershipFields.City]: undefined,
+        [MembershipFields.Address]: undefined,
+        [MembershipFields.AddressNumber]: undefined,
+        [MembershipFields.AddressFloor]: undefined,
+        [MembershipFields.AddressDoor]: undefined,
+      });
+      return;
+    }
+
+    if (!districtValue && districtValues.length === 1) {
+      form.setFieldValue(MembershipFields.State, districtValues[0]);
+    }
+  }, [districtOptions, districtValue, form]);
+
+  useEffect(() => {
+    const countyValues = countyOptions.map((option) => option.value);
+    if (
+      countyValue &&
+      countyValues.length &&
+      !countyValues.includes(countyValue)
+    ) {
+      form.setFieldsValue({
+        [MembershipFields.County]: undefined,
+        [MembershipFields.City]: undefined,
+        [MembershipFields.Address]: undefined,
+        [MembershipFields.AddressNumber]: undefined,
+        [MembershipFields.AddressFloor]: undefined,
+        [MembershipFields.AddressDoor]: undefined,
+      });
+      return;
+    }
+
+    if (!countyValue && countyValues.length === 1) {
+      form.setFieldValue(MembershipFields.County, countyValues[0]);
+    }
+  }, [countyOptions, countyValue, form]);
+
+  useEffect(() => {
+    const parishValues = parishOptions.map((option) => option.value);
+    if (
+      parishValue &&
+      parishValues.length &&
+      !parishValues.includes(parishValue)
+    ) {
+      form.setFieldsValue({
+        [MembershipFields.City]: undefined,
+        [MembershipFields.Address]: undefined,
+        [MembershipFields.AddressNumber]: undefined,
+        [MembershipFields.AddressFloor]: undefined,
+        [MembershipFields.AddressDoor]: undefined,
+      });
+      return;
+    }
+
+    if (!parishValue && parishValues.length === 1) {
+      form.setFieldValue(MembershipFields.City, parishValues[0]);
+    }
+  }, [parishOptions, parishValue, form]);
+
+  useEffect(() => {
+    const addressValues = addressOptions.map((option) => option.value);
+    if (
+      addressValue &&
+      addressValues.length &&
+      !addressValues.includes(addressValue)
+    ) {
+      form.setFieldsValue({
+        [MembershipFields.Address]: undefined,
+        [MembershipFields.AddressNumber]: undefined,
+        [MembershipFields.AddressFloor]: undefined,
+        [MembershipFields.AddressDoor]: undefined,
+      });
+      return;
+    }
+
+    if (!addressValue && addressValues.length === 1) {
+      form.setFieldValue(MembershipFields.Address, addressValues[0]);
+    }
+  }, [addressOptions, addressValue, form]);
+
+  useEffect(() => {
+    if (!addressValue) {
+      form.setFieldsValue({
+        [MembershipFields.AddressNumber]: undefined,
+        [MembershipFields.AddressFloor]: undefined,
+        [MembershipFields.AddressDoor]: undefined,
+      });
+      return;
+    }
+
+    const matchingRecords = recordsByParish.filter(
+      (record) => record.address === addressValue
+    );
+
+    const addressNumbers = uniqueValues(
+      matchingRecords.map((record) => record.addressNumber)
+    );
+    const addressFloors = uniqueValues(
+      matchingRecords.map((record) => record.addressFloor)
+    );
+    const addressDoors = uniqueValues(
+      matchingRecords.map((record) => record.addressDoor)
+    );
+
+    const updates: Partial<Record<MembershipFields, string | undefined>> = {};
+
+    if (addressNumbers.length === 1 && !addressNumberValue) {
+      updates[MembershipFields.AddressNumber] = addressNumbers[0];
+    } else if (
+      addressNumberValue &&
+      addressNumbers.length > 0 &&
+      !addressNumbers.includes(addressNumberValue)
+    ) {
+      updates[MembershipFields.AddressNumber] = undefined;
+    }
+
+    if (addressFloors.length === 1 && !addressFloorValue) {
+      updates[MembershipFields.AddressFloor] = addressFloors[0];
+    } else if (
+      addressFloorValue &&
+      addressFloors.length > 0 &&
+      !addressFloors.includes(addressFloorValue)
+    ) {
+      updates[MembershipFields.AddressFloor] = undefined;
+    }
+
+    if (addressDoors.length === 1 && !addressDoorValue) {
+      updates[MembershipFields.AddressDoor] = addressDoors[0];
+    } else if (
+      addressDoorValue &&
+      addressDoors.length > 0 &&
+      !addressDoors.includes(addressDoorValue)
+    ) {
+      updates[MembershipFields.AddressDoor] = undefined;
+    }
+
+    if (Object.keys(updates).length) {
+      form.setFieldsValue(updates);
+    }
+  }, [
+    addressDoorValue,
+    addressFloorValue,
+    addressNumberValue,
+    addressValue,
+    form,
+    recordsByParish,
+  ]);
 
   const handleChange: UploadProps["onChange"] = async ({ file }) => {
     if (file) {
@@ -69,21 +458,22 @@ export const PersonalInfo = () => {
   };
 
   const uploadButton = (
-    <div>
-      <PlusOutlined />
-      <div style={{ marginTop: 8 }}>Foto</div>
+    <div className="avatar-upload-placeholder">
+      <PlusOutlined className="avatar-upload-icon" />
+      <div className="avatar-upload-text">Foto</div>
     </div>
   );
 
   return (
-    <Row gutter={10}>
-      <Divider orientation="vertical" />
-      <Title level={3} className="text-uppercase">
-        Informações Pessoais
-      </Title>
+    <Row gutter={[16, 16]}>
+      <Col span={24}>
+        <Title level={3} className="text-uppercase">
+          Informações Pessoais
+        </Title>
+      </Col>
 
-      <Col xs={{ order: 2, span: 24 }} md={{ order: 1, span: 20 }}>
-        <Row gutter={10}>
+      <Col xs={{ order: 1, span: 24 }} md={{ order: 1, span: 20 }}>
+        <Row gutter={[16, 16]}>
           <Form.Item name={MembershipFields.Id} label="Código" hidden>
             <Input placeholder="" className="w-full" />
           </Form.Item>
@@ -106,7 +496,7 @@ export const PersonalInfo = () => {
             >
               <DatePicker
                 disabledDate={disabledDate}
-                format={dateFormat}
+                format={dateInputFormat}
                 className="w-full"
               />
             </Form.Item>
@@ -152,8 +542,9 @@ export const PersonalInfo = () => {
             <Form.Item
               name={MembershipFields.PostalCode}
               label="Código postal"
-              normalize={(value: string) =>
-                value.replace(/\s/, "-").replace(/-{2}/g, "-")
+              normalize={(value: string) => formatPostalCode(value)}
+              getValueFromEvent={(event) =>
+                formatPostalCode(event?.target?.value ?? "")
               }
               rules={[
                 () => ({
@@ -169,15 +560,20 @@ export const PersonalInfo = () => {
                 }),
               ]}
             >
-              <Input placeholder="XXXX-XXX" />
+              <Input
+                placeholder="XXXX-XXX"
+                inputMode="numeric"
+                pattern="[0-9]{4}-[0-9]{3}"
+                maxLength={8}
+              />
             </Form.Item>
           </Col>
         </Row>
       </Col>
 
-      <Col xs={{ order: 1, span: 24 }} md={{ order: 2, span: 4 }}>
+      <Col xs={{ order: 2, span: 24 }} md={{ order: 2, span: 4 }}>
         <Form.Item name={MembershipFields.Photo} noStyle>
-          <Flex justify="center" align="center" className="h-full">
+          <Flex justify="center" align="start" className="h-full">
             <Upload
               listType="picture-circle"
               className="avatar-uploader"
@@ -186,10 +582,10 @@ export const PersonalInfo = () => {
               onChange={handleChange}
             >
               {imageUrl ? (
-                <Row className="float-btn-container">
+                <div className="float-btn-container">
                   <Avatar
                     src={imageUrl}
-                    size="small"
+                    size={128}
                     alt="userProfile"
                     className="w-full h-full"
                   />
@@ -203,7 +599,7 @@ export const PersonalInfo = () => {
                       onClick={onRemove}
                     />
                   </Tooltip>
-                </Row>
+                </div>
               ) : (
                 uploadButton
               )}
@@ -218,27 +614,41 @@ export const PersonalInfo = () => {
           label="Morada"
           rules={requiredRules}
         >
-          <Input placeholder="Rua..." />
+          {addressOptions.length > 1 ? (
+            <Select
+              placeholder="Selecione a morada"
+              options={addressOptions}
+              loading={postalLoading}
+              disabled={!parishValue}
+              allowClear
+              showSearch
+              optionFilterProp="label"
+            />
+          ) : (
+            <Input placeholder="Rua..." />
+          )}
         </Form.Item>
       </Col>
 
-      <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
+      <Col xs={{ order: 3, span: 24 }} sm={8} md={8}>
         <Form.Item
-          name={MembershipFields.City}
-          label="Freguesia"
+          name={MembershipFields.AddressNumber}
+          label="Número"
           rules={requiredRules}
         >
-          <Input placeholder="Ex: Samora Correia" />
+          <Input placeholder="Ex: 123" />
         </Form.Item>
       </Col>
 
-      <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
-        <Form.Item
-          name={MembershipFields.County}
-          label="Concelho"
-          rules={requiredRules}
-        >
-          <Input placeholder="Ex: Benavente" />
+      <Col xs={{ order: 3, span: 24 }} sm={8} md={8}>
+        <Form.Item name={MembershipFields.AddressFloor} label="Andar">
+          <Input placeholder="Ex: 2º" />
+        </Form.Item>
+      </Col>
+
+      <Col xs={{ order: 3, span: 24 }} sm={8} md={8}>
+        <Form.Item name={MembershipFields.AddressDoor} label="Número da porta">
+          <Input placeholder="Ex: 3B" />
         </Form.Item>
       </Col>
 
@@ -248,7 +658,49 @@ export const PersonalInfo = () => {
           label="Distrito"
           rules={requiredRules}
         >
-          <Input placeholder="Ex: Santarém" />
+          <Select
+            placeholder="Selecione o distrito"
+            options={districtOptions}
+            loading={postalLoading}
+            disabled={!activePostalRecords.length}
+            allowClear
+            showSearch
+            optionFilterProp="label"
+          />
+        </Form.Item>
+      </Col>
+
+      <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
+        <Form.Item
+          name={MembershipFields.County}
+          label="Concelho"
+          rules={requiredRules}
+        >
+          <Select
+            placeholder="Selecione o concelho"
+            options={countyOptions}
+            disabled={!districtValue || !countyOptions.length}
+            allowClear
+            showSearch
+            optionFilterProp="label"
+          />
+        </Form.Item>
+      </Col>
+
+      <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
+        <Form.Item
+          name={MembershipFields.City}
+          label="Freguesia"
+          rules={requiredRules}
+        >
+          <Select
+            placeholder="Selecione a freguesia"
+            options={parishOptions}
+            disabled={!countyValue || !parishOptions.length}
+            allowClear
+            showSearch
+            optionFilterProp="label"
+          />
         </Form.Item>
       </Col>
     </Row>

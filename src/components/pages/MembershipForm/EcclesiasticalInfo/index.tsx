@@ -1,5 +1,5 @@
 import { MembershipFields } from "@/enums/membership";
-import { dateFormat, disabledDate } from "@/utils/app";
+import { dateInputFormat, disabledDate } from "@/utils/app";
 import { Col, DatePicker, Divider, Form, Input, Row, Select } from "antd";
 import Title from "antd/es/typography/Title";
 
@@ -35,7 +35,7 @@ export const EcclesiasticalInfo = ({
             label="Data de batismo"
           >
             <DatePicker
-              format={dateFormat}
+              format={dateInputFormat}
               disabledDate={disabledDate}
               className="w-full"
             />
@@ -66,7 +66,7 @@ export const EcclesiasticalInfo = ({
             label="Data de admissão"
           >
             <DatePicker
-              format={dateFormat}
+              format={dateInputFormat}
               disabledDate={disabledDate}
               className="w-full"
             />

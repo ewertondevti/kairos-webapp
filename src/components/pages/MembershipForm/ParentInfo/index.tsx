@@ -1,5 +1,5 @@
 import { MaritalStatusEnum, MembershipFields } from "@/enums/membership";
-import { dateFormat, disabledDate } from "@/utils/app";
+import { dateInputFormat, disabledDate } from "@/utils/app";
 import { Col, DatePicker, Divider, Form, Input, Row } from "antd";
 import Title from "antd/es/typography/Title";
 import { SonFields } from "./SonFields";
@@ -58,7 +58,7 @@ export const ParentInfo = () => {
               label="Data de casamento"
             >
               <DatePicker
-                format={dateFormat}
+                format={dateInputFormat}
                 disabledDate={disabledDate}
                 className="w-full"
               />

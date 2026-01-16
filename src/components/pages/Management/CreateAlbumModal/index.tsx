@@ -5,7 +5,7 @@ import { QueryNames } from "@/react-query/queryNames";
 import { createAlbum } from "@/services/albumServices";
 import { deleteUploadedImage } from "@/services/commonServices";
 import { IAlbumPayload } from "@/types/store";
-import { requiredRules } from "@/utils/app";
+import { dateInputFormat, requiredRules } from "@/utils/app";
 import { formatBytes, getUploadUrl } from "@/utils/upload";
 import {
   CheckCircleOutlined,
@@ -76,10 +76,15 @@ const UploadRow = ({
         </Flex>
 
         <Flex vertical className="min-w-0 flex-1">
-          <Text className="ant-upload-list-item-name truncate" title={item.name}>
+          <Text
+            className="ant-upload-list-item-name truncate"
+            title={item.name}
+          >
             {item.name}
           </Text>
-          <Text className="text-xs text-gray-500">{formatBytes(item.size)}</Text>
+          <Text className="text-xs text-gray-500">
+            {formatBytes(item.size)}
+          </Text>
         </Flex>
 
         <Flex align="center" gap={4}>
@@ -107,7 +112,11 @@ const UploadRow = ({
 
       {item.progress > 0 && item.progress < 100 && (
         <Flex className="ant-upload-list-item-progress">
-          <Progress percent={item.progress} showInfo={false} size={{ height: 2 }} />
+          <Progress
+            percent={item.progress}
+            showInfo={false}
+            size={{ height: 2 }}
+          />
         </Flex>
       )}
     </Flex>
@@ -271,14 +280,17 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
           <DatePicker
             className="w-full"
             placeholder="Selecione a data do evento"
-            format="DD/MM/YYYY"
+            format={dateInputFormat}
             onChange={(date) => {
               if (!date) return;
               const title = formatEventTitle(date);
               const previousAutoTitle = lastAutoTitle;
               setLastAutoTitle(title);
 
-              if (!isTitleTouched || form.getFieldValue("name") === previousAutoTitle) {
+              if (
+                !isTitleTouched ||
+                form.getFieldValue("name") === previousAutoTitle
+              ) {
                 form.setFieldValue("name", title);
                 setIsTitleTouched(false);
               }
@@ -314,11 +326,10 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
               Clique ou arraste a(s) imagen(s) para esta área
             </p>
             <p className="ant-upload-hint">
-              Suporta até 500 imagens por álbum, com uploads paralelos otimizados.
+              Suporta até 500 imagens por álbum, com uploads paralelos
+              otimizados.
             </p>
-            <p className="ant-upload-hint">
-              (Suporta PNG, JPG, JPEG e WEBP)
-            </p>
+            <p className="ant-upload-hint">(Suporta PNG, JPG, JPEG e WEBP)</p>
           </Upload>
 
           <Form.Item className="mb-0">
@@ -330,7 +341,8 @@ export const CreateAlbumModal: FC<Props> = ({ isOpen, onCancel }) => {
                 </i>
               </Text>
               <Text className="text-xs text-gray-500">
-                {stats.success} concluídas · {stats.uploading} em envio · {stats.error} erro(s)
+                {stats.success} concluídas · {stats.uploading} em envio ·{" "}
+                {stats.error} erro(s)
               </Text>
             </Flex>
             {!!stats.total && (

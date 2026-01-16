@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 html {
   scroll-behavior: smooth;
 }
@@ -6,18 +10,99 @@ html {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
-  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
 }
 
 body {
   background-color: #fafafa;
   color: #0a0a0a;
-  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+}
+
+.avatar-uploader {
+  .ant-upload {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    border: 1px dashed rgba(26, 93, 46, 0.45);
+    background: linear-gradient(
+      135deg,
+      rgba(26, 93, 46, 0.12),
+      rgba(255, 255, 255, 0.9)
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease,
+      background 0.2s ease;
+    box-shadow: 0 12px 24px rgba(10, 10, 10, 0.12);
+  }
+
+  .ant-upload:hover {
+    border-color: #1a5d2e;
+    background: linear-gradient(
+      135deg,
+      rgba(26, 93, 46, 0.18),
+      rgba(255, 255, 255, 0.95)
+    );
+    box-shadow: 0 16px 30px rgba(10, 10, 10, 0.18);
+  }
+
+  .ant-upload-picture-circle-wrapper {
+    width: 128px;
+    height: 128px;
+  }
+
+  .float-btn-container {
+    width: 128px;
+    height: 128px;
+    position: relative;
+  }
+
+  .ant-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .float-btn {
+    opacity: 0;
+    position: absolute;
+    bottom: 10px;
+    right: 36px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateY(4px);
+  }
+
+  .float-btn-container:hover .float-btn {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .avatar-upload-placeholder {
+    color: #1a5d2e;
+    text-align: center;
+  }
+
+  .avatar-upload-icon {
+    font-size: 22px;
+  }
+
+  .avatar-upload-text {
+    margin-top: 8px;
+    font-weight: 600;
+    font-size: 13px;
+  }
 }
 
 h1,
@@ -69,8 +154,12 @@ h6,
 
 /* Elegant Header Styling */
 .ant-layout-header {
-  background: linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #000000 100%)
-    !important;
+  background: linear-gradient(
+    135deg,
+    #000000 0%,
+    #0a0a0a 50%,
+    #000000 100%
+  ) !important;
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-bottom: 2px solid #1a5d2e;
@@ -169,13 +258,11 @@ h6,
 }
 
 .ant-layout-header .logo-container:hover > div > div:first-child {
-  box-shadow: 0 0 0 2px rgba(26, 93, 46, 0.5),
-    0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 2px rgba(26, 93, 46, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .ant-layout-header .logo-container:hover > div > div:nth-child(2) {
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2),
-    0 0 20px rgba(26, 93, 46, 0.4);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 20px rgba(26, 93, 46, 0.4);
 }
 
 .ant-layout-header .logo-container:hover > div > div:nth-child(3) {

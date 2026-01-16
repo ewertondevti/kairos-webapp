@@ -32,8 +32,19 @@ export interface IAlbumPayload {
 export interface IAlbumUpdatePayload extends IAlbumPayload, ICommon {}
 export interface ICommonDTO extends IImageDTO, ICommon {}
 
+export type MemberChildPayload = {
+  name: string;
+  birthDate?: string;
+};
+
 export type MemberPayload = {
-  [key in MembershipFields]?: IMemberPhoto | string | number | string[] | boolean;
+  [key in MembershipFields]?:
+    | IMemberPhoto
+    | string
+    | number
+    | string[]
+    | MemberChildPayload[]
+    | boolean;
 };
 
 export interface IMemberPhoto {

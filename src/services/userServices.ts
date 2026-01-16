@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getAuthHeaders } from "./authHeaders";
-import { MemberProfile, UserProfile, UserRole } from "@/types/user";
+import { UserProfile, UserRole } from "@/types/user";
 
 export type RequestAccessPayload = {
   fullname: string;
@@ -65,10 +65,7 @@ export const setUserRole = async (uid: string, role: UserRole) => {
   return response.data;
 };
 
-export const getUserProfile = async (): Promise<{
-  user: UserProfile;
-  member: MemberProfile | null;
-}> => {
+export const getUserProfile = async (): Promise<{ user: UserProfile }> => {
   const headers = await getAuthHeaders();
   const response = await axios.get("/api/users/profile", { headers });
   return response.data;

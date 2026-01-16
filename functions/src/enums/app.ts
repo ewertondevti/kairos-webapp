@@ -3,7 +3,6 @@ export const DatabaseTableKeys = {
   Albums: "albums",
   Presentations: "presentations",
   Events: "events",
-  Members: "members",
   Users: "users",
   AccessRequests: "accessRequests",
 } as const;

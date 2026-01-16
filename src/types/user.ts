@@ -4,6 +4,11 @@ export enum UserRole {
   Midia = 2,
 }
 
+export type MemberChild = {
+  name: string;
+  birthDate?: string;
+};
+
 export type UserProfile = {
   id: string;
   authUid: string;
@@ -11,19 +16,14 @@ export type UserProfile = {
   email: string;
   role: UserRole;
   active: boolean;
-  memberId?: string;
-  member?: MemberProfile | null;
-};
-
-export type MemberProfile = {
-  id: string;
-  fullname: string;
-  email: string;
   birthDate?: string;
   gender?: number;
   maritalStatus?: number;
   postalCode?: string;
   address?: string;
+  addressNumber?: string;
+  addressFloor?: string;
+  addressDoor?: string;
   city?: string;
   county?: string;
   state?: string;
@@ -31,7 +31,7 @@ export type MemberProfile = {
   fatherName?: string;
   spouseName?: string;
   weddingDate?: string;
-  children?: string[];
+  children?: MemberChild[];
   baptismChurch?: string;
   baptismDate?: string;
   admissionType?: string;

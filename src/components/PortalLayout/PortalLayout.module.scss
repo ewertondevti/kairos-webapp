@@ -36,19 +36,79 @@
 }
 
 .header {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(8, 20, 12, 0.92), rgba(15, 58, 28, 0.92));
+  border: 1px solid rgba(26, 93, 46, 0.4);
   border-radius: 20px;
   padding: 20px 24px;
   margin-bottom: 24px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 15% 30%, rgba(74, 157, 99, 0.25), transparent 45%),
+    radial-gradient(circle at 85% 70%, rgba(26, 93, 46, 0.3), transparent 40%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.headerLeft,
+.headerRight {
+  position: relative;
+  z-index: 1;
 }
 
 .headerLeft {
   display: flex;
   gap: 16px;
   align-items: center;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+}
+
+.homeButton {
+  background: #1a5d2e;
+  border-color: #1a5d2e;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 0 16px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.homeButton:hover,
+.homeButton:focus-visible {
+  background: #2d7a47;
+  border-color: #2d7a47;
+  color: #ffffff;
+}
+
+.drawerHomeButton {
+  width: 100%;
+  margin-bottom: 16px;
+  background: #1a5d2e;
+  border-color: #1a5d2e;
+  color: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.drawerHomeButton:hover,
+.drawerHomeButton:focus-visible {
+  background: #2d7a47;
+  border-color: #2d7a47;
+  color: #ffffff;
 }
 
 .menuButton {

@@ -1,7 +1,12 @@
 "use client";
 
+import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/EcclesiasticalInfo";
+import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
+import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
+import { churchRoleOptions } from "@/constants/churchRoles";
 import { MembershipFields } from "@/enums/membership";
 import { useGetUsers } from "@/react-query";
+import { QueryNames } from "@/react-query/queryNames";
 import {
   createUser,
   setUserActive,
@@ -10,6 +15,12 @@ import {
 } from "@/services/userServices";
 import { useAuth } from "@/store";
 import { UserProfile, UserRole } from "@/types/user";
+import {
+  mapChildrenToPayload,
+  normalizeMemberChildren,
+} from "@/utils/membership";
+import { SearchOutlined } from "@ant-design/icons";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Button,
   Drawer,
@@ -24,20 +35,13 @@ import {
   Table,
   Tag,
 } from "antd";
-import dayjs from "dayjs";
-import { useRef, useState, type Key } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { QueryNames } from "@/react-query/queryNames";
-import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/EcclesiasticalInfo";
-import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
-import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
-import { SearchOutlined } from "@ant-design/icons";
-import { churchRoleOptions } from "@/constants/churchRoles";
 import type {
-  ColumnType,
   ColumnsType,
+  ColumnType,
   FilterDropdownProps,
 } from "antd/es/table/interface";
+import dayjs from "dayjs";
+import { useRef, useState, type Key } from "react";
 
 type CreateFormValues = {
   fullname: string;
@@ -58,43 +62,43 @@ type MembersTabProps = {
   mode?: "admin" | "secretaria";
 };
 
-const mapMemberToForm = (user: UserProfile) => {
-  const member = user.member;
-  return {
-    [MembershipFields.Fullname]: member?.fullname ?? user.fullname,
-    [MembershipFields.Email]: member?.email ?? user.email,
-    [MembershipFields.BirthDate]: member?.birthDate
-      ? dayjs(member.birthDate)
-      : undefined,
-    [MembershipFields.Gender]: member?.gender,
-    [MembershipFields.MaritalStatus]: member?.maritalStatus,
-    [MembershipFields.PostalCode]: member?.postalCode,
-    [MembershipFields.Address]: member?.address,
-    [MembershipFields.City]: member?.city,
-    [MembershipFields.County]: member?.county,
-    [MembershipFields.State]: member?.state,
-    [MembershipFields.MotherName]: member?.motherName,
-    [MembershipFields.FatherName]: member?.fatherName,
-    [MembershipFields.SpouseName]: member?.spouseName,
-    [MembershipFields.WeddingDate]: member?.weddingDate
-      ? dayjs(member.weddingDate)
-      : undefined,
-    [MembershipFields.Children]: member?.children ?? [],
-    [MembershipFields.BaptismChurch]: member?.baptismChurch,
-    [MembershipFields.BaptismDate]: member?.baptismDate
-      ? dayjs(member.baptismDate)
-      : undefined,
-    [MembershipFields.AdmissionType]: member?.admissionType,
-    [MembershipFields.BaptizedPastor]: member?.baptizedPastor,
-    [MembershipFields.AdmissionDate]: member?.admissionDate
-      ? dayjs(member.admissionDate)
-      : undefined,
-    [MembershipFields.Congregation]: member?.congregation,
-    [MembershipFields.ChurchRole]: member?.churchRole,
-    [MembershipFields.BelongsTo]: member?.belongsTo,
-    [MembershipFields.Photo]: member?.photo,
-  };
-};
+const mapUserToForm = (user: UserProfile) => ({
+  [MembershipFields.Fullname]: user.fullname,
+  [MembershipFields.Email]: user.email,
+  [MembershipFields.BirthDate]: user.birthDate
+    ? dayjs(user.birthDate)
+    : undefined,
+  [MembershipFields.Gender]: user.gender,
+  [MembershipFields.MaritalStatus]: user.maritalStatus,
+  [MembershipFields.PostalCode]: user.postalCode,
+  [MembershipFields.Address]: user.address,
+  [MembershipFields.AddressNumber]: user.addressNumber,
+  [MembershipFields.AddressFloor]: user.addressFloor,
+  [MembershipFields.AddressDoor]: user.addressDoor,
+  [MembershipFields.City]: user.city,
+  [MembershipFields.County]: user.county,
+  [MembershipFields.State]: user.state,
+  [MembershipFields.MotherName]: user.motherName,
+  [MembershipFields.FatherName]: user.fatherName,
+  [MembershipFields.SpouseName]: user.spouseName,
+  [MembershipFields.WeddingDate]: user.weddingDate
+    ? dayjs(user.weddingDate)
+    : undefined,
+  [MembershipFields.Children]: normalizeMemberChildren(user.children),
+  [MembershipFields.BaptismChurch]: user.baptismChurch,
+  [MembershipFields.BaptismDate]: user.baptismDate
+    ? dayjs(user.baptismDate)
+    : undefined,
+  [MembershipFields.AdmissionType]: user.admissionType,
+  [MembershipFields.BaptizedPastor]: user.baptizedPastor,
+  [MembershipFields.AdmissionDate]: user.admissionDate
+    ? dayjs(user.admissionDate)
+    : undefined,
+  [MembershipFields.Congregation]: user.congregation,
+  [MembershipFields.ChurchRole]: user.churchRole,
+  [MembershipFields.BelongsTo]: user.belongsTo,
+  [MembershipFields.Photo]: user.photo,
+});
 
 export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const queryClient = useQueryClient();
@@ -123,7 +127,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
 
   const openEdit = (user: UserProfile) => {
     setEditingUser(user);
-    editForm.setFieldsValue(mapMemberToForm(user));
+    editForm.setFieldsValue(mapUserToForm(user));
     setEditOpen(true);
   };
 
@@ -180,6 +184,9 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
           values?.[MembershipFields.BaptismDate]?.toISOString(),
         [MembershipFields.AdmissionDate]:
           values?.[MembershipFields.AdmissionDate]?.toISOString(),
+        [MembershipFields.Children]: mapChildrenToPayload(
+          values?.[MembershipFields.Children]
+        ),
         [MembershipFields.Photo]: safePhoto,
       };
 
@@ -316,7 +323,9 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
             ],
             onFilter: (value: Key | boolean, record: UserProfile) => {
               const normalizedValue =
-                typeof value === "boolean" ? value : value === "true" || value === "1";
+                typeof value === "boolean"
+                  ? value
+                  : value === "true" || value === "1";
               return record.active === normalizedValue;
             },
             sorter: (a: UserProfile, b: UserProfile) =>
@@ -367,6 +376,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
       )}
 
       <Table
+        style={{ marginTop: 16 }}
         rowKey={(record) => record.id}
         loading={isLoading}
         dataSource={users}
@@ -416,7 +426,7 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
         title={`Editar dados do ${isAdminView ? "usuario" : "membro"}`}
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        width={720}
+        size={720}
         extra={
           <Space>
             <Button onClick={() => setEditOpen(false)}>Cancelar</Button>
@@ -425,9 +435,13 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
             </Button>
           </Space>
         }
-        destroyOnClose
+        destroyOnHidden
       >
-        <Form form={editForm} layout="vertical" initialValues={{ [MembershipFields.Children]: [] }}>
+        <Form
+          form={editForm}
+          layout="vertical"
+          initialValues={{ [MembershipFields.Children]: [] }}
+        >
           <PersonalInfo />
           <ParentInfo />
           <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />

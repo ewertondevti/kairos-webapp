@@ -12,18 +12,32 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const appId = process.env.NEXT_PUBLIC_PTCP_APP_ID;
+  const normalizedPostalCode = postalCode.replace(/\D/g, "");
 
-  if (!appId) {
+  if (normalizedPostalCode.length !== 7) {
     return NextResponse.json(
-      { error: "App ID não configurado" },
+      { error: "Código postal inválido" },
+      { status: 400 }
+    );
+  }
+
+  const formattedPostalCode = `${normalizedPostalCode.slice(
+    0,
+    4
+  )}-${normalizedPostalCode.slice(4)}`;
+
+  const apiKey = process.env.NEXT_PUBLIC_CTT_API_KEY;
+
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "API key não configurada" },
       { status: 500 }
     );
   }
 
   try {
     const response = await axios.get(
-      `https://api.duminio.com/ptcp/v2/${appId}/${postalCode.replace("-", "")}`,
+      `https://www.cttcodigopostal.pt/api/v1/${apiKey}/${formattedPostalCode}`,
       {
         headers: {
           "Content-Type": "application/json",

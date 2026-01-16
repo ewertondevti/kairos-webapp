@@ -1,6 +1,7 @@
 import { MembershipFields } from "@/enums/membership";
+import { dateInputFormat, disabledDate } from "@/utils/app";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Col, Flex, Form, Input, Row, Typography } from "antd";
+import { Button, Col, DatePicker, Flex, Form, Input, Row, Typography } from "antd";
 import styles from "./SonFields.module.scss";
 
 const { Text } = Typography;
@@ -18,10 +19,9 @@ export const SonFields = () => {
                 </Col>
               )}
 
-              <Col flex="auto">
+              <Col xs={24} md={14} lg={15}>
                 <Form.Item
-                  {...field}
-                  key={field.key}
+                  name={[field.name, "name"]}
                   rules={[
                     {
                       required: true,
@@ -30,9 +30,19 @@ export const SonFields = () => {
                         "Adicione o nome completo do filho ou remova este campo.",
                     },
                   ]}
-                  noStyle
                 >
                   <Input placeholder="Nome completo do filho..." />
+                </Form.Item>
+              </Col>
+
+              <Col xs={24} md={8} lg={7}>
+                <Form.Item name={[field.name, "birthDate"]}>
+                  <DatePicker
+                    format={dateInputFormat}
+                    disabledDate={disabledDate}
+                    className="w-full"
+                    placeholder="Data de nascimento"
+                  />
                 </Form.Item>
               </Col>
 

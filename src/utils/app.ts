@@ -1,7 +1,11 @@
-import { DatePickerProps, FormItemProps } from "antd";
+import type { DatePickerProps, FormItemProps } from "antd";
 import dayjs from "dayjs";
 
 export const dateFormat = "DD/MM/YYYY";
+export const dateInputFormat: NonNullable<DatePickerProps["format"]> = {
+  format: dateFormat,
+  type: "mask",
+};
 
 export const SCREEN_VALUES = {
   "mobile-portrait": {
@@ -62,4 +66,13 @@ export const disabledDate: DatePickerProps["disabledDate"] = (current) => {
   return current && (current.year() < 1900 || current.isAfter(dayjs()));
 };
 
-export const postalCodeRegex = /\d{4}-\d{3}/g;
+export const postalCodeRegex = /^\d{4}-\d{3}$/;
+
+export const formatPostalCode = (value?: string) => {
+  if (!value) return value;
+  const digits = value.replace(/\D/g, "").slice(0, 7);
+  if (digits.length <= 4) {
+    return digits;
+  }
+  return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+};
