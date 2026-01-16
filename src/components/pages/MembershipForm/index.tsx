@@ -10,6 +10,7 @@ import { Content } from "antd/es/layout/layout";
 import Title from "antd/es/typography/Title";
 import { useEffect, useState } from "react";
 import { EcclesiasticalInfo } from "./EcclesiasticalInfo";
+import styles from "./MembershipForm.module.scss";
 import { ParentInfo } from "./ParentInfo";
 import { PersonalInfo } from "./PersonalInfo";
 
@@ -44,7 +45,7 @@ export const MembershipForm = () => {
           ]);
         });
     }
-  }, [postalCodeValue]);
+  }, [postalCodeValue, form]);
 
   const onSubmit: FormProps["onFinish"] = async (values: MembershipValues) => {
     setIsLoading(true);
@@ -81,13 +82,14 @@ export const MembershipForm = () => {
 
   return (
     <Layout>
-      <Content style={{ padding: 20 }}>
-        <Title>Ficha de membro</Title>
+      <Content className={styles.page} style={{ padding: 20 }}>
+        <Title className={styles.title}>Ficha de membro</Title>
 
         <Flex justify="center">
           <Form
             form={form}
             layout="vertical"
+            className={styles.form}
             style={{ maxWidth: 900 }}
             onFinish={onSubmit}
             onFinishFailed={(error) => console.log(error)}

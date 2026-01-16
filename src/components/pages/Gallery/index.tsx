@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
 import { onDownload } from "@/helpers/app";
-import { useGetAlbums } from "@/react-query";
+import { useGetAlbumById, useGetAlbums } from "@/react-query";
 import {
   DownloadOutlined,
   LeftOutlined,
@@ -11,73 +10,39 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
 } from "@ant-design/icons";
-import {
-  Breadcrumb,
-  BreadcrumbProps,
-  Empty,
-  Flex,
-  Image,
-  Layout,
-  Space,
-  Spin,
-} from "antd";
-import { Content } from "antd/es/layout/layout";
-import Title from "antd/es/typography/Title";
-import { usePathname } from "next/navigation";
+import { Empty, Flex, Image, Space, Typography } from "antd";
 import { AlbumContent } from "../Management/tabs/AlbumsTab/AlbumContent";
 import { AlbumDetails } from "../Management/tabs/AlbumsTab/AlbumDetails";
+import styles from "./Gallery.module.scss";
+
+const { Title, Text } = Typography;
 
 type GalleryProps = {
   albumId?: string;
 };
 
 export const Gallery = ({ albumId }: GalleryProps) => {
-  const pathname = usePathname();
-  const { data: albums, isLoading } = useGetAlbums();
-
-  const keys = pathname.split("/").filter(Boolean);
-
-  const getLabel = (key: string) => {
-    const album = albums?.find((a) => a.id === key);
-
-    switch (key) {
-      case RoutesEnums.Gallery:
-        return "Galeria";
-      case RoutesEnums.Management:
-        return "Gerenciamento";
-      case ManagementRoutesEnums.Albums:
-        return "Álbuns";
-      case ManagementRoutesEnums.Events:
-        return "Eventos";
-
-      default:
-        if (album) return album.name;
-        return "";
-    }
-  };
-
-  const getLink = (index: number) => {
-    const link = keys.reduce((acc, curr, currIndex) => {
-      if (currIndex <= index) return (acc += `/${curr}`);
-      return acc;
-    }, "");
-
-    return link;
-  };
-
-  const items: BreadcrumbProps["items"] = keys.map((key, idx) => ({
-    key,
-    title: getLabel(key),
-    href: getLink(idx),
-  }));
+  const isAlbumView = !!albumId;
+  const { data: albums, isLoading: isAlbumsLoading } = useGetAlbums({
+    enabled: !isAlbumView,
+  });
+  const { data: album } = useGetAlbumById(albumId, {
+    enabled: isAlbumView,
+    limit: 24,
+  });
 
   const getTitle = () => {
-    const title = "Galeria";
+    const title = "Galeria de álbuns";
 
-    if (albumId && albums) {
-      const album = albums.find((a) => a.id === albumId);
+    if (isAlbumView && album) {
+      return album?.name;
+    }
 
-      if (album) return album?.name;
+    if (!isAlbumView && albums) {
+      if (albumId) {
+        const albumFromList = albums.find((a) => a.id === albumId);
+        if (albumFromList) return albumFromList?.name;
+      }
       return title;
     }
 
@@ -85,83 +50,113 @@ export const Gallery = ({ albumId }: GalleryProps) => {
   };
 
   return (
-    <Layout style={{ padding: 20 }} className="h-full">
-      <Flex gap={16} vertical>
-        <Breadcrumb style={{ textTransform: "capitalize" }} items={items} />
-
-        <Flex justify="center">
-          <Title>{getTitle()}</Title>
-        </Flex>
-      </Flex>
-
-      <Content>
-        {!albums?.length && (
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <Flex gap={12} vertical className={styles.header}>
           <Flex justify="center">
-            <Spin spinning={isLoading}>
-              <Empty />
-            </Spin>
+            <Title level={1} className={styles.title}>
+              {getTitle()}
+            </Title>
           </Flex>
-        )}
+          {!albumId && (
+            <div className={styles.subtitleWrapper}>
+              <span className={styles.divider} />
+              <Text className={styles.subtitle}>
+                Explore nossos álbuns de fotos e momentos especiais
+              </Text>
+            </div>
+          )}
+        </Flex>
 
-        {!!albumId && (
-          <Image.PreviewGroup
-            preview={{
-              toolbarRender: (
-                _,
-                {
-                  image,
-                  transform: { scale },
-                  actions: { onActive, onZoomOut, onZoomIn, onReset },
-                }
-              ) => {
-                return (
-                  <Space size={12} className="toolbar-wrapper">
-                    <LeftOutlined
-                      onClick={() => onActive?.(-1)}
-                      title="Voltar"
-                    />
-                    <RightOutlined
-                      onClick={() => onActive?.(1)}
-                      title="Próxima"
-                    />
-                    <DownloadOutlined
-                      onClick={onDownload(image.url)}
-                      title="Fazer download da imagem"
-                    />
-                    <ZoomOutOutlined
-                      disabled={scale === 1}
-                      onClick={onZoomOut}
-                      title="Diminuir zoom"
-                    />
-                    <ZoomInOutlined
-                      disabled={scale === 50}
-                      onClick={onZoomIn}
-                      title="Aumentar zoom"
-                    />
-                    <UndoOutlined onClick={onReset} title="Resetar tudo" />
-                  </Space>
-                );
-              },
-            }}
-          >
-            <AlbumDetails albumId={albumId} />
-          </Image.PreviewGroup>
-        )}
+        <div className={styles.content}>
+          {isAlbumsLoading && (
+            <div className={styles.loadingGrid}>
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={`skeleton-${index}`} className={styles.skeletonCard}>
+                  <div className={styles.skeletonImage} />
+                  <div className={styles.skeletonFooter}>
+                    <div className={styles.skeletonLine} />
+                    <div className={styles.skeletonLineShort} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-        {!albumId && (
-          <Flex
-            gap={32}
-            justify="center"
-            wrap
-            className="h-full"
-            style={{ overflowY: "auto" }}
-          >
-            {albums?.map((album) => (
-              <AlbumContent {...album} key={album.id} basePath="/gallery" />
-            ))}
-          </Flex>
-        )}
-      </Content>
-    </Layout>
+          {!isAlbumsLoading && !albums?.length && !isAlbumView && (
+            <Flex justify="center" align="center" className={styles.centered}>
+              <Empty description="Nenhum álbum encontrado" />
+            </Flex>
+          )}
+
+          {!!albumId && (
+            <Image.PreviewGroup
+              preview={{
+                actionsRender: (
+                  _,
+                  {
+                    image,
+                    transform: { scale },
+                    actions: { onActive, onZoomOut, onZoomIn, onReset },
+                  }
+                ) => {
+                  return (
+                    <Space size={12} className={styles.toolbar}>
+                      <LeftOutlined
+                        onClick={() => onActive?.(-1)}
+                        title="Voltar"
+                        className={styles.toolbarIcon}
+                      />
+                      <RightOutlined
+                        onClick={() => onActive?.(1)}
+                        title="Próxima"
+                        className={styles.toolbarIcon}
+                      />
+                      <DownloadOutlined
+                        onClick={onDownload(image.url)}
+                        title="Fazer download da imagem"
+                        className={styles.toolbarIcon}
+                      />
+                      <ZoomOutOutlined
+                        disabled={scale === 1}
+                        onClick={onZoomOut}
+                        title="Diminuir zoom"
+                        className={styles.toolbarIcon}
+                      />
+                      <ZoomInOutlined
+                        disabled={scale === 50}
+                        onClick={onZoomIn}
+                        title="Aumentar zoom"
+                        className={styles.toolbarIcon}
+                      />
+                      <UndoOutlined
+                        onClick={onReset}
+                        title="Resetar tudo"
+                        className={styles.toolbarIcon}
+                      />
+                    </Space>
+                  );
+                },
+              }}
+            >
+              <AlbumDetails albumId={albumId} initialAlbum={album} />
+            </Image.PreviewGroup>
+          )}
+
+          {!albumId && albums && albums.length > 0 && (
+            <div className={styles.grid}>
+              {albums.map((album, index) => (
+                <AlbumContent
+                  {...album}
+                  key={album.id}
+                  basePath="/gallery"
+                  index={index}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };

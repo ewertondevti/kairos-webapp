@@ -3,8 +3,14 @@ import * as fs from "fs";
 import * as heicConvert from "heic-convert";
 
 export const corsHandler = cors({
-  origin: ["https://localhost:3000", "https://kairos-portugal.com"],
-  methods: ["GET", "POST", "DELETE", "OPTIONS"],
+  origin: [
+    "http://localhost:3000",
+    "https://localhost:3000",
+    "https://kairos-portugal.com",
+    /^https:\/\/.*\.kairos-portugal\.com$/,
+  ],
+  methods: ["GET", "POST", "DELETE", "OPTIONS", "PUT", "PATCH"],
+  credentials: true,
 });
 
 export const processHeicToJpeg = async (
@@ -15,8 +21,13 @@ export const processHeicToJpeg = async (
     const inputBuffer = fs.readFileSync(inputPath);
 
     // Converte o buffer HEIC para JPEG usando heic-convert
+    const arrayBuffer = inputBuffer.buffer.slice(
+      inputBuffer.byteOffset,
+      inputBuffer.byteOffset + inputBuffer.byteLength
+    );
+
     const outputBuffer = await heicConvert({
-      buffer: inputBuffer as Uint8Array, // Buffer de entrada
+      buffer: arrayBuffer, // Buffer de entrada
       format: "JPEG", // Formato de saída
       quality: 1, // Qualidade máxima (1 = melhor qualidade)
     });
@@ -31,3 +42,26 @@ export const processHeicToJpeg = async (
     throw new Error("Erro na conversão de HEIC para JPEG.");
   }
 };
+
+export const mapWithConcurrency = async <T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>
+): Promise<R[]> => {
+  const results: R[] = [];
+  let currentIndex = 0;
+
+  const workers = Array.from({length: Math.min(limit, items.length)}).map(
+    async () => {
+      while (currentIndex < items.length) {
+        const index = currentIndex++;
+        results[index] = await worker(items[index], index);
+      }
+    }
+  );
+
+  await Promise.all(workers);
+  return results;
+};
+
+export {requireAuth, requireRoles, AuthContext, UserRole} from "./auth";

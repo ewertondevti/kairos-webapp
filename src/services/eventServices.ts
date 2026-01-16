@@ -3,22 +3,27 @@ import {
   DeleteCommonPayload,
   ICommonDTO,
 } from "@/types/store";
-import api from "./httpClient";
+import axios from "axios";
+import { getAuthHeaders } from "./authHeaders";
 
 export const createEvents = async (payload: CreateCommonPayload) => {
-  const { data } = await api.post("/createEvents", payload);
-
-  return data;
+  const headers = await getAuthHeaders();
+  const response = await axios.post("/api/events", payload, { headers });
+  return response.data;
 };
 
-export const getEvents = async () => {
-  const { data } = await api.get<ICommonDTO[]>("/getEvents");
-
-  return data;
+export const getEvents = async (): Promise<ICommonDTO[]> => {
+  try {
+    const response = await axios.get("/api/events");
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error: unknown) {
+    console.error("Erro ao buscar eventos:", error);
+    return [];
+  }
 };
 
 export const deleteEvents = async (payload: DeleteCommonPayload) => {
-  const { data } = await api.post("/deleteEvents", payload);
-
-  return data;
+  const headers = await getAuthHeaders();
+  const response = await axios.delete("/api/events", { data: payload, headers });
+  return response.data;
 };

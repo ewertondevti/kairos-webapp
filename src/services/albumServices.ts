@@ -1,39 +1,98 @@
-import { DeleteImgFromAlbumPayload, IAlbum, IAlbumDTO } from "@/types/store";
-import api from "./httpClient";
+import {
+  DeleteImgFromAlbumPayload,
+  IAlbumDTO,
+  IAlbumWithCursor,
+  IAlbumPayload,
+  IAlbumUpdatePayload,
+} from "@/types/store";
+import axios from "axios";
+import { getAuthHeaders } from "./authHeaders";
 
-export const createAlbum = async (payload: IAlbum) => {
-  const { data } = await api.post("/createAlbum", payload);
-  return data;
+export const createAlbum = async (payload: IAlbumPayload) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await axios.post("/api/albums", payload, { headers });
+    return response.data;
+  } catch (error) {
+    throw new Error("Erro ao criar álbum");
+  }
 };
 
-export const updateAlbum = async (payload: IAlbumDTO) => {
-  const { data } = await api.post("/updateAlbum", payload);
-  return data;
+export const updateAlbum = async (payload: IAlbumUpdatePayload) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await axios.post("/api/albums", payload, { headers });
+    return response.data;
+  } catch (error) {
+    throw new Error("Erro ao atualizar álbum");
+  }
 };
 
-export const getAlbums = async () => {
-  const { data } = await api.get<IAlbumDTO[]>("/getAlbums");
-  return data;
+export const getAlbums = async (): Promise<IAlbumDTO[]> => {
+  try {
+    const response = await axios.get("/api/albums");
+    const data = response.data;
+
+    // Handle case where response.data might be a string
+    if (typeof data === "string") {
+      try {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        console.error("Erro ao fazer parse da resposta:", data);
+        return [];
+      }
+    }
+
+    return Array.isArray(data) ? data : [];
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    console.error("Erro ao buscar álbuns:", {
+      message: err?.message,
+    });
+    // Return empty array instead of throwing to prevent UI crashes
+    return [];
+  }
+};
+
+type AlbumByIdParams = {
+  limit?: number;
+  cursor?: string;
 };
 
 export const getAlbumById = async (
-  id: string
-): Promise<IAlbumDTO | undefined> => {
-  const { data } = await api.get<IAlbumDTO>("/getAlbumById", {
-    params: { id },
-  });
-
-  return data;
+  id: string,
+  params?: AlbumByIdParams
+): Promise<IAlbumWithCursor | undefined> => {
+  try {
+    const response = await axios.get(`/api/albums/${id}`, {
+      params: {
+        limit: params?.limit,
+        cursor: params?.cursor,
+      },
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error("Erro ao buscar álbum por ID:", error);
+    return undefined;
+  }
 };
 
 export const deleteAlbum = async (id: string) => {
-  const { data } = await api.delete("/deleteAlbum", { params: { id } });
-  return data;
+  const headers = await getAuthHeaders();
+  const response = await axios.delete("/api/albums", {
+    params: { id },
+    headers,
+  });
+  return response.data;
 };
 
 export const deleteImageFromAlbum = async (
   payload: DeleteImgFromAlbumPayload
 ) => {
-  const { data } = await api.post("/deleteImageFromAlbum", payload);
-  return data;
+  const headers = await getAuthHeaders();
+  const response = await axios.post("/api/albums/delete-image", payload, {
+    headers,
+  });
+  return response.data;
 };

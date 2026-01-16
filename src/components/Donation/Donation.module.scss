@@ -1,0 +1,52 @@
+.section {
+  padding: 96px 0;
+  background: #fafafa;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 56px;
+  text-align: center;
+}
+
+.content {
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+.skeletonFull {
+  width: 100%;
+}
+
+.quote {
+  width: 100%;
+}
+
+.buttonShadow {
+  box-shadow: 0 4px 12px rgba(26, 93, 46, 0.3);
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 32px;
+  }
+}

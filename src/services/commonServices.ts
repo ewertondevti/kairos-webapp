@@ -1,9 +1,9 @@
 import { DatabaseTableKeys } from "@/enums/app";
-import { convertFileToBase64 } from "@/helpers/app";
 import { UploadCommonResponse } from "@/types/event";
+import axios from "axios";
 import { UploadProps } from "antd";
 import { RcFile } from "antd/es/upload";
-import api from "./httpClient";
+import { getAuthHeaders } from "./authHeaders";
 
 export const onRemoveImage =
   (dbKey: DatabaseTableKeys): UploadProps["onRemove"] =>
@@ -14,52 +14,69 @@ export const onRemoveImage =
   };
 
 export const deleteUploadedImage = async (imagePath: string) => {
-  const { data } = await api.delete("/deleteUploadedImage", {
-    params: { imagePath },
-  });
+  try {
+    const headers = await getAuthHeaders();
+    const response = await axios.delete("/api/upload/delete", {
+      params: { imagePath },
+      headers,
+    });
 
-  return data;
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao deletar imagem:", error);
+    throw error;
+  }
+};
+
+export const uploadImageFile = async (
+  file: File,
+  options?: {
+    type?: "event" | "image";
+    onProgress?: (percent: number) => void;
+  }
+) => {
+  const headers = await getAuthHeaders();
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("fileName", file.name);
+  formData.append("mimeType", file.type);
+  formData.append("type", options?.type ?? "image");
+
+  const response = await axios.post<UploadCommonResponse>(
+    "/api/upload",
+    formData,
+    {
+      headers,
+      onUploadProgress: (event) => {
+        if (!options?.onProgress) return;
+        if (!event.total) return;
+        const percent = Math.round((event.loaded / event.total) * 100);
+        options.onProgress(percent);
+      },
+    }
+  );
+
+  return response.data;
 };
 
 export const onImageUpload =
   (dbKey: DatabaseTableKeys): UploadProps["customRequest"] =>
   async ({ file, onProgress, onSuccess, onError }) => {
-    const base64img = (await convertFileToBase64(file as RcFile)) as string;
-
-    const getUri = () => {
-      switch (dbKey) {
-        case DatabaseTableKeys.Events:
-          return "/uploadEvent";
-
-        case DatabaseTableKeys.Images:
-          return "/uploadImage";
-
-        default:
-          return "";
-      }
-    };
-
-    const payload = {
-      file: base64img,
-      fileName: (file as RcFile).name,
-      mimeType: (file as RcFile).type,
-    };
+    const type = dbKey === DatabaseTableKeys.Events ? "event" : "image";
 
     try {
-      const response = await api.post<UploadCommonResponse>(getUri(), payload, {
-        onUploadProgress: (progressEvent) => {
-          const progress = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total!
-          );
-          if (onProgress) onProgress({ percent: progress });
+      const data = await uploadImageFile(file as RcFile, {
+        type,
+        onProgress: (percent) => {
+          if (onProgress) onProgress({ percent });
         },
       });
 
-      if (response.status === 200 && onSuccess) {
-        onSuccess(response.data, file);
-      } else if (onError) onError(new Error("Erro ao fazer upload."));
-    } catch (error: any) {
+      if (onSuccess) {
+        onSuccess(data, file);
+      }
+    } catch (error: unknown) {
       console.error("Erro no upload:", error);
-      if (onError) onError(error);
+      if (onError) onError(error as Error);
     }
   };

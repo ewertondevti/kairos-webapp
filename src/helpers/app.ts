@@ -1,4 +1,3 @@
-import api from "@/services/httpClient";
 import { message } from "antd";
 import { RcFile } from "antd/es/upload";
 import { saveAs } from "file-saver";
@@ -40,14 +39,19 @@ export const convertFileToBase64 = (file: RcFile) => {
   });
 };
 
-export const onDownload = (url: string) => () => {
+export const onDownload = (url: string) => async () => {
   const lastString = url.split("/").filter(Boolean).pop();
   const name = lastString?.split("?").shift() ?? "IMG_KAIROS";
   const filename = decodeURIComponent(name);
 
   if (url) {
-    api
-      .get<Blob>(url, { responseType: "blob" })
-      .then(({ data }) => saveAs(data, filename));
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      saveAs(blob, filename);
+    } catch (error) {
+      console.error("Erro ao fazer download:", error);
+      message.error("Erro ao fazer download da imagem");
+    }
   }
 };

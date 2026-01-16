@@ -1,3 +1,5 @@
+"use client";
+
 import { onDownload } from "@/helpers/app";
 import { useGetEvents } from "@/react-query";
 import {
@@ -8,28 +10,73 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
 } from "@ant-design/icons";
-import { Col, Divider, Flex, Image, Row, Space } from "antd";
-import Title from "antd/es/typography/Title";
-import { Fragment } from "react/jsx-runtime";
+import { Col, Flex, Image, Row, Space, Typography } from "antd";
+import styles from "./Events.module.scss";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
+
+const { Title } = Typography;
 
 export const Events = () => {
   const { data: events } = useGetEvents();
+  const { ref, isVisible } = useScrollReveal();
 
   if (!events?.length) return null;
 
   return (
-    <Col span={24}>
-      <Divider>
-        <Title level={3} style={{ margin: 0, textTransform: "uppercase" }}>
-          Próximos Eventos
-        </Title>
-      </Divider>
+    <section
+      ref={ref}
+      className={`${styles.section} scroll-reveal ${
+        isVisible ? "scroll-reveal--visible" : ""
+      }`}
+    >
+      {/* Vibrant decorative background elements */}
+      <div className={styles.decorations}>
+        <div className={styles.bubbleTop} />
+        <div className={styles.bubbleBottom} />
+        <div className={styles.bubbleCenter} />
+      </div>
+      {/* Dynamic pattern overlay */}
+      <div className={styles.pattern} />
+      {/* Accent lines */}
+      <div className={`${styles.accentLine} ${styles.accentLineTop}`} />
+      <div className={`${styles.accentLine} ${styles.accentLineBottom}`} />
 
-      <Flex align="center" justify="center" className="my-[100px] md:my-[75px] sm:my-[50px]">
-        <Row gutter={[8, 8]} justify="center" className="w-full">
+      <div className={styles.container}>
+        <Flex vertical align="center" className={styles.heading}>
+          {/* Decorative badge */}
+          <div className={styles.badge}>
+            <Typography.Text
+              className={styles.badgeText}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
+            >
+              ✨ Eventos Especiais
+            </Typography.Text>
+          </div>
+
+          <Title
+            level={2}
+            className={styles.title}
+            style={{
+              letterSpacing: "-0.02em",
+              fontFamily: "var(--font-playfair), Georgia, serif",
+              fontWeight: 700,
+            }}
+          >
+            Próximos Eventos
+            {/* Decorative underline */}
+            <span className={styles.titleUnderline} />
+          </Title>
+          <Typography.Text
+            className={styles.subtitle}
+          >
+            Junte-se à nossa comunidade e participe dos nossos eventos
+          </Typography.Text>
+        </Flex>
+
+        <Row gutter={[24, 24]} justify="center">
           <Image.PreviewGroup
             preview={{
-              toolbarRender: (
+              actionsRender: (
                 _,
                 {
                   image,
@@ -38,7 +85,7 @@ export const Events = () => {
                 }
               ) => {
                 return (
-                  <Space size={12} className="toolbar-wrapper">
+                  <Space size={12} className={styles.toolbar}>
                     <LeftOutlined
                       onClick={() => onActive?.(-1)}
                       title="Voltar"
@@ -68,25 +115,47 @@ export const Events = () => {
             }}
           >
             {events?.map(({ id, url }, idx) => (
-              <Fragment key={id}>
-                <Col xs={0} lg={1}>
-                  <Flex justify="center" className="h-full">
-                    {idx !== 0 && (
-                      <Divider type="vertical" className="h-full" />
-                    )}
-                  </Flex>
-                </Col>
+              <Col key={id} xs={24} sm={12} md={8} lg={6}>
+                <div className={styles.eventCard}>
+                  {/* Shine effect on hover */}
+                  <div className={styles.eventShine} />
 
-                <Col>
-                  <Flex className="[&_.ant-image-img]:object-cover [&_.ant-image-img]:rounded-md [&_.ant-image-img]:w-[315px] [&_.ant-image-img]:h-[177px]">
-                    <Image src={url} />
-                  </Flex>
-                </Col>
-              </Fragment>
+                  {/* Top badge */}
+                  <div className={styles.eventBadge}>
+                    <Typography.Text className={styles.eventBadgeText}>
+                      Novo
+                    </Typography.Text>
+                  </div>
+
+                  {/* Image container with overlay */}
+                  <div className={styles.imageWrap}>
+                    <div className={styles.imageOverlay} />
+                    <Image
+                      src={url}
+                      alt={`Evento ${idx + 1}`}
+                      className={styles.eventImage}
+                      preview
+                    />
+
+                    {/* Bottom info overlay */}
+                    <div className={styles.infoOverlay}>
+                      <Flex vertical gap={4}>
+                        <Typography.Text className={styles.infoText}>
+                          Ver Detalhes
+                        </Typography.Text>
+                        <div className={styles.infoLine} />
+                      </Flex>
+                    </div>
+                  </div>
+
+                  {/* Decorative corner accent */}
+                  <div className={styles.cornerAccent} />
+                </div>
+              </Col>
             ))}
           </Image.PreviewGroup>
         </Row>
-      </Flex>
-    </Col>
+      </div>
+    </section>
   );
 };

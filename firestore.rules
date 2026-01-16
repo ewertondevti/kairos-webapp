@@ -2,9 +2,61 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isActive() {
+      return isSignedIn() && request.auth.token.active == true;
+    }
+
+    function isAdmin() {
+      return isActive() && request.auth.token.role == "admin";
+    }
+
+    function isSecretaria() {
+      return isActive() && request.auth.token.role == "secretaria";
+    }
+
+    function isMidia() {
+      return isActive() && request.auth.token.role == "midia";
+    }
+
+    function isAdminOrSecretaria() {
+      return isAdmin() || isSecretaria();
+    }
+
+    function isAdminOrMidia() {
+      return isAdmin() || isMidia();
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdminOrSecretaria();
+    }
+
+    match /accessRequests/{requestId} {
+      allow read, write: if isAdminOrSecretaria();
+    }
+
+    match /members/{memberId} {
+      allow read: if true;
+      allow write: if isAdminOrSecretaria();
+    }
+
+    match /albums/{albumId} {
+      allow read: if true;
+      allow write: if isAdminOrMidia();
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdminOrMidia();
+    }
+
     match /{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false;
     }
   }
 }

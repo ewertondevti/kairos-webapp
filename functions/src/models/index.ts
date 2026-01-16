@@ -1,4 +1,4 @@
-import { IImage } from "./album";
+import {IImage} from "./album";
 
 export interface CreateCommonPayload {
   images: Partial<IImage>[];
@@ -6,6 +6,7 @@ export interface CreateCommonPayload {
 
 export interface CreateAlbumPayload {
   name: string;
+  eventDate?: string;
   images: Partial<IImage>[];
 }
 
@@ -27,3 +28,5 @@ export interface UploadCommonRequest {
   fileName: string;
   mimeType: string;
 }
+
+export * from "./user";

@@ -54,7 +54,7 @@ export const LIST_ITEM_VALUES = {
   },
 };
 
-export const requiredRules: FormItemProps["rules"] = [
+export const requiredRules: NonNullable<FormItemProps["rules"]> = [
   { required: true, message: "Este campo é obrigatório." },
 ];
 

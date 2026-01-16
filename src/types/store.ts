@@ -9,16 +9,31 @@ export interface IImageDTO {
   name: string;
 }
 
-export interface IAlbum {
+export interface IAlbumDTO extends ICommon {
   name: string;
+  eventDate?: string;
   images: IImageDTO[];
 }
 
-export interface IAlbumDTO extends IAlbum, ICommon {}
+export interface IAlbumWithCursor extends IAlbumDTO {
+  nextCursor?: string;
+}
+
+export type AlbumImagePayload = {
+  name: string;
+};
+
+export interface IAlbumPayload {
+  name: string;
+  eventDate?: string;
+  images: AlbumImagePayload[];
+}
+
+export interface IAlbumUpdatePayload extends IAlbumPayload, ICommon {}
 export interface ICommonDTO extends IImageDTO, ICommon {}
 
 export type MemberPayload = {
-  [key in MembershipFields]?: IMemberPhoto | string | number | string[];
+  [key in MembershipFields]?: IMemberPhoto | string | number | string[] | boolean;
 };
 
 export interface IMemberPhoto {

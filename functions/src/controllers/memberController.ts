@@ -1,12 +1,12 @@
-import { onRequest } from "firebase-functions/v2/https";
+import {onRequest} from "firebase-functions/v2/https";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { DatabaseTableKeys } from "../enums/app";
-import { firestore, storage } from "../firebaseAdmin";
-import { generateUniqueFileName } from "../helpers/common";
-import { IMember, IMemberPayload } from "../models/member";
-import { corsHandler } from "../utils";
+import {DatabaseTableKeys} from "../enums/app";
+import {firestore, storage} from "../firebaseAdmin";
+import {generateUniqueFileName, normalizeText} from "../helpers/common";
+import {IMember, IMemberPayload} from "../models/member";
+import {corsHandler} from "../utils";
 
 // Common function configuration for member operations
 const MEMBER_CONFIG = {
@@ -46,6 +46,7 @@ export const createNewMember = onRequest(
           "maritalStatus",
           "gender",
           "fullname",
+          "email",
         ];
 
         const missingFields = requiredFields.filter(
@@ -57,12 +58,21 @@ export const createNewMember = onRequest(
           return;
         }
 
-        const member: IMember = { ...body, photo: undefined };
+        const normalizedFullname = normalizeText(body.fullname);
+        const normalizedEmail = normalizeText(body.email);
+
+        const member: IMember = {
+          ...body,
+          photo: undefined,
+          isActive: body.isActive ?? true,
+          normalizedFullname,
+          normalizedEmail,
+        };
         let tempFilePath: string | null = null;
 
         try {
           if (body.photo) {
-            const { file, filename, type } = body.photo;
+            const {file, filename, type} = body.photo;
 
             if (!file || !filename || !type) {
               response.status(400).send("Dados da foto incompletos!");
@@ -74,7 +84,8 @@ export const createNewMember = onRequest(
               DatabaseTableKeys.Members,
               filename
             );
-            const destination = `${DatabaseTableKeys.Members}/${uniqueFileName}`;
+            const destination =
+              `${DatabaseTableKeys.Members}/${uniqueFileName}`;
 
             // Decode base64 file
             const base64Data = file.split(";base64,").pop();
@@ -91,7 +102,7 @@ export const createNewMember = onRequest(
             // Upload to Firebase Storage
             await storage.bucket().upload(tempFilePath, {
               destination,
-              metadata: { contentType: type },
+              metadata: {contentType: type},
             });
 
             // Get signed URL (long expiration for member photos)

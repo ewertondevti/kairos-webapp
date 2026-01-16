@@ -1,9 +1,14 @@
+import * as crypto from "crypto";
 import * as path from "path";
-import { storage } from "../firebaseAdmin";
+import {storage} from "../firebaseAdmin";
 
 /**
- * Generates a unique filename by appending a number suffix if the file already exists
- * Example: "nome-teste.jpg" -> "nome-teste (1).jpg" -> "nome-teste (2).jpg"
+ * Generates a unique filename by appending a number suffix
+ * if the file already exists.
+ * Example: "nome-teste.jpg" -> "nome-teste (1).jpg"
+ * -> "nome-teste (2).jpg"
+ * @param {string} basePath Storage base path for the file.
+ * @param {string} fileName Original file name.
  */
 export const generateUniqueFileName = async (
   basePath: string,
@@ -13,11 +18,12 @@ export const generateUniqueFileName = async (
   const fileNameWithoutExt = path.parse(fileName).name;
   let uniqueFileName = fileName;
   let counter = 1;
+  let exists = true;
 
-  while (true) {
+  while (exists) {
     const destination = `${basePath}/${uniqueFileName}`;
     const fileRef = storage.bucket().file(destination);
-    const [exists] = await fileRef.exists();
+    [exists] = await fileRef.exists();
 
     if (!exists) {
       return uniqueFileName;
@@ -26,10 +32,26 @@ export const generateUniqueFileName = async (
     uniqueFileName = `${fileNameWithoutExt} (${counter})${fileExtension}`;
     counter++;
   }
+
+  return uniqueFileName;
+};
+
+export const buildStorageFileName = (
+  originalName: string,
+  overrideExtension?: string
+) => {
+  const safeName = path.basename(originalName);
+  const parsed = path.parse(safeName);
+  const extension =
+    overrideExtension?.startsWith(".") ? overrideExtension : parsed.ext;
+  const cleanBase = parsed.name.replace(/\s+/g, "-").toLowerCase();
+  const uniqueSuffix = crypto.randomUUID();
+  return `${cleanBase}-${uniqueSuffix}${extension || ""}`;
 };
 
 /**
- * Deletes multiple images from Firebase Storage
+ * Deletes multiple images from Firebase Storage.
+ * @param {string[]} urls Storage object paths to delete.
  */
 export const deleteImageStorage = async (urls: string[]): Promise<void> => {
   try {
@@ -49,4 +71,37 @@ export const deleteImageStorage = async (urls: string[]): Promise<void> => {
     console.error("Erro inesperado ao excluir imagens:", error);
     throw error;
   }
+};
+
+export const normalizeText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+export const generateSecurePassword = (length = 20) => {
+  const digits = "0123456789";
+  const lower = "abcdefghijklmnopqrstuvwxyz";
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const symbols = "!@#$%^&*()-_=+[]{}<>?";
+  const all = `${digits}${lower}${upper}${symbols}`;
+
+  const pick = (charset: string) =>
+    charset[crypto.randomInt(0, charset.length)];
+
+  const passwordChars = [
+    pick(digits),
+    pick(lower),
+    pick(upper),
+    pick(symbols),
+  ];
+
+  for (let i = passwordChars.length; i < length; i += 1) {
+    passwordChars.push(pick(all));
+  }
+
+  return passwordChars
+    .sort(() => crypto.randomInt(0, 2) - 0.5)
+    .join("");
 };

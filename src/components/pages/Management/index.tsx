@@ -2,7 +2,7 @@
 
 import { EditAlbumModal } from "@/components/EditAlbumModal";
 import { TopBar } from "@/components/TopBar";
-import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
+import { ManagementRoutesEnums } from "@/enums/routesEnums";
 import { onDownload } from "@/helpers/app";
 import { useGetAlbums } from "@/react-query";
 import { useAppState } from "@/store";
@@ -15,8 +15,6 @@ import {
   ZoomOutOutlined,
 } from "@ant-design/icons";
 import {
-  Breadcrumb,
-  BreadcrumbProps,
   Flex,
   Image,
   Layout,
@@ -38,13 +36,14 @@ type ManagementProps = {
 const Management = ({ children }: ManagementProps) => {
   const router = useRouter();
   const pathname = usePathname();
+  const currentPath = pathname ?? "";
 
   const { data: albums } = useGetAlbums();
 
   const { selectedImages, mode, updateMode, updateSelectedImages } =
     useAppState();
 
-  const defaultKey = pathname.split("/").filter(Boolean)[1];
+  const defaultKey = currentPath.split("/").filter(Boolean)[1];
 
   const onChange: TabsProps["onChange"] = (key) => {
     updateMode("default");
@@ -52,47 +51,14 @@ const Management = ({ children }: ManagementProps) => {
     router.push(`/management/${key}`);
   };
 
-  const keys = pathname.split("/").filter(Boolean);
-
-  const getLabel = (key: string) => {
-    const album = albums?.find((a) => a.id === key);
-
-    switch (key) {
-      case RoutesEnums.Management:
-        return "Gerenciamento";
-      case ManagementRoutesEnums.Albums:
-        return "Álbuns";
-      case ManagementRoutesEnums.Events:
-        return "Eventos";
-
-      default:
-        if (album) return album.name;
-        return "";
-    }
-  };
-
-  const getLink = (index: number) => {
-    const link = keys.reduce((acc, curr, currIndex) => {
-      if (currIndex <= index) return (acc += `/${curr}`);
-      return acc;
-    }, "");
-
-    return link;
-  };
-
-  const items: BreadcrumbProps["items"] = keys.map((key, idx) => ({
-    key,
-    title: getLabel(key),
-    href: getLink(idx),
-  }));
-
   return (
-    <Layout style={{ padding: isMobile ? 8 : 20 }} className="h-full">
+    <Layout className={`h-full ${isMobile ? 'p-2' : 'p-5'}`}>
       <Flex gap={16} vertical>
-        <Breadcrumb style={{ textTransform: "capitalize" }} items={items} />
 
         <Flex justify={mode === "select" ? "space-between" : "flex-start"}>
-          <Title style={{ margin: 0 }}>Gerenciamento</Title>
+          <Title className="m-0" style={{ letterSpacing: "-0.02em" }}>
+            Gerenciamento
+          </Title>
 
           {mode === "select" && (
             <small className="flex items-center justify-center">
@@ -150,7 +116,15 @@ const Management = ({ children }: ManagementProps) => {
                 {
                   key: ManagementRoutesEnums.Albums,
                   label: "Álbuns",
-                  children: <AlbumsTab albumId={pathname.includes('/albums/') ? pathname.split('/').pop() : undefined} />,
+                  children: (
+                    <AlbumsTab
+                      albumId={
+                        currentPath.includes("/albums/")
+                          ? currentPath.split("/").pop()
+                          : undefined
+                      }
+                    />
+                  ),
                 },
                 {
                   key: ManagementRoutesEnums.Events,

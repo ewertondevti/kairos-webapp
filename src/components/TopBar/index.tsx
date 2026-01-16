@@ -27,13 +27,13 @@ export const TopBar = () => {
   const [isEventOpen, setIsEventOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const params = useParams();
   const albumId = params?.id as string | undefined;
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const { user } = useAuth();
+  const { user, role, active } = useAuth();
   const { data: events } = useGetEvents();
   const { data: album } = useGetAlbumById(albumId);
 
@@ -48,7 +48,9 @@ export const TopBar = () => {
   const isAlbums = pathname.includes(ManagementRoutesEnums.Albums);
   const isEvents = pathname.includes(ManagementRoutesEnums.Events);
 
-  const showSelectBtn = !!user && mode === "default";
+  const canManageMedia =
+    !!user && !!active && (role === "admin" || role === "midia");
+  const showSelectBtn = canManageMedia && mode === "default";
 
   const showModal = () => setIsOpen(true);
   const hideModal = () => setIsOpen(false);
@@ -177,7 +179,7 @@ export const TopBar = () => {
       <Row gutter={[0, 16]}>
         <Col flex="auto">
           <Flex gap={8}>
-            {!!albumId && (
+            {!!albumId && canManageMedia && (
               <Button
                 type="primary"
                 icon={<FontAwesomeIcon icon={faImages} />}
@@ -187,7 +189,7 @@ export const TopBar = () => {
               </Button>
             )}
 
-            {isEvents && (
+            {isEvents && canManageMedia && (
               <Button
                 type="primary"
                 icon={<FontAwesomeIcon icon={faImages} />}
@@ -197,7 +199,7 @@ export const TopBar = () => {
               </Button>
             )}
 
-            {isAlbums && !albumId && (
+            {isAlbums && !albumId && canManageMedia && (
               <Button
                 type="primary"
                 icon={<FontAwesomeIcon icon={faUpload} />}
@@ -211,7 +213,7 @@ export const TopBar = () => {
 
         <Col>
           <Flex gap={8}>
-            {!!selectedImages.length && (
+            {!!selectedImages.length && canManageMedia && (
               <Popconfirm
                 title={getConfirmMessage()}
                 onConfirm={onDelete}

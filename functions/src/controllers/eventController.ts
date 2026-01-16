@@ -1,17 +1,16 @@
-import { onRequest } from "firebase-functions/v2/https";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
-import { DatabaseTableKeys } from "../enums/app";
-import { firestore, storage } from "../firebaseAdmin";
-import { deleteImageStorage, generateUniqueFileName } from "../helpers/common";
+import {onRequest} from "firebase-functions/v2/https";
+import {DatabaseTableKeys} from "../enums/app";
+import {firestore, storage} from "../firebaseAdmin";
+import {deleteImageStorage} from "../helpers/common";
+import {handleMultipartUpload} from "../helpers/upload";
+import {CreateCommonPayload, DeleteCommonPayload} from "../models";
+import {IEvent} from "../models/event";
 import {
-  CreateCommonPayload,
-  DeleteCommonPayload,
-  UploadCommonRequest,
-} from "../models";
-import { IEvent } from "../models/event";
-import { corsHandler, processHeicToJpeg } from "../utils";
+  corsHandler,
+  mapWithConcurrency,
+  requireAuth,
+  requireRoles,
+} from "../utils";
 
 // Common function configuration for image uploads
 const IMAGE_UPLOAD_CONFIG = {
@@ -20,8 +19,14 @@ const IMAGE_UPLOAD_CONFIG = {
   maxInstances: 20,
 };
 
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+const SIGNED_URL_EXPIRATION_MS = 24 * 60 * 60 * 1000;
+const SIGNED_URL_CONCURRENCY = 10;
+const CACHE_CONTROL = "public, max-age=31536000, immutable";
+
 /**
- * Uploads an event image to Firebase Storage with automatic duplicate name handling
+ * Uploads an event image to Firebase Storage
+ * with automatic duplicate name handling.
  */
 export const uploadEvent = onRequest(
   IMAGE_UPLOAD_CONFIG,
@@ -38,88 +43,29 @@ export const uploadEvent = onRequest(
         return;
       }
 
-      const { file, fileName, mimeType } = request.body as UploadCommonRequest;
-
-      if (!file || !fileName) {
-        response.status(400).send("Dados incompletos!");
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 
-      let tempFilePath: string | null = null;
-      let convertedFilePath: string | null = null;
-
       try {
-        // Generate unique filename if file already exists
-        const uniqueFileName = await generateUniqueFileName(
+        const result = await handleMultipartUpload(
+          request,
           DatabaseTableKeys.Events,
-          fileName
-        );
-        const destination = `${DatabaseTableKeys.Events}/${uniqueFileName}`;
-
-        // Decode base64 file
-        const base64Data = file.split(";base64,").pop();
-        if (!base64Data) {
-          response.status(400).send("Formato de arquivo inválido!");
-          return;
-        }
-
-        tempFilePath = path.join(os.tmpdir(), uniqueFileName);
-        const fileExtension = path.extname(fileName).toLowerCase();
-        const isHeic =
-          mimeType?.toLowerCase() === "image/heic" || fileExtension === ".heic";
-
-        // Save temporary file
-        fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
-
-        let finalPath = tempFilePath;
-        let contentType = `image/${fileExtension.slice(1)}`.toLowerCase();
-
-        // Convert HEIC to JPEG if needed
-        if (isHeic) {
-          convertedFilePath = path.join(
-            os.tmpdir(),
-            `${path.parse(uniqueFileName).name}.jpeg`
-          );
-          finalPath = await processHeicToJpeg(tempFilePath, convertedFilePath);
-          contentType = "image/jpeg";
-        }
-
-        // Upload to Firebase Storage
-        await storage.bucket().upload(finalPath, {
-          destination,
-          metadata: { contentType },
-        });
-
-        // Get signed URL
-        const fileRef = storage.bucket().file(destination);
-        const [url] = await fileRef.getSignedUrl({
-          action: "read",
-          expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-        });
-
-        console.log(`Evento enviado com sucesso: ${uniqueFileName} -> ${url}`);
-
-        response.status(200).send({ url, fileName: uniqueFileName });
-      } catch (error) {
-        console.error("Erro ao processar o arquivo:", error);
-        response.status(500).send("Erro ao processar o arquivo.");
-      } finally {
-        // Clean up temporary files
-        const filesToClean = [tempFilePath, convertedFilePath].filter(
-          Boolean
-        ) as string[];
-        filesToClean.forEach((filePath) => {
-          try {
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
-            }
-          } catch (cleanupError) {
-            console.error(
-              `Erro ao limpar arquivo temporário ${filePath}:`,
-              cleanupError
-            );
+          {
+            maxFileSizeBytes: MAX_FILE_SIZE_BYTES,
+            cacheControl: CACHE_CONTROL,
+            urlExpiresMs: SIGNED_URL_EXPIRATION_MS,
           }
-        });
+        );
+
+        console.log(`Evento enviado com sucesso: ${result.fileName}`);
+        response.status(200).send({url: result.url, fileName: result.fileName});
+      } catch (error: any) {
+        console.error("Erro ao processar o arquivo:", error);
+        const status = error?.statusCode || 500;
+        const message = error?.message || "Erro ao processar o arquivo.";
+        response.status(status).send(message);
       }
     });
   }
@@ -129,7 +75,7 @@ export const uploadEvent = onRequest(
  * Creates multiple events
  */
 export const createEvents = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -143,6 +89,11 @@ export const createEvents = onRequest(
         return;
       }
 
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+        return;
+      }
+
       try {
         const body = request.body as CreateCommonPayload;
 
@@ -151,7 +102,7 @@ export const createEvents = onRequest(
           return;
         }
 
-        const { images } = body;
+        const {images} = body;
 
         // Use batch write for better performance
         const batch = firestore.batch();
@@ -178,7 +129,7 @@ export const createEvents = onRequest(
  * Retrieves all events with their image URLs
  */
 export const getEvents = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -202,8 +153,10 @@ export const getEvents = onRequest(
           return;
         }
 
-        const events = await Promise.all(
-          querySnapshot.docs.map(async (doc) => {
+        const events = await mapWithConcurrency(
+          querySnapshot.docs,
+          SIGNED_URL_CONCURRENCY,
+          async (doc) => {
             const event = doc.data() as IEvent;
 
             try {
@@ -212,18 +165,18 @@ export const getEvents = onRequest(
 
               const [url] = await fileRef.getSignedUrl({
                 action: "read",
-                expires: Date.now() + 15 * 60 * 1000,
+                expires: Date.now() + SIGNED_URL_EXPIRATION_MS,
               });
 
-              return { ...event, id: doc.id, url };
+              return {...event, id: doc.id, url};
             } catch (error) {
               console.error(
                 `Erro ao obter URL do evento ${event.name}:`,
                 error
               );
-              return { ...event, id: doc.id, url: undefined };
+              return {...event, id: doc.id, url: undefined};
             }
-          })
+          }
         );
 
         response.status(200).json(events);
@@ -239,7 +192,7 @@ export const getEvents = onRequest(
  * Deletes multiple events and their associated images
  */
 export const deleteEvents = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -253,6 +206,11 @@ export const deleteEvents = onRequest(
         return;
       }
 
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+        return;
+      }
+
       try {
         const body = request.body as DeleteCommonPayload;
 
@@ -263,7 +221,7 @@ export const deleteEvents = onRequest(
           return;
         }
 
-        const { images } = body;
+        const {images} = body;
 
         // Delete Firestore documents using batch
         const batch = firestore.batch();

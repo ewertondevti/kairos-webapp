@@ -1,0 +1,75 @@
+.section {
+  padding: 96px 0;
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 56px;
+}
+
+.content {
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+.bibleBadge {
+  width: 140px;
+  height: 140px;
+  border-radius: 9999px;
+  border: 4px solid #1a5d2e;
+  background-image: url("/bible.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 8px 24px rgba(26, 93, 46, 0.25);
+  margin: 0 auto 40px;
+}
+
+.quote {
+  margin-bottom: 32px;
+}
+
+.reference {
+  margin-bottom: 40px;
+}
+
+.actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.copyButton {
+  border-color: #1a5d2e;
+  border-width: 2px;
+  color: #1a5d2e;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 32px;
+  }
+}

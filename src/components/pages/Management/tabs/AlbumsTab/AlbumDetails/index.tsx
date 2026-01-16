@@ -1,70 +1,128 @@
 "use client";
 
 import { ImagesSkeleton } from "@/components/ImagesSkeleton";
-import { LazyImage } from "@/components/LazyImage";
-import { useGetImageSize } from "@/hooks/app";
-import { useGetAlbumById } from "@/react-query";
-import { Col, Empty, Flex, Row } from "antd";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeGrid } from "react-window";
+import { OptimizedImage } from "@/components/OptimizedImage";
+import { useGetAlbumImagesInfinite } from "@/react-query";
+import { IAlbumWithCursor } from "@/types/store";
+import { Empty } from "antd";
+import Image from "antd/es/image";
+import { useEffect, useMemo, useRef, useState } from "react";
+import styles from "./AlbumDetails.module.scss";
 
 type AlbumDetailsProps = {
   albumId?: string;
+  initialAlbum?: IAlbumWithCursor;
 };
 
-export const AlbumDetails = ({ albumId }: AlbumDetailsProps) => {
+export const AlbumDetails = ({ albumId, initialAlbum }: AlbumDetailsProps) => {
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const {
-    height: ROW_HEIGHT,
-    width: COLUMN_WIDTH,
-    columns,
-  } = useGetImageSize();
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useGetAlbumImagesInfinite(albumId, {
+    limit: 24,
+    initialPage: initialAlbum,
+    enabled: !!albumId,
+  });
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const { data: album, isLoading } = useGetAlbumById(albumId);
+  const albumImages = useMemo(() => {
+    const pages = data?.pages ?? [];
+    return pages.flatMap((page) => page?.images ?? []);
+  }, [data?.pages]);
 
-  if (isLoading) return <ImagesSkeleton />;
+  const images = useMemo(() => {
+    if (!albumImages.length) return [];
+    return albumImages.map((img) => ({
+      src: img.url,
+      alt: img.name || "Imagem",
+    }));
+  }, [albumImages]);
 
-  if (!album?.images?.length) return <Empty style={{ marginTop: 50 }} />;
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    const node = loadMoreRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  if (isLoading && !albumImages.length) {
+    return <ImagesSkeleton />;
+  }
+
+  if (!albumImages.length) {
+    return <Empty className={styles.empty} description="Nenhuma imagem encontrada" />;
+  }
 
   return (
-    <Row className="w-full h-full">
-      <Col span={24}>
-        <Flex className="h-full [&>div>div]:flex [&>div>div]:justify-center [&>div>div>div]:absolute">
-          <AutoSizer>
-            {({ height, width }) => {
-              const columnCount = Math.min(columns, album.images.length);
-
-              return (
-                <FixedSizeGrid
-                  height={height}
-                  columnCount={columnCount}
-                  columnWidth={COLUMN_WIDTH}
-                  rowCount={Math.ceil(album.images!.length / columnCount)}
-                  rowHeight={ROW_HEIGHT}
-                  width={width}
-                >
-                  {({ columnIndex, rowIndex, style }) => {
-                    const index = rowIndex * columnCount + columnIndex;
-
-                    if (index >= album.images!.length) return null;
-
-                    const image = album.images![index];
-
-                    return (
-                      <Flex
-                        style={style}
-                        className="relative p-[3px] rounded-[10px] h-full w-full [&>div]:rounded-md [&>div]:w-full [&>div]:h-full"
-                        key={image.url}
-                      >
-                        <LazyImage {...image} isLoading={isLoading} />
-                      </Flex>
-                    );
-                  }}
-                </FixedSizeGrid>
-              );
+    <div className={styles.wrapper}>
+      <div className={styles.masonry}>
+        {albumImages.map((image, index) => (
+          <button
+            key={image.url}
+            type="button"
+            className={styles.item}
+            onClick={() => {
+              setPreviewIndex(index);
+              setIsPreviewOpen(true);
             }}
-          </AutoSizer>
-        </Flex>
-      </Col>
-    </Row>
+          >
+            <div className={styles.card}>
+              <div className={styles.shine} />
+              <OptimizedImage
+                src={image.url}
+                alt={image.name || `Imagem ${index + 1}`}
+                className={styles.image}
+              />
+              <div className={styles.overlay}>
+                <p className={styles.caption}>Visualizar</p>
+              </div>
+              <div className={styles.infoLine} />
+              <div className={styles.cornerAccent} />
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {hasNextPage && (
+        <div ref={loadMoreRef} className="h-8 w-full" aria-hidden />
+      )}
+
+      {/* Image Preview Modal */}
+      {images.length > 0 && (
+        <Image.PreviewGroup
+          preview={{
+            current: previewIndex,
+            open: isPreviewOpen,
+            onOpenChange: (open) => setIsPreviewOpen(open),
+            onChange: (current) => setPreviewIndex(current),
+          }}
+        >
+          {images.map((img, idx) => (
+            <Image
+              key={idx}
+              src={img.src}
+              alt={img.alt}
+              className={styles.previewHidden}
+            />
+          ))}
+        </Image.PreviewGroup>
+      )}
+    </div>
   );
 };

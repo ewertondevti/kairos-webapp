@@ -1,25 +1,65 @@
 import * as admin from "firebase-admin";
-import { onRequest } from "firebase-functions/v2/https";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
-import { DatabaseTableKeys } from "../enums/app";
-import { firestore, storage } from "../firebaseAdmin";
-import { deleteImageStorage, generateUniqueFileName } from "../helpers/common";
+import {onRequest} from "firebase-functions/v2/https";
+import {DatabaseTableKeys} from "../enums/app";
+import {firestore, storage} from "../firebaseAdmin";
+import {deleteImageStorage} from "../helpers/common";
+import {handleMultipartUpload} from "../helpers/upload";
 import {
   CreateAlbumPayload,
   DeleteImgFromAlbumPayload,
   UpdateAlbumPayload,
-  UploadCommonRequest,
 } from "../models";
-import { IAlbum } from "../models/album";
-import { corsHandler, processHeicToJpeg } from "../utils";
+import {IAlbum, IImage} from "../models/album";
+import {
+  corsHandler,
+  mapWithConcurrency,
+  requireAuth,
+  requireRoles,
+} from "../utils";
 
 // Common function configuration for image uploads
 const IMAGE_UPLOAD_CONFIG = {
   memory: "2GiB" as const,
   timeoutSeconds: 600,
   maxInstances: 20,
+};
+
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+const SIGNED_URL_EXPIRATION_MS = 24 * 60 * 60 * 1000;
+const SIGNED_URL_CONCURRENCY = 10;
+const CACHE_CONTROL = "public, max-age=31536000, immutable";
+const URL_CACHE_TTL_BUFFER_MS = 60 * 1000;
+
+type SignedUrlCacheEntry = {
+  url: string;
+  expiresAt: number;
+};
+
+const signedUrlCache = new Map<string, SignedUrlCacheEntry>();
+
+const normalizeImages = (images?: Partial<IImage>[]) =>
+  (images || [])
+    .filter((img) => img?.name?.trim())
+    .map((img) => ({name: img.name!.trim()}));
+
+const getSignedUrlCached = async (storagePath: string) => {
+  const cached = signedUrlCache.get(storagePath);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.url;
+  }
+
+  const fileRef = storage.bucket().file(storagePath);
+  const [url] = await fileRef.getSignedUrl({
+    action: "read",
+    expires: Date.now() + SIGNED_URL_EXPIRATION_MS,
+  });
+
+  signedUrlCache.set(storagePath, {
+    url,
+    expiresAt: Date.now() + SIGNED_URL_EXPIRATION_MS - URL_CACHE_TTL_BUFFER_MS,
+  });
+
+  return url;
 };
 
 /**
@@ -40,87 +80,29 @@ export const uploadImage = onRequest(
         return;
       }
 
-      const { file, fileName, mimeType } = request.body as UploadCommonRequest;
-
-      if (!file || !fileName) {
-        response.status(400).send("Dados incompletos!");
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 
-      let tempFilePath: string | null = null;
-      let convertedFilePath: string | null = null;
-
       try {
-        // Generate unique filename if file already exists
-        const uniqueFileName = await generateUniqueFileName(
+        const result = await handleMultipartUpload(
+          request,
           DatabaseTableKeys.Images,
-          fileName
-        );
-        const destination = `${DatabaseTableKeys.Images}/${uniqueFileName}`;
-
-        // Decode base64 file
-        const base64Data = file.split(";base64,").pop();
-        if (!base64Data) {
-          response.status(400).send("Formato de arquivo inválido!");
-          return;
-        }
-
-        tempFilePath = path.join(os.tmpdir(), uniqueFileName);
-        const fileExtension = path.extname(fileName).toLowerCase();
-        const isHeic = mimeType?.toLowerCase() === "image/heic";
-
-        // Save temporary file
-        fs.writeFileSync(tempFilePath, Buffer.from(base64Data, "base64"));
-
-        let finalPath = tempFilePath;
-        let contentType = `image/${fileExtension.slice(1)}`.toLowerCase();
-
-        // Convert HEIC to JPEG if needed
-        if (isHeic) {
-          convertedFilePath = path.join(
-            os.tmpdir(),
-            `${path.parse(uniqueFileName).name}.jpeg`
-          );
-          finalPath = await processHeicToJpeg(tempFilePath, convertedFilePath);
-          contentType = "image/jpeg";
-        }
-
-        // Upload to Firebase Storage
-        await storage.bucket().upload(finalPath, {
-          destination,
-          metadata: { contentType },
-        });
-
-        // Get signed URL
-        const fileRef = storage.bucket().file(destination);
-        const [url] = await fileRef.getSignedUrl({
-          action: "read",
-          expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-        });
-
-        console.log(`Imagem enviada com sucesso: ${uniqueFileName} -> ${url}`);
-
-        response.status(200).send({ url, fileName: uniqueFileName });
-      } catch (error) {
-        console.error("Erro ao processar o arquivo:", error);
-        response.status(500).send("Erro ao processar o arquivo.");
-      } finally {
-        // Clean up temporary files
-        const filesToClean = [tempFilePath, convertedFilePath].filter(
-          Boolean
-        ) as string[];
-        filesToClean.forEach((filePath) => {
-          try {
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
-            }
-          } catch (cleanupError) {
-            console.error(
-              `Erro ao limpar arquivo temporário ${filePath}:`,
-              cleanupError
-            );
+          {
+            maxFileSizeBytes: MAX_FILE_SIZE_BYTES,
+            cacheControl: CACHE_CONTROL,
+            urlExpiresMs: SIGNED_URL_EXPIRATION_MS,
           }
-        });
+        );
+
+        console.log(`Imagem enviada com sucesso: ${result.fileName}`);
+        response.status(200).send({url: result.url, fileName: result.fileName});
+      } catch (error: any) {
+        console.error("Erro ao processar o arquivo:", error);
+        const status = error?.statusCode || 500;
+        const message = error?.message || "Erro ao processar o arquivo.";
+        response.status(status).send(message);
       }
     });
   }
@@ -130,7 +112,7 @@ export const uploadImage = onRequest(
  * Creates a new album
  */
 export const createAlbum = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -144,6 +126,11 @@ export const createAlbum = onRequest(
         return;
       }
 
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+        return;
+      }
+
       try {
         const body = request.body as CreateAlbumPayload;
 
@@ -154,7 +141,8 @@ export const createAlbum = onRequest(
 
         const newAlbum: Omit<IAlbum, "id"> = {
           name: body.name.trim(),
-          images: body.images,
+          eventDate: body.eventDate?.trim(),
+          images: normalizeImages(body.images),
           creationDate: admin.firestore.FieldValue.serverTimestamp(),
         };
 
@@ -174,7 +162,7 @@ export const createAlbum = onRequest(
  * Updates an existing album
  */
 export const updateAlbum = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -185,6 +173,11 @@ export const updateAlbum = onRequest(
       if (request.method !== "POST") {
         response.set("Allow", "POST");
         response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 
@@ -212,11 +205,15 @@ export const updateAlbum = onRequest(
 
             const updatedAlbum: Partial<IAlbum> = {
               name: body.name.trim(),
+              eventDate: body.eventDate?.trim(),
               updatedDate: admin.firestore.FieldValue.serverTimestamp(),
             };
 
             if (body.images?.length) {
-              updatedAlbum.images = [...album.images, ...body.images];
+              updatedAlbum.images = [
+                ...(album.images || []),
+                ...normalizeImages(body.images),
+              ];
             }
 
             transaction.update(albumRef, updatedAlbum);
@@ -274,38 +271,34 @@ export const getAlbums = onRequest(
           querySnapshot.docs.map(
             async (doc: admin.firestore.QueryDocumentSnapshot) => {
               const album = doc.data() as IAlbum;
-
-              // Get preview images (first 3)
-              const previewImages = album.images
+              const previewImages = (album.images || [])
                 .filter((img) => img.name)
-                .slice(0, 3);
-              const images = await Promise.all(
-                previewImages.map(async (img) => {
+                .slice(0, 1);
+
+              const images = await mapWithConcurrency(
+                previewImages,
+                SIGNED_URL_CONCURRENCY,
+                async (img) => {
                   if (!img.name) {
-                    return { ...img, url: undefined };
+                    return {...img, url: undefined};
                   }
 
                   try {
-                    const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-                    const fileRef = storage.bucket().file(destination);
-
-                    const [url] = await fileRef.getSignedUrl({
-                      action: "read",
-                      expires: Date.now() + 15 * 60 * 1000,
-                    });
-
-                    return { ...img, url };
+                    const destination =
+                      `${DatabaseTableKeys.Images}/${img.name}`;
+                    const url = await getSignedUrlCached(destination);
+                    return {...img, url};
                   } catch (error) {
                     console.error(
                       `Erro ao obter URL da imagem ${img.name}:`,
                       error
                     );
-                    return { ...img, url: undefined };
+                    return {...img, url: undefined};
                   }
-                })
+                }
               );
 
-              return { ...album, id: doc.id, images };
+              return {...album, id: doc.id, images};
             }
           )
         );
@@ -367,37 +360,57 @@ export const getAlbumById = onRequest(
         }
 
         const album = docSnap.data() as IAlbum;
+        const albumImages = (album.images || []).filter((img) => img.name);
+        const limitParam = request.query.limit as string | undefined;
+        const cursorParam = request.query.cursor as string | undefined;
+        const limit = limitParam ? Number(limitParam) : undefined;
+        const safeLimit =
+          typeof limit === "number" && Number.isFinite(limit) && limit > 0 ?
+            Math.min(limit, 200) :
+            undefined;
 
-        // Get all image URLs
-        const images = await Promise.all(
-          album.images
-            .filter((img) => img.name)
-            .map(async (img) => {
-              if (!img.name) {
-                return { ...img, url: undefined };
-              }
+        const startIndex = cursorParam ?
+          Math.max(
+            albumImages.findIndex((img) => img.name === cursorParam) + 1,
+            0
+          ) :
+          0;
+        const pageImages =
+          safeLimit === undefined ?
+            albumImages :
+            albumImages.slice(startIndex, startIndex + safeLimit);
+        const hasNextPage =
+          safeLimit !== undefined &&
+          startIndex + safeLimit < albumImages.length;
+        const nextCursor =
+          hasNextPage && pageImages.length ?
+            pageImages[pageImages.length - 1].name :
+            undefined;
 
-              try {
-                const destination = `${DatabaseTableKeys.Images}/${img.name}`;
-                const fileRef = storage.bucket().file(destination);
+        // Get image URLs
+        const images = await mapWithConcurrency(
+          pageImages,
+          SIGNED_URL_CONCURRENCY,
+          async (img) => {
+            if (!img.name) {
+              return {...img, url: undefined};
+            }
 
-                const [url] = await fileRef.getSignedUrl({
-                  action: "read",
-                  expires: Date.now() + 15 * 60 * 1000,
-                });
+            try {
+              const destination = `${DatabaseTableKeys.Images}/${img.name}`;
+              const url = await getSignedUrlCached(destination);
 
-                return { ...img, url };
-              } catch (error) {
-                console.error(
-                  `Erro ao obter URL da imagem ${img.name}:`,
-                  error
-                );
-                return { ...img, url: undefined };
-              }
-            })
+              return {...img, url};
+            } catch (error) {
+              console.error(`Erro ao obter URL da imagem ${img.name}:`, error);
+              return {...img, url: undefined};
+            }
+          }
         );
 
-        response.status(200).json({ id: docSnap.id, ...album, images });
+        response
+          .status(200)
+          .json({id: docSnap.id, ...album, images, nextCursor});
       } catch (error) {
         console.error("Erro ao buscar álbum:", error);
         response.status(500).send("Erro ao buscar álbum.");
@@ -410,7 +423,7 @@ export const getAlbumById = onRequest(
  * Deletes images from an album
  */
 export const deleteImageFromAlbum = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -424,6 +437,11 @@ export const deleteImageFromAlbum = onRequest(
         return;
       }
 
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
+        return;
+      }
+
       try {
         const body = request.body as DeleteImgFromAlbumPayload;
 
@@ -434,7 +452,7 @@ export const deleteImageFromAlbum = onRequest(
           return;
         }
 
-        const { albumId, images } = body;
+        const {albumId, images} = body;
         const imageNamesToDelete = new Set(images.map((img) => img.name));
 
         const albumRef = firestore
@@ -456,7 +474,7 @@ export const deleteImageFromAlbum = onRequest(
         );
 
         // Update album with remaining images
-        await albumRef.update({ images: remainingImages });
+        await albumRef.update({images: remainingImages});
 
         // Delete images from storage
         const paths = images
@@ -480,7 +498,7 @@ export const deleteImageFromAlbum = onRequest(
  * Deletes an album and all its associated images
  */
 export const deleteAlbum = onRequest(
-  { maxInstances: 10 },
+  {maxInstances: 10},
   async (request, response) => {
     corsHandler(request, response, async () => {
       if (request.method === "OPTIONS") {
@@ -491,6 +509,11 @@ export const deleteAlbum = onRequest(
       if (request.method !== "DELETE") {
         response.set("Allow", "DELETE");
         response.status(405).send("Método não permitido. Use DELETE.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, ["admin", "midia"], response)) {
         return;
       }
 

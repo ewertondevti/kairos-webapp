@@ -2,89 +2,152 @@
 
 import { RoutesEnums } from "@/enums/routesEnums";
 import { useAuth } from "@/store";
-import { faBars, faLock, faLockOpen } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Flex, Popover, PopoverProps } from "antd";
-import { Header } from "antd/es/layout/layout";
+import { MenuOutlined } from "@ant-design/icons";
+import { Button, Drawer, Flex, Layout, Menu, Typography } from "antd";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Colors } from "../ThemeProvider/colors.config";
-import { LoginContent } from "./LoginContent";
 import { MenuContent } from "./MenuContent";
+import styles from "./CustomHeader.module.scss";
+
+const { Header } = Layout;
+const { Text } = Typography;
 
 export const CustomHeader = () => {
-  const [menuIsOpen, setMenuIsOpen] = useState(false);
-  const [loginIsOpen, setLoginIsOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const router = useRouter();
+  const pathname = usePathname();
 
   const { user } = useAuth();
-
-  const onLoginOpenChange: PopoverProps["onOpenChange"] = (bool) =>
-    setLoginIsOpen(bool);
-
-  const onMenuOpenChange: PopoverProps["onOpenChange"] = (bool) =>
-    setMenuIsOpen(bool);
-
-  const onCloseLogin = () => setLoginIsOpen(false);
-  const onCloseMenu = () => setMenuIsOpen(false);
 
   const onRedirect = () => router.push(RoutesEnums.Home);
 
   const isAuthenticated = useMemo(() => !!user, [user]);
 
+  const navItems = [
+    { key: RoutesEnums.Home, label: "Início" },
+    { key: `/${RoutesEnums.Gallery}`, label: "Galeria" },
+    { key: `/${RoutesEnums.MembershipForm}`, label: "Ficha de Membro" },
+    ...(isAuthenticated
+      ? [
+          { key: `/${RoutesEnums.Management}`, label: "Gerenciamento" },
+          { key: `/${RoutesEnums.Profile}`, label: "Perfil" },
+        ]
+      : []),
+    ...(!isAuthenticated
+      ? [
+          {
+            key: "/login",
+            label: (
+              <span className={styles.loginPill}>
+                Entrar
+              </span>
+            ),
+          },
+        ]
+      : []),
+  ];
+
+  const selectedKeys = useMemo(() => {
+    const currentPath =
+      pathname === RoutesEnums.Home ? RoutesEnums.Home : pathname;
+    return currentPath ? [currentPath] : [];
+  }, [pathname]);
+
+  const handleMenuClick = ({ key }: { key: string }) => {
+    router.push(key);
+  };
+
   return (
-    <Header className="border-b border-white/12">
-      <Flex align="center" justify="space-between" className="h-full">
-        <div onClick={onRedirect} className="cursor-pointer">
-          <Image
-            src="/kairos-logo.png"
-            height={50}
-            width={50}
-            alt="Kairós Logo"
-            priority
-          />
-        </div>
-
-        <Flex gap={16} align="center">
-          <Popover
-            trigger="click"
-            content={<LoginContent onClose={onCloseLogin} />}
-            onOpenChange={onLoginOpenChange}
-            open={loginIsOpen}
-            destroyOnHidden
+    <Header className={styles.header}>
+      {/* Elegant green gradient overlay */}
+      <div className={styles.overlay} />
+      {/* Green accent bar at bottom */}
+      <div className={styles.accentBar} />
+      <div className={styles.inner}>
+        <Flex align="center" className={styles.headerFlex}>
+          {/* Logo */}
+          <Flex
+            align="center"
+            gap={12}
+            onClick={onRedirect}
+            className={`${styles.logoContainer} logo-container`}
           >
-            <Button
-              type="primary"
-              size="small"
-              icon={
-                <FontAwesomeIcon icon={isAuthenticated ? faLockOpen : faLock} />
-              }
-              className="text-xs leading-normal"
-              disabled={isAuthenticated}
+            <div className={styles.logoCircle}>
+              {/* Outer black ring with green accent */}
+              <div className={styles.outerRing} />
+              {/* Green gradient ring */}
+              <div className={`${styles.greenRing} kairos-logo-ring`} />
+              {/* Inner dark circle with logo */}
+              <div className={styles.innerRing}>
+                <Image
+                  src="/kairos-logo.png"
+                  height={32}
+                  width={32}
+                  alt="Kairós Logo"
+                  priority
+                  className={styles.logoImage}
+                />
+              </div>
+            </div>
+            <Flex
+              vertical
+              gap={0}
+              align="center"
+              className={styles.logoTextWrap}
             >
-              {isAuthenticated ? "Logado" : "Login"}
-            </Button>
-          </Popover>
+              <Text
+                strong
+                className={`${styles.logoTitle} kairos-logo-title`}
+              >
+                KAIRÓS
+                {/* Decorative underline */}
+                <span
+                  className={`${styles.logoUnderline} kairos-logo-underline`}
+                />
+              </Text>
+              <Text
+                className={`${styles.logoSubtitle} kairos-logo-subtitle`}
+              >
+                PORTUGAL
+              </Text>
+            </Flex>
+          </Flex>
 
-          <Popover
-            trigger="click"
-            content={<MenuContent onClose={onCloseMenu} />}
-            title="Menu"
-            overlayStyle={{ maxWidth: 250 }}
-            open={menuIsOpen}
-            onOpenChange={onMenuOpenChange}
-          >
-            <Button
-              type="text"
-              icon={
-                <FontAwesomeIcon icon={faBars} color={Colors.ColorPrimary} />
-              }
+          {/* Desktop Navigation */}
+          <div className={styles.navDesktop}>
+            <Menu
+              mode="horizontal"
+              selectedKeys={selectedKeys}
+              onClick={handleMenuClick}
+              items={navItems}
+              className={styles.menu}
+              theme="dark"
             />
-          </Popover>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <Button
+            type="text"
+            icon={<MenuOutlined />}
+            className={styles.mobileButton}
+            onClick={() => setDrawerOpen(true)}
+          />
+
+          {/* Mobile Drawer */}
+          <Drawer
+            title="Menu"
+            placement="right"
+            onClose={() => setDrawerOpen(false)}
+            open={drawerOpen}
+            size="default"
+            style={{ width: 280 }}
+          >
+            <MenuContent onClose={() => setDrawerOpen(false)} />
+          </Drawer>
         </Flex>
-      </Flex>
+      </div>
     </Header>
   );
 };

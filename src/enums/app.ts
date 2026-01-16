@@ -7,4 +7,6 @@ export enum DatabaseTableKeys {
   Albums = "albums",
   Events = "events",
   Members = "members",
+  Users = "users",
+  AccessRequests = "accessRequests",
 }

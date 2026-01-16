@@ -9,12 +9,32 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Nunito"', "sans-serif"],
+        sans: ['var(--font-poppins)', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+        serif: ['var(--font-playfair)', 'Georgia', 'serif'],
+        poppins: ['var(--font-poppins)', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+        playfair: ['var(--font-playfair)', 'Georgia', 'serif'],
       },
       colors: {
-        primary: "#00ff00",
-        "primary-text": "#ffffff",
-        content: "#1b1c1d",
+        primary: {
+          DEFAULT: "#1a5d2e",
+          light: "#2d7a47",
+          lighter: "#4a9d63",
+          dark: "#0f3a1c",
+        },
+        black: {
+          DEFAULT: "#0a0a0a",
+          pure: "#000000",
+        },
+        white: {
+          DEFAULT: "#ffffff",
+          soft: "#fafafa",
+        },
+        text: {
+          DEFAULT: "#0a0a0a",
+          secondary: "#4a4a4a",
+          tertiary: "#8a8a8a",
+          onDark: "#ffffff",
+        },
       },
     },
   },

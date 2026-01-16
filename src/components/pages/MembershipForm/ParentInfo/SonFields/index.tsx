@@ -1,6 +1,7 @@
 import { MembershipFields } from "@/enums/membership";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Col, Flex, Form, Input, Row, Typography } from "antd";
+import styles from "./SonFields.module.scss";
 
 const { Text } = Typography;
 
@@ -56,6 +57,7 @@ export const SonFields = () => {
               onClick={() => add()}
               icon={<PlusOutlined />}
               block
+              className={styles.addChildButton}
             >
               Adicionar filho
             </Button>

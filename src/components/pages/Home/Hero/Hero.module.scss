@@ -1,0 +1,40 @@
+.section {
+  background: #1a5d2e;
+  padding: 96px 0;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.content {
+  text-align: center;
+}
+
+.title {
+  color: #ffffff;
+  margin-bottom: 28px;
+}
+
+.paragraph {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 48px;
+  max-width: 800px;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 32px;
+  }
+}
