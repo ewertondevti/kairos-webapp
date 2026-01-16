@@ -41,7 +41,18 @@ jobs:
       - name: Build the project
         run: pnpm run build
 
+      - name: Configure Firebase service account
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}' > "$HOME/firebase-service-account.json"
+
+      - name: Enable webframeworks experiment
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-service-account.json
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
+        run: pnpm dlx firebase-tools experiments:enable webframeworks --project ${{ secrets.FIREBASE_PROJECT_ID }}
+
       - name: Deploy to Firebase
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-service-account.json
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
         run: pnpm dlx firebase-tools deploy --project ${{ secrets.FIREBASE_PROJECT_ID }}
