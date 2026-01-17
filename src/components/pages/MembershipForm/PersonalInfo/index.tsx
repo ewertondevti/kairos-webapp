@@ -34,6 +34,7 @@ import Title from "antd/es/typography/Title";
 import { RcFile, UploadProps } from "antd/es/upload";
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
+import styles from "./PersonalInfo.module.scss";
 
 const toStringValue = (value: unknown) => {
   if (value === undefined || value === null) {
@@ -515,9 +516,10 @@ export const PersonalInfo = () => {
   );
 
   return (
-    <Row gutter={16}>
+    <div className={styles.section}>
+      <Row gutter={16}>
       <Col span={24}>
-        <Title level={3} className="text-uppercase">
+        <Title level={3} className={`${styles.sectionTitle} text-uppercase`}>
           Informações Pessoais
         </Title>
       </Col>
@@ -772,6 +774,7 @@ export const PersonalInfo = () => {
           )}
         </Form.Item>
       </Col>
-    </Row>
+      </Row>
+    </div>
   );
 };

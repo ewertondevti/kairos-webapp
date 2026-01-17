@@ -2,12 +2,28 @@
 
 import { UserRole } from "@/features/auth/auth.enums";
 import { RoutesEnums } from "@/features/navigation/routes.enums";
+import { firebaseAuth } from "@/firebase";
 import { useAuth } from "@/store";
-import { MenuOutlined } from "@ant-design/icons";
-import { Button, Drawer, Flex, Layout, Menu, Typography } from "antd";
+import {
+  DownOutlined,
+  LogoutOutlined,
+  MenuOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import {
+  Avatar,
+  Button,
+  Drawer,
+  Dropdown,
+  Flex,
+  Layout,
+  Menu,
+  Typography,
+} from "antd";
+import { signOut } from "firebase/auth";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { KeyboardEvent, useMemo, useState } from "react";
 import styles from "./CustomHeader.module.scss";
 import { MenuContent } from "./MenuContent";
 
@@ -20,16 +36,37 @@ export const CustomHeader = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { user, role } = useAuth();
+  const { user, role, profile } = useAuth();
 
   const onRedirect = () => router.push(RoutesEnums.Home);
 
   const isAuthenticated = useMemo(() => !!user, [user]);
 
+  const displayName = useMemo(() => {
+    return profile?.fullname || user?.displayName || user?.email || "Conta";
+  }, [profile?.fullname, user?.displayName, user?.email]);
+
+  const initials = useMemo(() => {
+    const source = displayName.trim();
+    if (!source) {
+      return "U";
+    }
+
+    if (source.includes("@")) {
+      return source.slice(0, 1).toUpperCase();
+    }
+
+    const parts = source.split(/\s+/);
+    const first = parts[0]?.[0] ?? "";
+    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+    return `${first}${last}`.toUpperCase() || "U";
+  }, [displayName]);
+
   const canAccessSecretariaPortal =
     role === UserRole.Admin || role === UserRole.Secretaria;
   const canAccessAdminPortal = role === UserRole.Admin;
-  const canAccessMediaPortal = role === UserRole.Admin || role === UserRole.Midia;
+  const canAccessMediaPortal =
+    role === UserRole.Admin || role === UserRole.Midia;
 
   const navItems = [
     { key: RoutesEnums.Home, label: "Início" },
@@ -46,7 +83,6 @@ export const CustomHeader = () => {
           ...(canAccessAdminPortal
             ? [{ key: "/admin", label: "Portal Admin" }]
             : []),
-          { key: `/${RoutesEnums.Profile}`, label: "Perfil" },
         ]
       : []),
     ...(!isAuthenticated
@@ -69,6 +105,46 @@ export const CustomHeader = () => {
     router.push(key);
   };
 
+  const handleLogoKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onRedirect();
+    }
+  };
+
+  const onLogout = async () => {
+    await signOut(firebaseAuth);
+    router.push(RoutesEnums.Home);
+  };
+
+  const userMenuItems = [
+    {
+      key: "profile",
+      icon: <UserOutlined />,
+      label: "Meu perfil",
+    },
+    {
+      type: "divider" as const,
+    },
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: "Sair",
+      danger: true,
+    },
+  ];
+
+  const handleUserMenuClick = ({ key }: { key: string }) => {
+    if (key === "profile") {
+      router.push(`/${RoutesEnums.Profile}`);
+      return;
+    }
+
+    if (key === "logout") {
+      void onLogout();
+    }
+  };
+
   return (
     <Header className={styles.header}>
       {/* Elegant green gradient overlay */}
@@ -82,6 +158,10 @@ export const CustomHeader = () => {
             align="center"
             gap={12}
             onClick={onRedirect}
+            onKeyDown={handleLogoKeyDown}
+            role="button"
+            tabIndex={0}
+            aria-label="Voltar para a página inicial"
             className={`${styles.logoContainer} logo-container`}
           >
             <div className={styles.logoCircle}>
@@ -128,9 +208,34 @@ export const CustomHeader = () => {
               onClick={handleMenuClick}
               items={navItems}
               className={styles.menu}
-              theme="dark"
             />
           </div>
+
+          {isAuthenticated && (
+            <div className={styles.userActions}>
+              <Dropdown
+                trigger={["click"]}
+                menu={{
+                  items: userMenuItems,
+                  onClick: handleUserMenuClick,
+                  className: styles.userMenu,
+                }}
+                placement="bottomRight"
+              >
+                <Button
+                  type="text"
+                  className={styles.userButton}
+                  aria-label="Abrir menu do usuário"
+                >
+                  <Avatar size={32} className={styles.userAvatar}>
+                    {initials}
+                  </Avatar>
+                  <span className={styles.userName}>{displayName}</span>
+                  <DownOutlined className={styles.userChevron} />
+                </Button>
+              </Dropdown>
+            </div>
+          )}
 
           {/* Mobile Menu Button */}
           <Button
@@ -138,6 +243,7 @@ export const CustomHeader = () => {
             icon={<MenuOutlined />}
             className={styles.mobileButton}
             onClick={() => setDrawerOpen(true)}
+            aria-label="Abrir menu"
           />
 
           {/* Mobile Drawer */}

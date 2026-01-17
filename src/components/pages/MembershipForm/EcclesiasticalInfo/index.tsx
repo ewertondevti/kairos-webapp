@@ -3,6 +3,7 @@ import { MembershipFields } from "@/features/membership/membership.enums";
 import { dateInputFormat, disabledDate } from "@/utils/app";
 import { Col, DatePicker, Divider, Form, Input, Row, Select } from "antd";
 import Title from "antd/es/typography/Title";
+import styles from "./EcclesiasticalInfo.module.scss";
 
 type EcclesiasticalInfoProps = {
   showChurchRole?: boolean;
@@ -15,9 +16,9 @@ export const EcclesiasticalInfo = ({
 }: EcclesiasticalInfoProps) => {
   const roleOptions = churchRoleOptions ?? defaultChurchRoleOptions;
   return (
-    <>
+    <div className={styles.section}>
       <Divider orientation="vertical" />
-      <Title level={3} className="text-uppercase">
+      <Title level={3} className={`${styles.sectionTitle} text-uppercase`}>
         Informações Eclasiásticas
       </Title>
 
@@ -102,6 +103,6 @@ export const EcclesiasticalInfo = ({
           </Form.Item>
         </Col>
       </Row>
-    </>
+    </div>
   );
 };
