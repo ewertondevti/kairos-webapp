@@ -33,6 +33,7 @@ export const MemberFormDrawer = ({
       open={open}
       onClose={onClose}
       size={size}
+      className="member-form-drawer"
       extra={
         <Space className="drawer-actions" wrap>
           <Button onClick={onClose}>Cancelar</Button>

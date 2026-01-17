@@ -683,6 +683,26 @@ h5 {
     padding: 16px;
   }
 
+  .ant-drawer.member-form-drawer .ant-typography,
+  .ant-drawer.member-form-drawer .ant-typography-title,
+  .ant-drawer.member-form-drawer h1.ant-typography,
+  .ant-drawer.member-form-drawer h2.ant-typography,
+  .ant-drawer.member-form-drawer h3.ant-typography,
+  .ant-drawer.member-form-drawer h4.ant-typography,
+  .ant-drawer.member-form-drawer h5.ant-typography,
+  .ant-drawer.member-form-drawer .ant-typography * {
+    color: #1a5d2e;
+  }
+
+  .ant-drawer.member-form-drawer .ant-form-item-label > label {
+    color: #1a5d2e;
+    font-weight: 600;
+  }
+
+  .ant-drawer.member-form-drawer .ant-form-item-label > label::after {
+    color: #1a5d2e;
+  }
+
   .ant-table-wrapper .ant-table {
     font-size: 12px;
   }

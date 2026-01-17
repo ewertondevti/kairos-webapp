@@ -5,6 +5,7 @@ import {
 import { dateInputFormat, disabledDate } from "@/utils/app";
 import { Col, DatePicker, Divider, Form, Input, Row } from "antd";
 import Title from "antd/es/typography/Title";
+import styles from "./ParentInfo.module.scss";
 import { SonFields } from "./SonFields";
 
 export const ParentInfo = () => {
@@ -24,9 +25,9 @@ export const ParentInfo = () => {
   };
 
   return (
-    <>
+    <div className={styles.section}>
       <Divider orientation="vertical" />
-      <Title level={3} className="text-uppercase">
+      <Title level={3} className={`${styles.sectionTitle} text-uppercase`}>
         Informações Familiares
       </Title>
 
@@ -48,7 +49,7 @@ export const ParentInfo = () => {
 
       <Row gutter={10}>
         {isShowFields(MembershipFields.SpouseName) && (
-          <Col xs={24} sm={16} md={18}>
+          <Col span={24}>
             <Form.Item
               name={MembershipFields.SpouseName}
               label="Nome do cônjuge"
@@ -59,7 +60,7 @@ export const ParentInfo = () => {
         )}
 
         {isShowFields(MembershipFields.WeddingDate) && (
-          <Col xs={24} sm={8} md={6}>
+          <Col xs={24} md={12}>
             <Form.Item
               name={MembershipFields.WeddingDate}
               label="Data de casamento"
@@ -77,6 +78,6 @@ export const ParentInfo = () => {
           <SonFields />
         </Col>
       </Row>
-    </>
+    </div>
   );
 };

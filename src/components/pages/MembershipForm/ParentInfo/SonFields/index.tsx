@@ -24,7 +24,7 @@ export const SonFields = () => {
             <Row gutter={[10, 10]} style={{ marginBottom: 10 }} key={field.key}>
               {index === 0 && (
                 <Col span={24}>
-                  <Text>Filhos</Text>
+                  <Text className={styles.childrenLabel}>Filhos</Text>
                 </Col>
               )}
 

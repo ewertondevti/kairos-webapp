@@ -111,6 +111,7 @@ export const ThemeProvider: FC<Props> = ({ children }) => {
         itemActiveBg: "rgba(26, 93, 46, 0.15)",
         fontSize: 15,
         fontWeightStrong: 500,
+        colorBgElevated: Colors.ColorPrimaryLighter,
       },
       Input: {
         borderRadius: 8,

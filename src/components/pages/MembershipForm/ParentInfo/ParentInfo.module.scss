@@ -1,0 +1,22 @@
+.section {
+  display: block;
+}
+
+.sectionTitle {
+  margin-bottom: 12px;
+}
+
+:global(.ant-drawer) .sectionTitle {
+  color: #1a5d2e;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+:global(.ant-drawer) .section :global(.ant-form-item-label > label) {
+  color: #1a5d2e;
+  font-weight: 600;
+}
+
+:global(.ant-drawer) .section :global(.ant-form-item-label > label)::after {
+  color: #1a5d2e;
+}
