@@ -3,7 +3,7 @@
 import { useGetAuditLogs } from "@/react-query";
 import { useAuth } from "@/store";
 import { AuditLogEntry } from "@/types/audit";
-import { UserRole } from "@/types/user";
+import { UserRole } from "@/features/auth/auth.enums";
 import {
   Card,
   Empty,

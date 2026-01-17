@@ -3,7 +3,7 @@
 import { EditAlbumModal } from "@/components/EditAlbumModal";
 import { ImagesSkeleton } from "@/components/ImagesSkeleton";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { DatabaseTableKeys } from "@/enums/app";
+import { DatabaseTableKeys } from "@/features/database/database.enums";
 import { downloadImagesAsZip } from "@/helpers/app";
 import { QueryNames } from "@/react-query/queryNames";
 import { useGetAlbumById, useGetAlbumImagesInfinite } from "@/react-query";

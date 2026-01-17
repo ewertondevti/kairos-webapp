@@ -1,4 +1,4 @@
-import { MembershipFields } from "@/enums/membership";
+import { MembershipFields } from "@/features/membership/membership.enums";
 import { Dayjs } from "dayjs";
 import { MemberChild } from "./user";
 import { IMemberPhoto } from "./store";

@@ -1,13 +1,16 @@
 "use client";
 
 import { CreateAlbumModal } from "@/components/pages/Management/CreateAlbumModal";
-import { DatabaseTableKeys } from "@/enums/app";
-import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
+import { UserRole } from "@/features/auth/auth.enums";
+import { DatabaseTableKeys } from "@/features/database/database.enums";
+import {
+  ManagementRoutesEnums,
+  RoutesEnums,
+} from "@/features/navigation/routes.enums";
 import { useGetAlbumById, useGetEvents } from "@/react-query";
 import { deleteAlbum, deleteImageFromAlbum } from "@/services/albumServices";
 import { deleteEvents } from "@/services/eventServices";
 import { useAppState, useAuth } from "@/store";
-import { UserRole } from "@/types/user";
 import {
   faImages,
   faObjectGroup,

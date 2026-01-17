@@ -2,13 +2,16 @@
 
 import { ImagesSkeleton } from "@/components/ImagesSkeleton";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { ManagementRoutesEnums, RoutesEnums } from "@/enums/routesEnums";
+import {
+  ManagementRoutesEnums,
+  RoutesEnums,
+} from "@/features/navigation/routes.enums";
 import { downloadImagesAsZip } from "@/helpers/app";
 import { useGetAlbumById, useGetAlbumImagesInfinite } from "@/react-query";
 import { deleteAlbum } from "@/services/albumServices";
 import { useAppState, useAuth } from "@/store";
 import { IAlbumWithCursor, IImageDTO } from "@/types/store";
-import { UserRole } from "@/types/user";
+import { UserRole } from "@/features/auth/auth.enums";
 import {
   CheckSquareOutlined,
   CloseOutlined,

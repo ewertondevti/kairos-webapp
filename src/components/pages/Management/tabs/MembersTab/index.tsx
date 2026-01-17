@@ -9,7 +9,7 @@ import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/Ecclesiast
 import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
 import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
 import { churchRoleOptions } from "@/constants/churchRoles";
-import { MembershipFields } from "@/enums/membership";
+import { MembershipFields } from "@/features/membership/membership.enums";
 import { useGetAccessRequests, useGetUsers } from "@/react-query";
 import { QueryNames } from "@/react-query/queryNames";
 import { logAuditEvent } from "@/services/auditService";
@@ -23,7 +23,8 @@ import {
   updateUserProfile,
 } from "@/services/userServices";
 import { useAuth } from "@/store";
-import { UserProfile, UserRole } from "@/types/user";
+import { UserRole } from "@/features/auth/auth.enums";
+import { UserProfile } from "@/types/user";
 import {
   mapChildrenToPayload,
   normalizeMemberChildren,

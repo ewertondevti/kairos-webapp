@@ -1,4 +1,4 @@
-import { DatabaseTableKeys } from "@/enums/app";
+import { DatabaseTableKeys } from "@/features/database/database.enums";
 import { QueryNames } from "@/react-query/queryNames";
 import { onImageUpload, onRemoveImage } from "@/services/commonServices";
 import { createEvents } from "@/services/eventServices";

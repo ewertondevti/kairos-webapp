@@ -4,7 +4,7 @@ import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/Ecclesiast
 import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
 import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
 import { churchRoleOptions } from "@/constants/churchRoles";
-import { MembershipFields } from "@/enums/membership";
+import { MembershipFields } from "@/features/membership/membership.enums";
 import { firebaseAuth } from "@/firebase";
 import { useGetUserProfile } from "@/react-query";
 import { logAuditEvent } from "@/services/auditService";

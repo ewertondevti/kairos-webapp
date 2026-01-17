@@ -3,7 +3,8 @@
 import firebaseDB, { firebaseAuth } from "@/firebase";
 import { syncUserClaims } from "@/services/userServices";
 import AuthContext from "@/store";
-import { UserProfile, UserRole } from "@/types/user";
+import { UserRole } from "@/features/auth/auth.enums";
+import { UserProfile } from "@/types/user";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { FC, ReactNode, useEffect, useState } from "react";
@@ -62,8 +63,12 @@ const AuthProvider: FC<Props> = ({ children }) => {
         const claimActive = Boolean(activeClaim);
 
         if (claimRole === null || !hasActiveClaim || !claimActive) {
-          await signOut(firebaseAuth);
+          setUser(null);
+          setRole(null);
+          setActive(false);
+          setProfile(null);
           setLoading(false);
+          void signOut(firebaseAuth);
           return;
         }
 

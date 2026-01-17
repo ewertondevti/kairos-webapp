@@ -2,7 +2,7 @@
 
 import { EditAlbumModal } from "@/components/EditAlbumModal";
 import { TopBar } from "@/components/TopBar";
-import { ManagementRoutesEnums } from "@/enums/routesEnums";
+import { ManagementRoutesEnums } from "@/features/navigation/routes.enums";
 import { onDownload } from "@/helpers/app";
 import { useAppState } from "@/store";
 import {

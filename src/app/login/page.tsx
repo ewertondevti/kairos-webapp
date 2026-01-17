@@ -3,7 +3,7 @@
 import { firebaseAuth } from "@/firebase";
 import { logAuditEvent } from "@/services/auditService";
 import { requestAccess, syncUserClaims } from "@/services/userServices";
-import { UserRole } from "@/types/user";
+import { UserRole } from "@/features/auth/auth.enums";
 import { App, Form, Input, Modal } from "antd";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
