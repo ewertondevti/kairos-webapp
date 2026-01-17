@@ -1,6 +1,10 @@
 [
   {
-    "origin": ["https://localhost:3000", "https://kairos-portugal.com"],
+    "origin": [
+      "https://localhost:3000",
+      "https://kairos-portugal.com",
+      "https://www.abibliadigital.com.br"
+    ],
     "method": ["GET", "POST", "DELETE", "PUT", "PATCH"],
     "maxAgeSeconds": 3600
   }

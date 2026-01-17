@@ -7,10 +7,15 @@ export const corsHandler = cors({
     "http://localhost:3000",
     "https://localhost:3000",
     "https://kairos-portugal.com",
+    "https://kairos-webapp-4de65.web.app",
+    "https://kairos-webapp-4de65.firebaseapp.com",
     /^https:\/\/.*\.kairos-portugal\.com$/,
+    /^https:\/\/.*\.web\.app$/,
+    /^https:\/\/.*\.firebaseapp\.com$/,
   ],
   methods: ["GET", "POST", "DELETE", "OPTIONS", "PUT", "PATCH"],
   credentials: true,
+  allowedHeaders: ["Authorization", "Content-Type"],
 });
 
 export const processHeicToJpeg = async (

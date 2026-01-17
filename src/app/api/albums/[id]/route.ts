@@ -9,6 +9,7 @@ export async function GET(
   const { searchParams } = request.nextUrl;
   const limit = searchParams.get("limit") || undefined;
   const cursor = searchParams.get("cursor") || undefined;
+  const authorization = request.headers.get("authorization") || "";
   
   if (!id) {
     return proxyRequest("GET", "/getAlbumById", undefined, { id: "" }); // Will return error from proxy
@@ -18,5 +19,7 @@ export async function GET(
     id,
     limit: limit ?? "",
     cursor: cursor ?? "",
+  }, {
+    authorization,
   });
 }

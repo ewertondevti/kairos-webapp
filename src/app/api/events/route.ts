@@ -1,8 +1,11 @@
 import { NextRequest } from "next/server";
 import { proxyRequest } from "@/app/api/_utils/proxy";
 
-export async function GET() {
-  return proxyRequest("GET", "/getEvents");
+export async function GET(request: NextRequest) {
+  const authorization = request.headers.get("authorization") || "";
+  return proxyRequest("GET", "/getEvents", undefined, undefined, {
+    authorization,
+  });
 }
 
 export async function POST(request: NextRequest) {

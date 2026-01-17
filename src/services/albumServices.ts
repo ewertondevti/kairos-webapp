@@ -8,6 +8,7 @@ import {
 import { AlbumByIdParams, AlbumListResponse } from "@/types/album";
 import { MediaImagesResponse } from "@/types/media";
 import axios from "axios";
+import api from "./httpClient";
 import { getAuthHeaders } from "./authHeaders";
 
 export const createAlbum = async (payload: IAlbumPayload) => {
@@ -32,7 +33,7 @@ export const updateAlbum = async (payload: IAlbumUpdatePayload) => {
 
 export const getAlbums = async (): Promise<IAlbumDTO[]> => {
   try {
-    const response = await axios.get("/api/albums");
+    const response = await api.get("/getAlbums");
     const data = response.data;
 
     // Handle case where response.data might be a string
@@ -61,7 +62,7 @@ export const getAlbumsPaged = async (
   params?: AlbumByIdParams
 ): Promise<AlbumListResponse> => {
   try {
-    const response = await axios.get<AlbumListResponse>("/api/albums/paged", {
+    const response = await api.get<AlbumListResponse>("/getAlbumsPaged", {
       params: {
         limit: params?.limit,
         cursor: params?.cursor,
@@ -79,8 +80,9 @@ export const getAlbumById = async (
   params?: AlbumByIdParams
 ): Promise<IAlbumWithCursor | undefined> => {
   try {
-    const response = await axios.get(`/api/albums/${id}`, {
+    const response = await api.get("/getAlbumById", {
       params: {
+        id,
         limit: params?.limit,
         cursor: params?.cursor,
       },
@@ -96,7 +98,7 @@ export const getAlbumImages = async (
   params?: AlbumByIdParams
 ): Promise<MediaImagesResponse> => {
   try {
-    const response = await axios.get<MediaImagesResponse>("/api/albums/images", {
+    const response = await api.get<MediaImagesResponse>("/getAlbumImages", {
       params: {
         limit: params?.limit,
         cursor: params?.cursor,
