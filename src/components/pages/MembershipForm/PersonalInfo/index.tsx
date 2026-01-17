@@ -31,6 +31,7 @@ import {
   Tooltip,
   Upload,
 } from "antd";
+import type { Rule } from "antd/es/form";
 import type { DefaultOptionType } from "antd/es/select";
 import Title from "antd/es/typography/Title";
 import { RcFile, UploadProps } from "antd/es/upload";
@@ -143,9 +144,9 @@ export const PersonalInfo = ({ requiredFields }: PersonalInfoProps) => {
     !requiredFields || requiredFields.includes(field);
   const getRequiredRules = (field: MembershipFields) =>
     isRequiredField(field) ? requiredRules : undefined;
-  const emailRules = isRequiredField(MembershipFields.Email)
-    ? [...requiredRules, { type: "email", message: "Email inválido." }]
-    : [{ type: "email", message: "Email inválido." }];
+  const emailRules: Rule[] = isRequiredField(MembershipFields.Email)
+    ? [...requiredRules, { type: "email" as const, message: "Email inválido." }]
+    : [{ type: "email" as const, message: "Email inválido." }];
 
   const photoValue = Form.useWatch(MembershipFields.Photo, form);
   const postalCodeValue = Form.useWatch(MembershipFields.PostalCode, form);
@@ -531,268 +532,274 @@ export const PersonalInfo = ({ requiredFields }: PersonalInfoProps) => {
   return (
     <div className={styles.section}>
       <Row gutter={16}>
-      <Col span={24}>
-        <Title level={3} className={`${styles.sectionTitle} text-uppercase`}>
-          Informações Pessoais
-        </Title>
-      </Col>
+        <Col span={24}>
+          <Title level={3} className={`${styles.sectionTitle} text-uppercase`}>
+            Informações Pessoais
+          </Title>
+        </Col>
 
-      <Col xs={{ order: 1, span: 24 }} md={{ order: 1, span: 20 }}>
-        <Row gutter={16}>
-          <Form.Item name={MembershipFields.Id} label="Código" hidden>
-            <Input placeholder="" className="w-full" />
-          </Form.Item>
-
-          <Col span={24}>
-            <Form.Item
-              name={MembershipFields.Fullname}
-              label="Nome"
-              rules={
-                isRequiredField(MembershipFields.Fullname)
-                  ? [...requiredRules, ...personNameRules]
-                  : personNameRules
-              }
-              getValueFromEvent={(event) =>
-                formatPersonName(event?.target?.value ?? "")
-              }
-            >
-              <Input placeholder="Nome completo..." />
+        <Col xs={{ order: 1, span: 24 }} md={{ order: 1, span: 20 }}>
+          <Row gutter={16}>
+            <Form.Item name={MembershipFields.Id} label="Código" hidden>
+              <Input placeholder="" className="w-full" />
             </Form.Item>
-          </Col>
 
-          <Col xs={24} sm={12}>
-            <Form.Item
-              name={MembershipFields.BirthDate}
-              label="Data de nascimento"
-              rules={getRequiredRules(MembershipFields.BirthDate)}
-            >
-              <DatePicker
-                disabledDate={disabledDate}
-                format={dateInputFormat}
-                className="w-full"
-              />
-            </Form.Item>
-          </Col>
-
-          <Col xs={24} sm={12}>
-            <Form.Item
-              name={MembershipFields.Email}
-              label="Email"
-              rules={emailRules}
-            >
-              <Input placeholder="email@dominio.com" type="email" />
-            </Form.Item>
-          </Col>
-
-          <Col xs={24} sm={12}>
-            <Form.Item
-              name={MembershipFields.Gender}
-              label="Sexo"
-              rules={getRequiredRules(MembershipFields.Gender)}
-            >
-              <Select placeholder="Selecione o sexo" options={genderOptions} />
-            </Form.Item>
-          </Col>
-
-          <Col xs={24} sm={12}>
-            <Form.Item
-              name={MembershipFields.MaritalStatus}
-              label="Estado civil"
-              rules={getRequiredRules(MembershipFields.MaritalStatus)}
-            >
-              <Select
-                placeholder="Selecione seu estado civil"
-                options={martitalOptions}
-              />
-            </Form.Item>
-          </Col>
-
-          <Col xs={24} sm={12}>
-            <Form.Item
-              name={MembershipFields.PostalCode}
-              label="Código postal"
-              normalize={(value: string) => formatPostalCode(value)}
-              getValueFromEvent={(event) =>
-                formatPostalCode(event?.target?.value ?? "")
-              }
-              rules={[
-                ...(isRequiredField(MembershipFields.PostalCode)
-                  ? requiredRules
-                  : []),
-                () => ({
-                  validator(_, value: string) {
-                    if (!value) {
-                      return Promise.resolve();
-                    }
-                    if (value?.match(postalCodeRegex)) {
-                      return Promise.resolve();
-                    }
-                    return Promise.reject("XXXX-XXX");
-                  },
-                }),
-              ]}
-            >
-              <Input
-                placeholder="XXXX-XXX"
-                inputMode="numeric"
-                pattern="[0-9]{4}-[0-9]{3}"
-                maxLength={8}
-                onChange={(event) =>
-                  handlePostalChange(event?.target?.value ?? "")
+            <Col span={24}>
+              <Form.Item
+                name={MembershipFields.Fullname}
+                label="Nome"
+                rules={
+                  isRequiredField(MembershipFields.Fullname)
+                    ? [...requiredRules, ...personNameRules]
+                    : personNameRules
                 }
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Col>
+                getValueFromEvent={(event) =>
+                  formatPersonName(event?.target?.value ?? "")
+                }
+              >
+                <Input placeholder="Nome completo..." />
+              </Form.Item>
+            </Col>
 
-      <Col xs={{ order: 2, span: 24 }} md={{ order: 2, span: 4 }}>
-        <Form.Item name={MembershipFields.Photo} noStyle>
-          <Flex justify="center" align="start" className="h-full">
-            <Upload
-              listType="picture-circle"
-              className="avatar-uploader"
-              showUploadList={false}
-              beforeUpload={beforeUpload}
-              onChange={handleChange}
-            >
-              {imageUrl ? (
-                <div className="float-btn-container">
-                  <Avatar
-                    src={imageUrl}
-                    size={128}
-                    alt="userProfile"
-                    className="w-full h-full"
-                  />
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name={MembershipFields.BirthDate}
+                label="Data de nascimento"
+                rules={getRequiredRules(MembershipFields.BirthDate)}
+              >
+                <DatePicker
+                  disabledDate={disabledDate}
+                  format={dateInputFormat}
+                  className="w-full"
+                />
+              </Form.Item>
+            </Col>
 
-                  <Tooltip title="Remover" placement="bottom">
-                    <Button
-                      shape="circle"
-                      size="small"
-                      icon={<DeleteOutlined />}
-                      className="float-btn"
-                      onClick={onRemove}
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name={MembershipFields.Email}
+                label="Email"
+                rules={emailRules}
+              >
+                <Input placeholder="email@dominio.com" type="email" />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name={MembershipFields.Gender}
+                label="Sexo"
+                rules={getRequiredRules(MembershipFields.Gender)}
+              >
+                <Select
+                  placeholder="Selecione o sexo"
+                  options={genderOptions}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name={MembershipFields.MaritalStatus}
+                label="Estado civil"
+                rules={getRequiredRules(MembershipFields.MaritalStatus)}
+              >
+                <Select
+                  placeholder="Selecione seu estado civil"
+                  options={martitalOptions}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name={MembershipFields.PostalCode}
+                label="Código postal"
+                normalize={(value: string) => formatPostalCode(value)}
+                getValueFromEvent={(event) =>
+                  formatPostalCode(event?.target?.value ?? "")
+                }
+                rules={[
+                  ...(isRequiredField(MembershipFields.PostalCode)
+                    ? requiredRules
+                    : []),
+                  () => ({
+                    validator(_, value: string) {
+                      if (!value) {
+                        return Promise.resolve();
+                      }
+                      if (value?.match(postalCodeRegex)) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject("XXXX-XXX");
+                    },
+                  }),
+                ]}
+              >
+                <Input
+                  placeholder="XXXX-XXX"
+                  inputMode="numeric"
+                  pattern="[0-9]{4}-[0-9]{3}"
+                  maxLength={8}
+                  onChange={(event) =>
+                    handlePostalChange(event?.target?.value ?? "")
+                  }
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Col>
+
+        <Col xs={{ order: 2, span: 24 }} md={{ order: 2, span: 4 }}>
+          <Form.Item name={MembershipFields.Photo} noStyle>
+            <Flex justify="center" align="start" className="h-full">
+              <Upload
+                listType="picture-circle"
+                className="avatar-uploader"
+                showUploadList={false}
+                beforeUpload={beforeUpload}
+                onChange={handleChange}
+              >
+                {imageUrl ? (
+                  <div className="float-btn-container">
+                    <Avatar
+                      src={imageUrl}
+                      size={128}
+                      alt="userProfile"
+                      className="w-full h-full"
                     />
-                  </Tooltip>
-                </div>
-              ) : (
-                uploadButton
-              )}
-            </Upload>
-          </Flex>
-        </Form.Item>
-      </Col>
 
-      <Col xs={{ order: 3, span: 24 }}>
-        <Form.Item
-          name={MembershipFields.Address}
-          label="Morada"
-          rules={getRequiredRules(MembershipFields.Address)}
-        >
-          {addressOptions.length > 1 ? (
-            <Select
-              placeholder="Selecione a morada"
-              options={addressOptions}
-              loading={postalLoading}
-              disabled={!parishValue}
-              allowClear
-              showSearch
-              optionFilterProp="label"
-            />
-          ) : (
-            <Input placeholder="Rua..." />
-          )}
-        </Form.Item>
-      </Col>
+                    <Tooltip title="Remover" placement="bottom">
+                      <Button
+                        shape="circle"
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        className="float-btn"
+                        onClick={onRemove}
+                      />
+                    </Tooltip>
+                  </div>
+                ) : (
+                  uploadButton
+                )}
+              </Upload>
+            </Flex>
+          </Form.Item>
+        </Col>
 
-      <Col xs={{ order: 3, span: 24 }} sm={8} md={8}>
-        <Form.Item
-          name={MembershipFields.AddressNumber}
-          label="Número"
-          rules={getRequiredRules(MembershipFields.AddressNumber)}
-        >
-          <Input placeholder="Ex: 123" />
-        </Form.Item>
-      </Col>
+        <Col xs={{ order: 3, span: 24 }}>
+          <Form.Item
+            name={MembershipFields.Address}
+            label="Morada"
+            rules={getRequiredRules(MembershipFields.Address)}
+          >
+            {addressOptions.length > 1 ? (
+              <Select
+                placeholder="Selecione a morada"
+                options={addressOptions}
+                loading={postalLoading}
+                disabled={!parishValue}
+                allowClear
+                showSearch
+                optionFilterProp="label"
+              />
+            ) : (
+              <Input placeholder="Rua..." />
+            )}
+          </Form.Item>
+        </Col>
 
-      <Col xs={{ order: 3, span: 24 }} sm={8} md={8}>
-        <Form.Item name={MembershipFields.AddressFloor} label="Andar">
-          <Input placeholder="Ex: 2º" />
-        </Form.Item>
-      </Col>
+        <Col xs={{ order: 3, span: 24 }} sm={8} md={8}>
+          <Form.Item
+            name={MembershipFields.AddressNumber}
+            label="Número"
+            rules={getRequiredRules(MembershipFields.AddressNumber)}
+          >
+            <Input placeholder="Ex: 123" />
+          </Form.Item>
+        </Col>
 
-      <Col xs={{ order: 3, span: 24 }} sm={8} md={8}>
-        <Form.Item name={MembershipFields.AddressDoor} label="Número da porta">
-          <Input placeholder="Ex: 3B" />
-        </Form.Item>
-      </Col>
+        <Col xs={{ order: 3, span: 24 }} sm={8} md={8}>
+          <Form.Item name={MembershipFields.AddressFloor} label="Andar">
+            <Input placeholder="Ex: 2º" />
+          </Form.Item>
+        </Col>
 
-      <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
-        <Form.Item
-          name={MembershipFields.State}
-          label="Distrito"
-          rules={getRequiredRules(MembershipFields.State)}
-        >
-          {districtOptions.length > 1 ? (
-            <Select
-              placeholder="Selecione o distrito"
-              options={districtOptions}
-              loading={postalLoading}
-              allowClear
-              showSearch={{
-                optionFilterProp: "label",
-                filterOption: selectFilterOption,
-              }}
-            />
-          ) : (
-            <Input placeholder="Informe o distrito" />
-          )}
-        </Form.Item>
-      </Col>
+        <Col xs={{ order: 3, span: 24 }} sm={8} md={8}>
+          <Form.Item
+            name={MembershipFields.AddressDoor}
+            label="Número da porta"
+          >
+            <Input placeholder="Ex: 3B" />
+          </Form.Item>
+        </Col>
 
-      <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
-        <Form.Item
-          name={MembershipFields.County}
-          label="Concelho"
-          rules={getRequiredRules(MembershipFields.County)}
-        >
-          {countyOptions.length > 1 ? (
-            <Select
-              placeholder="Selecione o concelho"
-              options={countyOptions}
-              allowClear
-              showSearch={{
-                optionFilterProp: "label",
-                filterOption: selectFilterOption,
-              }}
-            />
-          ) : (
-            <Input placeholder="Informe o concelho" />
-          )}
-        </Form.Item>
-      </Col>
+        <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
+          <Form.Item
+            name={MembershipFields.State}
+            label="Distrito"
+            rules={getRequiredRules(MembershipFields.State)}
+          >
+            {districtOptions.length > 1 ? (
+              <Select
+                placeholder="Selecione o distrito"
+                options={districtOptions}
+                loading={postalLoading}
+                allowClear
+                showSearch={{
+                  optionFilterProp: "label",
+                  filterOption: selectFilterOption,
+                }}
+              />
+            ) : (
+              <Input placeholder="Informe o distrito" />
+            )}
+          </Form.Item>
+        </Col>
 
-      <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
-        <Form.Item
-          name={MembershipFields.City}
-          label="Freguesia"
-          rules={getRequiredRules(MembershipFields.City)}
-        >
-          {parishOptions.length > 1 ? (
-            <Select
-              placeholder="Selecione a freguesia"
-              options={parishOptions}
-              allowClear
-              showSearch={{
-                optionFilterProp: "label",
-                filterOption: selectFilterOption,
-              }}
-            />
-          ) : (
-            <Input placeholder="Informe a freguesia" />
-          )}
-        </Form.Item>
-      </Col>
+        <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
+          <Form.Item
+            name={MembershipFields.County}
+            label="Concelho"
+            rules={getRequiredRules(MembershipFields.County)}
+          >
+            {countyOptions.length > 1 ? (
+              <Select
+                placeholder="Selecione o concelho"
+                options={countyOptions}
+                allowClear
+                showSearch={{
+                  optionFilterProp: "label",
+                  filterOption: selectFilterOption,
+                }}
+              />
+            ) : (
+              <Input placeholder="Informe o concelho" />
+            )}
+          </Form.Item>
+        </Col>
+
+        <Col xs={{ order: 3, span: 24 }} sm={12} md={8}>
+          <Form.Item
+            name={MembershipFields.City}
+            label="Freguesia"
+            rules={getRequiredRules(MembershipFields.City)}
+          >
+            {parishOptions.length > 1 ? (
+              <Select
+                placeholder="Selecione a freguesia"
+                options={parishOptions}
+                allowClear
+                showSearch={{
+                  optionFilterProp: "label",
+                  filterOption: selectFilterOption,
+                }}
+              />
+            ) : (
+              <Input placeholder="Informe a freguesia" />
+            )}
+          </Form.Item>
+        </Col>
       </Row>
     </div>
   );

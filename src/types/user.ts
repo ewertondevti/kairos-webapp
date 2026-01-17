@@ -40,3 +40,7 @@ export type UserProfile = {
   photoStoragePath?: string;
   isActive?: boolean;
 };
+
+export type AuthUserProfile = UserProfile;
+
+export type UnlinkedUserProfile = UserProfile;

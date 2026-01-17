@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getAuthHeaders } from "./authHeaders";
 import { UserRole } from "@/features/auth/auth.enums";
-import { UserProfile } from "@/types/user";
+import { AuthUserProfile, UnlinkedUserProfile, UserProfile } from "@/types/user";
 import { MembershipSubmissionPayload } from "@/types/membership";
 
 export type RequestAccessPayload = {
@@ -38,6 +38,27 @@ export const getUsers = async (): Promise<UserProfile[]> => {
   const headers = await getAuthHeaders();
   const response = await axios.get("/api/users", { headers });
   return Array.isArray(response.data) ? response.data : [];
+};
+
+export const getAuthUsers = async (): Promise<AuthUserProfile[]> => {
+  const headers = await getAuthHeaders();
+  const response = await axios.get("/api/users/auth", { headers });
+  return Array.isArray(response.data) ? response.data : [];
+};
+
+export const getUsersWithoutAuth = async (): Promise<UnlinkedUserProfile[]> => {
+  const headers = await getAuthHeaders();
+  const response = await axios.get("/api/users/unlinked", { headers });
+  return Array.isArray(response.data) ? response.data : [];
+};
+
+export const deleteUserDocument = async (id: string) => {
+  const headers = await getAuthHeaders();
+  const response = await axios.delete("/api/users/delete", {
+    headers,
+    params: { id },
+  });
+  return response.data;
 };
 
 export const getAccessRequests = async (): Promise<AccessRequest[]> => {

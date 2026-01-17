@@ -7,6 +7,8 @@ export enum QueryNames {
   GetStorageImages = "GetStorageImages",
   GetVerse = "GetVerse",
   GetUsers = "GetUsers",
+  GetAuthUsers = "GetAuthUsers",
+  GetUsersWithoutAuth = "GetUsersWithoutAuth",
   GetUserProfile = "GetUserProfile",
   GetAccessRequests = "GetAccessRequests",
   GetAuditLogs = "GetAuditLogs",

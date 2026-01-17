@@ -4,18 +4,25 @@ import { AccessRequestsTable } from "@/components/pages/Management/tabs/MembersT
 import { CreateUserModal } from "@/components/pages/Management/tabs/MembersTab/CreateUserModal";
 import { MemberFormDrawer } from "@/components/pages/Management/tabs/MembersTab/MemberFormDrawer";
 import { CreateFormValues } from "@/components/pages/Management/tabs/MembersTab/types";
+import { UnlinkedUsersTable } from "@/components/pages/Management/tabs/MembersTab/UnlinkedUsersTable";
 import { UsersTable } from "@/components/pages/Management/tabs/MembersTab/UsersTable";
 import { EcclesiasticalInfo } from "@/components/pages/MembershipForm/EcclesiasticalInfo";
 import { ParentInfo } from "@/components/pages/MembershipForm/ParentInfo";
 import { PersonalInfo } from "@/components/pages/MembershipForm/PersonalInfo";
 import { churchRoleOptions } from "@/constants/churchRoles";
 import { MembershipFields } from "@/features/membership/membership.enums";
-import { useGetAccessRequests, useGetUsers } from "@/react-query";
+import {
+  useGetAccessRequests,
+  useGetAuthUsers,
+  useGetUsers,
+  useGetUsersWithoutAuth,
+} from "@/react-query";
 import { QueryNames } from "@/react-query/queryNames";
 import { logAuditEvent } from "@/services/auditService";
 import {
   AccessRequest,
   createUser,
+  deleteUserDocument,
   deleteAccessRequest,
   setUserActive,
   setUserRole,
@@ -130,16 +137,22 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
   const drawerSize = screens.md ? "large" : "default";
+  const isAdminView = mode === "admin";
   const canViewUsers =
     (mode === "admin" && role === UserRole.Admin) ||
     (mode === "secretaria" &&
       (role === UserRole.Admin || role === UserRole.Secretaria));
-  const { data: users = [], isLoading } = useGetUsers(canViewUsers);
+  const shouldFetchAuthUsers = isAdminView && canViewUsers;
+  const shouldFetchUsers = !isAdminView && canViewUsers;
+  const { data: users = [], isLoading } = useGetUsers(shouldFetchUsers);
+  const { data: authUsers = [], isLoading: isAuthLoading } =
+    useGetAuthUsers(shouldFetchAuthUsers);
+  const { data: unlinkedUsers = [], isLoading: isUnlinkedLoading } =
+    useGetUsersWithoutAuth(shouldFetchAuthUsers);
   const { data: accessRequests = [] } = useGetAccessRequests(
     mode === "admin" && role === UserRole.Admin
   );
 
-  const isAdminView = mode === "admin";
   const canCreateUsers = isAdminView && role === UserRole.Admin;
   const canCreateMembers = mode === "secretaria" && canViewUsers;
   const canToggleActive = isAdminView && role === UserRole.Admin;
@@ -162,8 +175,13 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
   const searchInput = useRef<InputRef>(null);
   const { modal } = App.useApp();
 
-  const refresh = () =>
+  const refresh = () => {
     queryClient.invalidateQueries({ queryKey: [QueryNames.GetUsers] });
+    queryClient.invalidateQueries({ queryKey: [QueryNames.GetAuthUsers] });
+    queryClient.invalidateQueries({
+      queryKey: [QueryNames.GetUsersWithoutAuth],
+    });
+  };
   const refreshAccessRequests = () =>
     queryClient.invalidateQueries({ queryKey: [QueryNames.GetAccessRequests] });
 
@@ -638,10 +656,15 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
     return <Empty description="Sem permissão para visualizar esta área." />;
   }
 
-  const tableUsers = users.filter(
+  const usersForTable = isAdminView ? authUsers : users;
+  const tableUsers = usersForTable.filter(
     (user) =>
       Boolean(user?.authUid || user?.id) &&
       Boolean(user?.fullname?.trim() || user?.email?.trim())
+  );
+
+  const unlinkedTableUsers = unlinkedUsers.filter((user) =>
+    Boolean(user?.id)
   );
 
   const pendingAccessRequests = accessRequests.filter(
@@ -674,10 +697,59 @@ export const MembersTab = ({ mode = "admin" }: MembersTabProps) => {
         </Space>
       )}
 
+      {isAdminView && (
+        <UnlinkedUsersTable
+          users={unlinkedTableUsers}
+          isLoading={isUnlinkedLoading}
+          isMobile={isMobile}
+          onCreateAuth={async (user) => {
+            if (!user.email?.trim() || !user.fullname?.trim()) {
+              message.warning("Informe nome completo e email.");
+              return;
+            }
+            try {
+              await createUser({
+                fullname: user.fullname,
+                email: user.email,
+                role: user.role ?? UserRole.Member,
+              });
+              message.success("Autenticação criada com sucesso!");
+              void logAuditEvent({
+                action: "user.associate",
+                targetType: "user",
+                targetId: user.id,
+                metadata: { email: user.email, fullname: user.fullname },
+              });
+              refresh();
+            } catch (error) {
+              console.error(error);
+              message.error("Não foi possível criar a autenticação.");
+            }
+          }}
+          onEdit={openEdit}
+          onDelete={async (user) => {
+            try {
+              await deleteUserDocument(user.id);
+              message.success("Usuário removido com sucesso!");
+              void logAuditEvent({
+                action: "user.delete",
+                targetType: "user",
+                targetId: user.id,
+                metadata: { email: user.email, fullname: user.fullname },
+              });
+              refresh();
+            } catch (error) {
+              console.error(error);
+              message.error("Não foi possível remover o usuário.");
+            }
+          }}
+        />
+      )}
+
       <UsersTable
         users={tableUsers}
         columns={columns}
-        isLoading={isLoading}
+        isLoading={isAdminView ? isAuthLoading : isLoading}
         isMobile={isMobile}
       />
 

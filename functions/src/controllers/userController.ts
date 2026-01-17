@@ -137,21 +137,70 @@ const getPhotoUrlFromStoragePath = async (storagePath?: string) => {
   }
 };
 
-const findUserByNormalized = async (fullname: string, email: string) => {
-  const normalizedFullname = normalizeComparable(fullname);
+const findUsersByEmailNormalized = async (email: string) => {
   const normalizedEmail = normalizeComparable(email);
-
   const snapshot = await firestore.collection(DatabaseTableKeys.Users).get();
 
-  const match = snapshot.docs.find((doc) => {
-    const user = doc.data() as IUser;
-    return (
-      normalizeComparable(user.fullname) === normalizedFullname &&
-      normalizeComparable(user.email) === normalizedEmail
-    );
-  });
+  return snapshot.docs
+    .filter((doc) => {
+      const user = doc.data() as IUser;
+      return normalizeComparable(user.email) === normalizedEmail;
+    })
+    .map((doc) => ({ id: doc.id, data: doc.data() as IUser, ref: doc.ref }));
+};
 
-  return match ? { id: match.id, data: match.data() } : null;
+const getAuthUserByEmail = async (email: string) => {
+  try {
+    return await auth.getUserByEmail(email);
+  } catch (error: any) {
+    if (error?.code === "auth/user-not-found") {
+      return null;
+    }
+    throw error;
+  }
+};
+
+const listAllAuthUsers = async () => {
+  const users: admin.auth.UserRecord[] = [];
+  let nextPageToken: string | undefined;
+
+  do {
+    const result = await auth.listUsers(1000, nextPageToken);
+    users.push(...result.users);
+    nextPageToken = result.pageToken;
+  } while (nextPageToken);
+
+  return users;
+};
+
+const getUserDocByUidOrAuthUid = async (uid: string) => {
+  const userRef = firestore.collection(DatabaseTableKeys.Users).doc(uid);
+  const userSnap = await userRef.get();
+
+  if (userSnap.exists) {
+    return {
+      ref: userRef,
+      id: userSnap.id,
+      data: userSnap.data() as IUser,
+    };
+  }
+
+  const snapshot = await firestore
+    .collection(DatabaseTableKeys.Users)
+    .where("authUid", "==", uid)
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const doc = snapshot.docs[0];
+  return {
+    ref: doc.ref,
+    id: doc.id,
+    data: doc.data() as IUser,
+  };
 };
 
 const USER_ROLE_VALUES: UserRole[] = [
@@ -428,16 +477,13 @@ export const syncUserClaims = onRequest(
         const token = authorization.replace("Bearer ", "").trim();
         const decoded = await auth.verifyIdToken(token);
 
-        const userRef = firestore
-          .collection(DatabaseTableKeys.Users)
-          .doc(decoded.uid);
-        const userSnap = await userRef.get();
+        const userEntry = await getUserDocByUidOrAuthUid(decoded.uid);
 
         const safeFullname =
           decoded.name?.trim() || decoded.email?.trim() || "Usuário";
         const safeEmail = decoded.email?.trim() || "";
 
-        if (!userSnap.exists) {
+        if (!userEntry) {
           const userDoc: IUser = {
             authUid: decoded.uid,
             fullname: safeFullname,
@@ -449,7 +495,10 @@ export const syncUserClaims = onRequest(
             createdBy: decoded.uid,
           };
 
-          await userRef.set(userDoc);
+          await firestore
+            .collection(DatabaseTableKeys.Users)
+            .doc(decoded.uid)
+            .set(userDoc);
 
           await auth.setCustomUserClaims(decoded.uid, {
             role: UserRole.Admin,
@@ -470,7 +519,7 @@ export const syncUserClaims = onRequest(
           return;
         }
 
-        const user = userSnap.data() as IUser;
+        const user = userEntry.data;
         const role = isValidUserRole(user.role) ? user.role : UserRole.Admin;
         const active = typeof user.active === "boolean" ? user.active : true;
         const fullname = user.fullname?.trim() || safeFullname;
@@ -482,7 +531,7 @@ export const syncUserClaims = onRequest(
           email !== user.email;
 
         if (shouldUpdate) {
-          await userRef.update({
+          await userEntry.ref.update({
             role,
             active,
             fullname,
@@ -536,34 +585,165 @@ export const createUser = onRequest(USER_CONFIG, async (request, response) => {
     try {
       const { fullname, email, role } = request.body || {};
       const normalizedRole = parseUserRole(role);
+      const safeFullname = String(fullname ?? "").trim();
+      const safeEmail = String(email ?? "").trim();
 
-      if (!fullname?.trim() || !email?.trim() || normalizedRole === null) {
+      if (!safeFullname || !safeEmail || normalizedRole === null) {
         response.status(400).send("Dados incompletos ou inválidos!");
+        return;
+      }
+
+      const matches = await findUsersByEmailNormalized(safeEmail);
+      if (matches.length > 1) {
+        response.status(409).send("Existe mais de um usuário com este email.");
+        return;
+      }
+
+      const existingUser = matches[0] ?? null;
+      const authUser = await getAuthUserByEmail(safeEmail);
+
+      if (authUser && existingUser) {
+        await existingUser.ref.update({
+          authUid: authUser.uid,
+          fullname: safeFullname,
+          email: safeEmail,
+          role: normalizedRole,
+          active: true,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        await auth.setCustomUserClaims(authUser.uid, {
+          role: normalizedRole,
+          active: true,
+        });
+
+        if (authUser.displayName !== safeFullname) {
+          await auth.updateUser(authUser.uid, {
+            displayName: safeFullname,
+            email: safeEmail,
+          });
+        }
+
+        void logAuditEvent(
+          {
+            action: "user.associate",
+            targetType: "user",
+            targetId: authUser.uid,
+            metadata: { email: safeEmail, fullname: safeFullname },
+          },
+          context
+        );
+
+        response.status(200).send({ uid: authUser.uid, associated: true });
+        return;
+      }
+
+      if (authUser && !existingUser) {
+        const userDoc: IUser = {
+          authUid: authUser.uid,
+          fullname: safeFullname,
+          email: safeEmail,
+          role: normalizedRole,
+          active: !authUser.disabled,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdBy: context.uid,
+        };
+
+        await firestore
+          .collection(DatabaseTableKeys.Users)
+          .doc(authUser.uid)
+          .set(userDoc);
+
+        await auth.setCustomUserClaims(authUser.uid, {
+          role: normalizedRole,
+          active: !authUser.disabled,
+        });
+
+        if (authUser.displayName !== safeFullname) {
+          await auth.updateUser(authUser.uid, {
+            displayName: safeFullname,
+            email: safeEmail,
+          });
+        }
+
+        void logAuditEvent(
+          {
+            action: "user.create",
+            targetType: "user",
+            targetId: authUser.uid,
+            metadata: { email: userDoc.email, fullname: userDoc.fullname },
+          },
+          context
+        );
+
+        response.status(200).send({ uid: authUser.uid, associated: true });
         return;
       }
 
       const password = generateSecurePassword();
 
-      const existing = await findUserByNormalized(
-        fullname.trim(),
-        email.trim()
-      );
+      if (existingUser && !authUser) {
+        const preferredUid =
+          existingUser.data.authUid?.trim() || existingUser.id;
+        const createdAuth = await auth.createUser({
+          uid: preferredUid,
+          email: safeEmail,
+          password,
+          displayName: safeFullname,
+        });
 
-      if (existing) {
-        response.status(409).send("Usuário já existe.");
+        await firestore
+          .collection(DatabaseTableKeys.Users)
+          .doc(existingUser.id)
+          .update({
+            authUid: createdAuth.uid,
+            fullname: safeFullname,
+            email: safeEmail,
+            role: normalizedRole,
+            active: true,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+
+        await auth.setCustomUserClaims(createdAuth.uid, {
+          role: normalizedRole,
+          active: true,
+        });
+
+        void logAuditEvent(
+          {
+            action: "user.associate",
+            targetType: "user",
+            targetId: createdAuth.uid,
+            metadata: { email: safeEmail, fullname: safeFullname },
+          },
+          context
+        );
+
+        await sendMail(
+          [safeEmail],
+          "Seus dados de acesso",
+          `<p>Olá, ${safeFullname}.</p>
+           <p>Seu acesso foi criado com sucesso.</p>
+           <p><strong>Email:</strong> ${safeEmail}</p>
+           <p><strong>Senha temporária:</strong> ${password}</p>
+           <p>Recomendamos alterar a senha após o primeiro acesso.</p>`
+        );
+
+        response.status(201).send({ uid: createdAuth.uid });
         return;
       }
 
-      const authUser = await auth.createUser({
-        email: email.trim(),
+      const newAuthUser = await auth.createUser({
+        email: safeEmail,
         password,
-        displayName: fullname.trim(),
+        displayName: safeFullname,
       });
 
       const userDoc: IUser = {
-        authUid: authUser.uid,
-        fullname: fullname.trim(),
-        email: email.trim(),
+        authUid: newAuthUser.uid,
+        fullname: safeFullname,
+        email: safeEmail,
         role: normalizedRole,
         active: true,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -573,10 +753,10 @@ export const createUser = onRequest(USER_CONFIG, async (request, response) => {
 
       await firestore
         .collection(DatabaseTableKeys.Users)
-        .doc(authUser.uid)
+        .doc(newAuthUser.uid)
         .set(userDoc);
 
-      await auth.setCustomUserClaims(authUser.uid, {
+      await auth.setCustomUserClaims(newAuthUser.uid, {
         role: normalizedRole,
         active: true,
       });
@@ -585,7 +765,7 @@ export const createUser = onRequest(USER_CONFIG, async (request, response) => {
         {
           action: "user.create",
           targetType: "user",
-          targetId: authUser.uid,
+          targetId: newAuthUser.uid,
           metadata: { email: userDoc.email, fullname: userDoc.fullname },
         },
         context
@@ -601,7 +781,7 @@ export const createUser = onRequest(USER_CONFIG, async (request, response) => {
            <p>Recomendamos alterar a senha após o primeiro acesso.</p>`
       );
 
-      response.status(201).send({ uid: authUser.uid });
+      response.status(201).send({ uid: newAuthUser.uid });
     } catch (error) {
       console.error("Erro ao criar usuário:", error);
       response.status(500).send("Erro ao criar usuário.");
@@ -637,12 +817,8 @@ export const createNewMember = onRequest(
           return;
         }
 
-        const existing = await findUserByNormalized(
-          fullname.trim(),
-          email.trim()
-        );
-
-        if (existing) {
+        const matches = await findUsersByEmailNormalized(email.trim());
+        if (matches.length > 0) {
           response.status(409).send("Usuário já existe.");
           return;
         }
@@ -785,12 +961,8 @@ export const submitMemberForm = onRequest(
           return;
         }
 
-        const existing = await findUserByNormalized(
-          normalizedFullname,
-          normalizedEmail
-        );
-
-        if (existing) {
+        const matches = await findUsersByEmailNormalized(normalizedEmail);
+        if (matches.length > 0) {
           response.status(409).send("Usuário já existe.");
           return;
         }
@@ -876,22 +1048,21 @@ export const setUserRole = onRequest(USER_CONFIG, async (request, response) => {
         return;
       }
 
-      const userRef = firestore.collection(DatabaseTableKeys.Users).doc(uid);
-      const userSnap = await userRef.get();
-
-      if (!userSnap.exists) {
+      const userEntry = await getUserDocByUidOrAuthUid(uid);
+      if (!userEntry) {
         response.status(404).send("Usuário não encontrado.");
         return;
       }
 
-      const user = userSnap.data() as IUser;
+      const user = userEntry.data;
 
-      await userRef.update({
+      await userEntry.ref.update({
         role: normalizedRole,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      await auth.setCustomUserClaims(uid, {
+      const authUid = user.authUid || uid;
+      await auth.setCustomUserClaims(authUid, {
         role: normalizedRole,
         active: user.active,
       });
@@ -900,7 +1071,7 @@ export const setUserRole = onRequest(USER_CONFIG, async (request, response) => {
         {
           action: "user.role.update",
           targetType: "user",
-          targetId: uid,
+          targetId: userEntry.id,
           metadata: { role: normalizedRole },
         },
         context
@@ -955,17 +1126,13 @@ export const updateUserProfile = onRequest(
           return;
         }
 
-        const userRef = firestore
-          .collection(DatabaseTableKeys.Users)
-          .doc(targetUid);
-        const userSnap = await userRef.get();
-
-        if (!userSnap.exists) {
+        const userEntry = await getUserDocByUidOrAuthUid(targetUid);
+        if (!userEntry) {
           response.status(404).send("Usuário não encontrado.");
           return;
         }
 
-        const user = userSnap.data() as IUser;
+        const user = userEntry.data;
         const fullname = payload.fullname?.trim() || user.fullname;
         const email = payload.email?.trim() || user.email;
         const { active, role, photo, ...safePayload } = payload;
@@ -1000,20 +1167,27 @@ export const updateUserProfile = onRequest(
           }
         }
 
-        await userRef.update(updatePayload);
+        await userEntry.ref.update(updatePayload);
 
         if (payload.email || payload.fullname) {
-          await auth.updateUser(targetUid, {
-            email,
-            displayName: fullname,
-          });
+          const authUid = user.authUid || targetUid;
+          try {
+            await auth.updateUser(authUid, {
+              email,
+              displayName: fullname,
+            });
+          } catch (error: any) {
+            if (error?.code !== "auth/user-not-found") {
+              throw error;
+            }
+          }
         }
 
         void logAuditEvent(
           {
             action: "user.profile.update",
             targetType: "user",
-            targetId: targetUid,
+            targetId: userEntry.id,
             metadata: { fields: Object.keys(payload || {}) },
           },
           context
@@ -1059,35 +1233,34 @@ export const setUserActive = onRequest(
           return;
         }
 
-        const userRef = firestore.collection(DatabaseTableKeys.Users).doc(uid);
-        const userSnap = await userRef.get();
-
-        if (!userSnap.exists) {
+        const userEntry = await getUserDocByUidOrAuthUid(uid);
+        if (!userEntry) {
           response.status(404).send("Usuário não encontrado.");
           return;
         }
 
-        const user = userSnap.data() as IUser;
+        const user = userEntry.data;
 
-        await userRef.update({
+        await userEntry.ref.update({
           active,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
-        await auth.setCustomUserClaims(uid, {
+        const authUid = user.authUid || uid;
+        await auth.setCustomUserClaims(authUid, {
           role: user.role,
           active,
         });
 
         if (!active) {
-          await auth.revokeRefreshTokens(uid);
+          await auth.revokeRefreshTokens(authUid);
         }
 
         void logAuditEvent(
           {
             action: "user.active.update",
             targetType: "user",
-            targetId: uid,
+            targetId: userEntry.id,
             metadata: { active },
           },
           context
@@ -1153,6 +1326,231 @@ export const getUsers = onRequest(USER_CONFIG, async (request, response) => {
   });
 });
 
+export const getAuthUsers = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "GET") {
+        response.set("Allow", "GET");
+        response.status(405).send("Método não permitido. Use GET.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const [authUsers, firestoreSnap] = await Promise.all([
+          listAllAuthUsers(),
+          firestore.collection(DatabaseTableKeys.Users).get(),
+        ]);
+
+        const firestoreUsers = await Promise.all(
+          firestoreSnap.docs.map(async (doc) => {
+            const data = doc.data() as IUser;
+            const fallbackPhoto =
+              !data.photo && data.photoStoragePath
+                ? await getPhotoUrlFromStoragePath(data.photoStoragePath)
+                : undefined;
+            return {
+              id: doc.id,
+              data: {
+                ...data,
+                photo: data.photo || fallbackPhoto,
+              },
+            };
+          })
+        );
+
+        const byAuthUid = new Map(
+          firestoreUsers.map((user) => [user.data.authUid, user])
+        );
+        const byEmail = new Map(
+          firestoreUsers
+            .filter((user) => user.data.email?.trim())
+            .map((user) => [normalizeComparable(user.data.email), user])
+        );
+
+        const users = authUsers.map((authUser) => {
+          const email = authUser.email?.trim() || "";
+          const normalizedEmail = normalizeComparable(email);
+          const firestoreMatch =
+            byAuthUid.get(authUser.uid) ||
+            (normalizedEmail ? byEmail.get(normalizedEmail) : undefined);
+          const firestoreData = firestoreMatch?.data;
+
+          const claimRole = parseUserRole(authUser.customClaims?.role);
+          const claimActive =
+            typeof authUser.customClaims?.active === "boolean"
+              ? authUser.customClaims.active
+              : undefined;
+
+          const fullname =
+            firestoreData?.fullname ||
+            authUser.displayName?.trim() ||
+            email ||
+            "Usuário";
+          const role = firestoreData?.role ?? claimRole ?? UserRole.Member;
+          const active =
+            typeof firestoreData?.active === "boolean"
+              ? firestoreData.active
+              : typeof claimActive === "boolean"
+              ? claimActive
+              : !authUser.disabled;
+
+          return {
+            ...firestoreData,
+            id: authUser.uid,
+            authUid: authUser.uid,
+            fullname,
+            email: firestoreData?.email || email,
+            role,
+            active,
+          };
+        });
+
+        response.status(200).json(users);
+      } catch (error) {
+        console.error("Erro ao buscar usuários do Auth:", error);
+        response.status(500).send("Erro ao buscar usuários.");
+      }
+    });
+  }
+);
+
+export const getUsersWithoutAuth = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "GET") {
+        response.set("Allow", "GET");
+        response.status(405).send("Método não permitido. Use GET.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const [authUsers, firestoreSnap] = await Promise.all([
+          listAllAuthUsers(),
+          firestore
+            .collection(DatabaseTableKeys.Users)
+            .orderBy("fullname")
+            .get(),
+        ]);
+
+        const authUidSet = new Set(authUsers.map((user) => user.uid));
+        const authEmailSet = new Set(
+          authUsers
+            .map((user) => normalizeComparable(user.email || ""))
+            .filter(Boolean)
+        );
+
+        const users = await Promise.all(
+          firestoreSnap.docs.map(async (doc) => {
+            const data = doc.data() as IUser;
+            const normalizedEmail = normalizeComparable(data.email || "");
+            const hasAuth =
+              (data.authUid && authUidSet.has(data.authUid)) ||
+              (normalizedEmail && authEmailSet.has(normalizedEmail));
+
+            if (hasAuth) {
+              return null;
+            }
+
+            const fallbackPhoto =
+              !data.photo && data.photoStoragePath
+                ? await getPhotoUrlFromStoragePath(data.photoStoragePath)
+                : undefined;
+
+            return {
+              id: doc.id,
+              ...data,
+              photo: data.photo || fallbackPhoto,
+            };
+          })
+        );
+
+        response.status(200).json(users.filter(Boolean));
+      } catch (error) {
+        console.error("Erro ao buscar usuários sem auth:", error);
+        response.status(500).send("Erro ao buscar usuários.");
+      }
+    });
+  }
+);
+
+export const deleteUserDocument = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "DELETE") {
+        response.set("Allow", "DELETE");
+        response.status(405).send("Método não permitido. Use DELETE.");
+        return;
+      }
+
+      const context = await requireAuth(request, response);
+      if (!context || !requireRoles(context, [UserRole.Admin], response)) {
+        return;
+      }
+
+      try {
+        const id = String(request.query?.id || request.body?.id || "").trim();
+
+        if (!id) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        const userRef = firestore.collection(DatabaseTableKeys.Users).doc(id);
+        const userSnap = await userRef.get();
+
+        if (!userSnap.exists) {
+          response.status(404).send("Usuário não encontrado.");
+          return;
+        }
+
+        await userRef.delete();
+
+        void logAuditEvent(
+          {
+            action: "user.delete",
+            targetType: "user",
+            targetId: id,
+          },
+          context
+        );
+
+        response.status(200).send();
+      } catch (error) {
+        console.error("Erro ao excluir usuário:", error);
+        response.status(500).send("Erro ao excluir usuário.");
+      }
+    });
+  }
+);
+
 export const getUserProfile = onRequest(
   USER_CONFIG,
   async (request, response) => {
@@ -1181,17 +1579,13 @@ export const getUserProfile = onRequest(
       }
 
       try {
-        const userRef = firestore
-          .collection(DatabaseTableKeys.Users)
-          .doc(context.uid);
-        const userSnap = await userRef.get();
-
-        if (!userSnap.exists) {
+        const userEntry = await getUserDocByUidOrAuthUid(context.uid);
+        if (!userEntry) {
           response.status(404).send("Usuário não encontrado.");
           return;
         }
 
-        const user = userSnap.data() as IUser;
+        const user = userEntry.data;
         const fallbackPhoto =
           !user.photo && user.photoStoragePath
             ? await getPhotoUrlFromStoragePath(user.photoStoragePath)
@@ -1199,7 +1593,7 @@ export const getUserProfile = onRequest(
 
         response.status(200).json({
           user: {
-            id: userSnap.id,
+            id: userEntry.id,
             ...user,
             photo: user.photo || fallbackPhoto,
           },

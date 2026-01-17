@@ -9,8 +9,10 @@ import { getAuditLogs } from "@/services/auditService";
 import { getStorageImages } from "@/services/storageServices";
 import {
   getAccessRequests,
+  getAuthUsers,
   getUserProfile,
   getUsers,
+  getUsersWithoutAuth,
 } from "@/services/userServices";
 import { getVerse } from "@/services/versesServices";
 import { IAlbumWithCursor } from "@/types/store";
@@ -130,6 +132,26 @@ export const useGetUsers = (enabled = true) => {
   return useQuery({
     queryKey: [QueryNames.GetUsers],
     queryFn: async () => await getUsers(),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    enabled,
+  });
+};
+
+export const useGetAuthUsers = (enabled = true) => {
+  return useQuery({
+    queryKey: [QueryNames.GetAuthUsers],
+    queryFn: async () => await getAuthUsers(),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    enabled,
+  });
+};
+
+export const useGetUsersWithoutAuth = (enabled = true) => {
+  return useQuery({
+    queryKey: [QueryNames.GetUsersWithoutAuth],
+    queryFn: async () => await getUsersWithoutAuth(),
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
     enabled,
