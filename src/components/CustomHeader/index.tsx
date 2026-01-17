@@ -151,7 +151,11 @@ export const CustomHeader = () => {
       <div className={styles.overlay} />
       {/* Green accent bar at bottom */}
       <div className={styles.accentBar} />
-      <div className={styles.inner}>
+      <div
+        className={`${styles.inner} ${
+          !isAuthenticated ? styles.innerUnauthenticated : ""
+        }`}
+      >
         <Flex align="center" className={styles.headerFlex}>
           {/* Logo */}
           <Flex
