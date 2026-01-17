@@ -1,4 +1,4 @@
-import { MembershipFields } from "../enums/membership";
+import { MembershipFields } from "@/features/membership/membership.enums";
 
 export interface ICommon {
   id?: string;
