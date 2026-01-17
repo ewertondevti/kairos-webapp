@@ -1,6 +1,6 @@
 "use client";
 
-import { RoutesEnums } from "@/enums/routesEnums";
+import { RoutesEnums } from "@/features/navigation/routes.enums";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Button, Col, Flex, Row, Typography } from "antd";
 import { useRouter } from "next/navigation";

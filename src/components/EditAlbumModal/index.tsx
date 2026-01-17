@@ -1,6 +1,6 @@
 "use client";
 
-import { DatabaseTableKeys } from "@/enums/app";
+import { DatabaseTableKeys } from "@/features/database/database.enums";
 import { useGetListItemSize } from "@/hooks/app";
 import { useUploadQueue } from "@/hooks/useUploadQueue";
 import { UploadQueueItem } from "@/hooks/useUploadQueue.types";

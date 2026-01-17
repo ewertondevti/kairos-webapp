@@ -1,6 +1,6 @@
 "use client";
 
-import { RoutesEnums } from "@/enums/routesEnums";
+import { RoutesEnums } from "@/features/navigation/routes.enums";
 import { useGetAlbumsInfinite } from "@/react-query";
 import { Button, Flex, Spin, Typography } from "antd";
 import { useRouter } from "next/navigation";

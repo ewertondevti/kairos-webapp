@@ -2,7 +2,7 @@
 
 import { PortalNavItem } from "@/config/portalNavigation";
 import { useAuth } from "@/store";
-import { UserRole } from "@/types/user";
+import { UserRole } from "@/features/auth/auth.enums";
 import { HomeOutlined, MenuOutlined } from "@ant-design/icons";
 import {
   Button,

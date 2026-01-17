@@ -3,7 +3,7 @@
 import "../globals.scss";
 import PortalLayout from "@/components/PortalLayout";
 import { mediaPortalNav } from "@/config/portalNavigation";
-import { UserRole } from "@/types/user";
+import { UserRole } from "@/features/auth/auth.enums";
 
 export default function MediaLayout({
   children,

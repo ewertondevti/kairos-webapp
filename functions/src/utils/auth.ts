@@ -1,11 +1,6 @@
-import { auth } from "../firebaseAdmin";
-
-export enum UserRole {
-  Admin = 0,
-  Secretaria = 1,
-  Midia = 2,
-  Member = 3,
-}
+import { DatabaseTableKeys } from "../enums/app";
+import { UserRole } from "../enums/auth";
+import { auth, firestore } from "../firebaseAdmin";
 
 type RequestLike = {
   headers: {
@@ -46,8 +41,72 @@ export const requireAuth = async (
 
   try {
     const decoded = await auth.verifyIdToken(token);
-    const role = decoded.role as UserRole | undefined;
-    const active = Boolean(decoded.active);
+    let role = decoded.role as UserRole | undefined;
+    let active =
+      typeof decoded.active === "boolean" ? decoded.active : undefined;
+    let email = decoded.email;
+
+    const hasValidRole =
+      typeof role === "number" &&
+      [
+        UserRole.Admin,
+        UserRole.Secretaria,
+        UserRole.Midia,
+        UserRole.Member,
+      ].includes(role);
+
+    const hasActiveClaim = typeof active === "boolean";
+
+    if (!hasValidRole || !hasActiveClaim) {
+      try {
+        const userSnap = await firestore
+          .collection(DatabaseTableKeys.Users)
+          .doc(decoded.uid)
+          .get();
+
+        if (userSnap.exists) {
+          const userData = userSnap.data() as {
+            role?: UserRole;
+            active?: boolean;
+            email?: string;
+          };
+          const roleFromDb = userData.role;
+          const activeFromDb = userData.active;
+
+          if (
+            typeof roleFromDb === "number" &&
+            [
+              UserRole.Admin,
+              UserRole.Secretaria,
+              UserRole.Midia,
+              UserRole.Member,
+            ].includes(roleFromDb)
+          ) {
+            role = roleFromDb;
+          }
+
+          if (typeof activeFromDb === "boolean") {
+            active = activeFromDb;
+          }
+
+          if (!email && userData.email?.trim()) {
+            email = userData.email.trim();
+          }
+
+          const canPersistClaims =
+            typeof role === "number" && typeof active === "boolean";
+
+          if (canPersistClaims && (!hasValidRole || !hasActiveClaim)) {
+            await auth.setCustomUserClaims(decoded.uid, {
+              role,
+              active,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Falha ao carregar usuário no Firestore:", error);
+      }
+    }
 
     if (
       typeof role !== "number" ||
@@ -56,7 +115,8 @@ export const requireAuth = async (
         UserRole.Secretaria,
         UserRole.Midia,
         UserRole.Member,
-      ].includes(role)
+      ].includes(role) ||
+      typeof active !== "boolean"
     ) {
       response.status(403).send("Permissão insuficiente.");
       return null;
@@ -66,7 +126,7 @@ export const requireAuth = async (
       uid: decoded.uid,
       role,
       active,
-      email: decoded.email,
+      email,
     };
   } catch (error) {
     console.error("Falha ao validar token:", error);

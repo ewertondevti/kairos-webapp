@@ -1,4 +1,4 @@
-import { MembershipFields } from "@/enums/membership";
+import { MembershipFields } from "@/features/membership/membership.enums";
 import { dateInputFormat, disabledDate } from "@/utils/app";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import {

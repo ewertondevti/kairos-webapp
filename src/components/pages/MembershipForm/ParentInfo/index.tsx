@@ -1,4 +1,7 @@
-import { MaritalStatusEnum, MembershipFields } from "@/enums/membership";
+import {
+  MaritalStatusEnum,
+  MembershipFields,
+} from "@/features/membership/membership.enums";
 import { dateInputFormat, disabledDate } from "@/utils/app";
 import { Col, DatePicker, Divider, Form, Input, Row } from "antd";
 import Title from "antd/es/typography/Title";

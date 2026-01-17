@@ -1,4 +1,4 @@
-import { DatabaseTableKeys } from "@/enums/app";
+import { DatabaseTableKeys } from "@/features/database/database.enums";
 import { UploadCommonResponse } from "@/types/event";
 import axios from "axios";
 import { UploadProps } from "antd";

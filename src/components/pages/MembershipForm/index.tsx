@@ -1,6 +1,6 @@
 "use client";
 
-import { MembershipFields } from "@/enums/membership";
+import { MembershipFields } from "@/features/membership/membership.enums";
 import { logAuditEvent } from "@/services/auditService";
 import { updateUserProfile } from "@/services/userServices";
 import { MembershipValues } from "@/types/membership";

@@ -1,5 +1,6 @@
 import { User } from "firebase/auth";
-import { UserProfile, UserRole } from "@/types/user";
+import { UserRole } from "@/features/auth/auth.enums";
+import { UserProfile } from "@/types/user";
 
 export type LoginFormType = {
   email: string;

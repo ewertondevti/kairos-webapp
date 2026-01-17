@@ -3,7 +3,7 @@ import {
   GenderEnum,
   MaritalStatusEnum,
   MembershipFields,
-} from "@/enums/membership";
+} from "@/features/membership/membership.enums";
 import { beforeUpload, convertFileToBase64 } from "@/helpers/app";
 import { IMemberPhoto } from "@/types/store";
 import {

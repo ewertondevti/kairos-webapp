@@ -1,8 +1,8 @@
 "use client";
 
-import { RoutesEnums } from "@/enums/routesEnums";
+import { UserRole } from "@/features/auth/auth.enums";
+import { RoutesEnums } from "@/features/navigation/routes.enums";
 import { useAuth } from "@/store";
-import { UserRole } from "@/types/user";
 import { MenuOutlined } from "@ant-design/icons";
 import { Button, Drawer, Flex, Layout, Menu, Typography } from "antd";
 import Image from "next/image";

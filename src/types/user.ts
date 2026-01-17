@@ -1,9 +1,4 @@
-export enum UserRole {
-  Admin = 0,
-  Secretaria = 1,
-  Midia = 2,
-  Member = 3,
-}
+import { UserRole } from "@/features/auth/auth.enums";
 
 export type MemberChild = {
   name: string;

@@ -5,7 +5,7 @@ import { CreateAlbumModal } from "@/components/pages/Management/CreateAlbumModal
 import { useGetAlbumsInfinite } from "@/react-query";
 import { useAuth } from "@/store";
 import { MediaAlbumSummary } from "@/types/media";
-import { UserRole } from "@/types/user";
+import { UserRole } from "@/features/auth/auth.enums";
 import {
   AppstoreOutlined,
   UnorderedListOutlined,

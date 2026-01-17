@@ -64,4 +64,5 @@ export const mapWithConcurrency = async <T, R>(
   return results;
 };
 
-export {requireAuth, requireRoles, AuthContext, UserRole} from "./auth";
+export {requireAuth, requireRoles, AuthContext} from "./auth";
+export {UserRole} from "../enums/auth";
