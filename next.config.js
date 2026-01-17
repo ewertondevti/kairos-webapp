@@ -2,6 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
+    formats: ["image/avif", "image/webp"],
+    domains: [
+      "kairos-portugal.com",
+      "www.kairos-portugal.com",
+      "kairos-webapp-4de65.web.app",
+      "kairos-webapp-4de65.firebaseapp.com",
+      "localhost",
+    ],
     remotePatterns: [
       {
         protocol: "https",
