@@ -1,6 +1,7 @@
 "use client";
 
 import { firebaseAuth } from "@/firebase";
+import { formatPersonName, personNameRules } from "@/utils/app";
 import { logAuditEvent } from "@/services/auditService";
 import { requestAccess, syncUserClaims } from "@/services/userServices";
 import { UserRole } from "@/features/auth/auth.enums";
@@ -364,7 +365,13 @@ export default function LoginPage() {
           <Form.Item
             name="fullname"
             label="Nome completo"
-            rules={[{ required: true, message: "Informe seu nome completo." }]}
+            rules={[
+              { required: true, message: "Informe seu nome completo." },
+              ...personNameRules,
+            ]}
+            getValueFromEvent={(event) =>
+              formatPersonName(event?.target?.value ?? "")
+            }
           >
             <Input placeholder="Nome completo" />
           </Form.Item>

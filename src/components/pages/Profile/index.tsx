@@ -207,9 +207,12 @@ export const ProfilePage = () => {
               initialValues={{ [MembershipFields.Children]: [] }}
             >
               <Card>
-                <PersonalInfo />
+                <PersonalInfo requiredFields={[MembershipFields.Fullname]} />
                 <ParentInfo />
-                <EcclesiasticalInfo churchRoleOptions={churchRoleOptions} />
+                <EcclesiasticalInfo
+                  churchRoleOptions={churchRoleOptions}
+                  requireChurchRole={false}
+                />
 
                 <Flex justify="flex-end">
                   <Button

@@ -20,6 +20,7 @@ import {
 import { createAuditLog, getAuditLogs } from "./controllers/auditController";
 import {
   createNewMember,
+  submitMemberForm,
   createUser,
   getUserProfile,
   getUsers,
@@ -39,6 +40,7 @@ export {
   createAlbum,
   createEvents,
   createNewMember,
+  submitMemberForm,
   createUser,
   deleteAlbum,
   deleteEvents,

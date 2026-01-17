@@ -2,7 +2,12 @@ import {
   MaritalStatusEnum,
   MembershipFields,
 } from "@/features/membership/membership.enums";
-import { dateInputFormat, disabledDate } from "@/utils/app";
+import {
+  dateInputFormat,
+  disabledDate,
+  formatPersonName,
+  personNameRules,
+} from "@/utils/app";
 import { Col, DatePicker, Divider, Form, Input, Row } from "antd";
 import Title from "antd/es/typography/Title";
 import styles from "./ParentInfo.module.scss";
@@ -33,7 +38,14 @@ export const ParentInfo = () => {
 
       <Row gutter={10}>
         <Col span={24}>
-          <Form.Item name={MembershipFields.FatherName} label="Nome do pai">
+          <Form.Item
+            name={MembershipFields.FatherName}
+            label="Nome do pai"
+            rules={personNameRules}
+            getValueFromEvent={(event) =>
+              formatPersonName(event?.target?.value ?? "")
+            }
+          >
             <Input placeholder="Nome completo do pai..." />
           </Form.Item>
         </Col>
@@ -41,7 +53,14 @@ export const ParentInfo = () => {
 
       <Row gutter={10}>
         <Col span={24}>
-          <Form.Item name={MembershipFields.MotherName} label="Nome da mãe">
+          <Form.Item
+            name={MembershipFields.MotherName}
+            label="Nome da mãe"
+            rules={personNameRules}
+            getValueFromEvent={(event) =>
+              formatPersonName(event?.target?.value ?? "")
+            }
+          >
             <Input placeholder="Nome completo da mãe..." />
           </Form.Item>
         </Col>
@@ -53,6 +72,10 @@ export const ParentInfo = () => {
             <Form.Item
               name={MembershipFields.SpouseName}
               label="Nome do cônjuge"
+              rules={personNameRules}
+              getValueFromEvent={(event) =>
+                formatPersonName(event?.target?.value ?? "")
+              }
             >
               <Input placeholder="Nome completo do conjuge..." />
             </Form.Item>

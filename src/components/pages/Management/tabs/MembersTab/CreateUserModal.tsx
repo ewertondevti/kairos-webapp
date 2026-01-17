@@ -1,5 +1,6 @@
 import { CreateFormValues } from "@/components/pages/Management/tabs/MembersTab/types";
 import { UserRole } from "@/features/auth/auth.enums";
+import { formatPersonName, personNameRules } from "@/utils/app";
 import { Alert, Form, Input, Modal, Select } from "antd";
 import type { FormInstance } from "antd/es/form";
 
@@ -45,7 +46,13 @@ export const CreateUserModal = ({
         <Form.Item
           name="fullname"
           label="Nome completo"
-          rules={[{ required: true, message: "Informe o nome." }]}
+          rules={[
+            { required: true, message: "Informe o nome." },
+            ...personNameRules,
+          ]}
+          getValueFromEvent={(event) =>
+            formatPersonName(event?.target?.value ?? "")
+          }
         >
           <Input placeholder="Nome completo" />
         </Form.Item>

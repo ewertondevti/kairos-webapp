@@ -9,7 +9,9 @@ import { IMemberPhoto } from "@/types/store";
 import {
   dateInputFormat,
   disabledDate,
+  formatPersonName,
   formatPostalCode,
+  personNameRules,
   postalCodeRegex,
   requiredRules,
 } from "@/utils/app";
@@ -35,6 +37,10 @@ import { RcFile, UploadProps } from "antd/es/upload";
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./PersonalInfo.module.scss";
+
+type PersonalInfoProps = {
+  requiredFields?: MembershipFields[];
+};
 
 const toStringValue = (value: unknown) => {
   if (value === undefined || value === null) {
@@ -131,8 +137,15 @@ const selectFilterOption = (
     .toLowerCase()
     .includes(input.toLowerCase());
 
-export const PersonalInfo = () => {
+export const PersonalInfo = ({ requiredFields }: PersonalInfoProps) => {
   const form = Form.useFormInstance();
+  const isRequiredField = (field: MembershipFields) =>
+    !requiredFields || requiredFields.includes(field);
+  const getRequiredRules = (field: MembershipFields) =>
+    isRequiredField(field) ? requiredRules : undefined;
+  const emailRules = isRequiredField(MembershipFields.Email)
+    ? [...requiredRules, { type: "email", message: "Email inválido." }]
+    : [{ type: "email", message: "Email inválido." }];
 
   const photoValue = Form.useWatch(MembershipFields.Photo, form);
   const postalCodeValue = Form.useWatch(MembershipFields.PostalCode, form);
@@ -534,7 +547,14 @@ export const PersonalInfo = () => {
             <Form.Item
               name={MembershipFields.Fullname}
               label="Nome"
-              rules={requiredRules}
+              rules={
+                isRequiredField(MembershipFields.Fullname)
+                  ? [...requiredRules, ...personNameRules]
+                  : personNameRules
+              }
+              getValueFromEvent={(event) =>
+                formatPersonName(event?.target?.value ?? "")
+              }
             >
               <Input placeholder="Nome completo..." />
             </Form.Item>
@@ -544,7 +564,7 @@ export const PersonalInfo = () => {
             <Form.Item
               name={MembershipFields.BirthDate}
               label="Data de nascimento"
-              rules={requiredRules}
+              rules={getRequiredRules(MembershipFields.BirthDate)}
             >
               <DatePicker
                 disabledDate={disabledDate}
@@ -558,10 +578,7 @@ export const PersonalInfo = () => {
             <Form.Item
               name={MembershipFields.Email}
               label="Email"
-              rules={[
-                ...requiredRules,
-                { type: "email", message: "Email inválido." },
-              ]}
+              rules={emailRules}
             >
               <Input placeholder="email@dominio.com" type="email" />
             </Form.Item>
@@ -571,7 +588,7 @@ export const PersonalInfo = () => {
             <Form.Item
               name={MembershipFields.Gender}
               label="Sexo"
-              rules={requiredRules}
+              rules={getRequiredRules(MembershipFields.Gender)}
             >
               <Select placeholder="Selecione o sexo" options={genderOptions} />
             </Form.Item>
@@ -581,7 +598,7 @@ export const PersonalInfo = () => {
             <Form.Item
               name={MembershipFields.MaritalStatus}
               label="Estado civil"
-              rules={requiredRules}
+              rules={getRequiredRules(MembershipFields.MaritalStatus)}
             >
               <Select
                 placeholder="Selecione seu estado civil"
@@ -599,7 +616,9 @@ export const PersonalInfo = () => {
                 formatPostalCode(event?.target?.value ?? "")
               }
               rules={[
-                ...requiredRules,
+                ...(isRequiredField(MembershipFields.PostalCode)
+                  ? requiredRules
+                  : []),
                 () => ({
                   validator(_, value: string) {
                     if (!value) {
@@ -668,7 +687,7 @@ export const PersonalInfo = () => {
         <Form.Item
           name={MembershipFields.Address}
           label="Morada"
-          rules={requiredRules}
+          rules={getRequiredRules(MembershipFields.Address)}
         >
           {addressOptions.length > 1 ? (
             <Select
@@ -690,7 +709,7 @@ export const PersonalInfo = () => {
         <Form.Item
           name={MembershipFields.AddressNumber}
           label="Número"
-          rules={requiredRules}
+          rules={getRequiredRules(MembershipFields.AddressNumber)}
         >
           <Input placeholder="Ex: 123" />
         </Form.Item>
@@ -712,7 +731,7 @@ export const PersonalInfo = () => {
         <Form.Item
           name={MembershipFields.State}
           label="Distrito"
-          rules={requiredRules}
+          rules={getRequiredRules(MembershipFields.State)}
         >
           {districtOptions.length > 1 ? (
             <Select
@@ -735,7 +754,7 @@ export const PersonalInfo = () => {
         <Form.Item
           name={MembershipFields.County}
           label="Concelho"
-          rules={requiredRules}
+          rules={getRequiredRules(MembershipFields.County)}
         >
           {countyOptions.length > 1 ? (
             <Select
@@ -757,7 +776,7 @@ export const PersonalInfo = () => {
         <Form.Item
           name={MembershipFields.City}
           label="Freguesia"
-          rules={requiredRules}
+          rules={getRequiredRules(MembershipFields.City)}
         >
           {parishOptions.length > 1 ? (
             <Select

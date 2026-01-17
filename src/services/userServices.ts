@@ -2,6 +2,7 @@ import axios from "axios";
 import { getAuthHeaders } from "./authHeaders";
 import { UserRole } from "@/features/auth/auth.enums";
 import { UserProfile } from "@/types/user";
+import { MembershipSubmissionPayload } from "@/types/membership";
 
 export type RequestAccessPayload = {
   fullname: string;
@@ -70,6 +71,13 @@ export const deleteAccessRequest = async (id: string) => {
 export const createUser = async (payload: CreateUserPayload) => {
   const headers = await getAuthHeaders();
   const response = await axios.post("/api/users", payload, { headers });
+  return response.data;
+};
+
+export const submitMembershipForm = async (
+  payload: MembershipSubmissionPayload
+) => {
+  const response = await axios.post("/api/membership", { payload });
   return response.data;
 };
 

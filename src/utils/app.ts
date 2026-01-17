@@ -76,3 +76,52 @@ export const formatPostalCode = (value?: string) => {
   }
   return `${digits.slice(0, 4)}-${digits.slice(4)}`;
 };
+
+const normalizeWhitespace = (value?: string) => {
+  if (!value) return value;
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length ? normalized : "";
+};
+
+const formatNameChunk = (value: string) => {
+  if (!value) return value;
+  const normalized = value.toLowerCase();
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
+};
+
+export const formatPersonName = (value?: string) => {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return normalized;
+  return normalized
+    .split(" ")
+    .map((chunk) =>
+      chunk
+        .split(/(['-])/)
+        .map((part) =>
+          part === "-" || part === "'" ? part : formatNameChunk(part)
+        )
+        .join("")
+    )
+    .join(" ");
+};
+
+const getPersonNameParts = (value?: string) => {
+  const formatted = formatPersonName(value);
+  if (!formatted) return [];
+  return formatted.split(" ").filter(Boolean);
+};
+
+export const personNameRules: NonNullable<FormItemProps["rules"]> = [
+  () => ({
+    validator(_, value: string) {
+      if (!value || !String(value).trim()) {
+        return Promise.resolve();
+      }
+      const parts = getPersonNameParts(value);
+      if (parts.length >= 2) {
+        return Promise.resolve();
+      }
+      return Promise.reject("Informe pelo menos dois nomes.");
+    },
+  }),
+];

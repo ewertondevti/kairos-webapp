@@ -1,5 +1,6 @@
 import { MembershipFields } from "@/features/membership/membership.enums";
 import { Dayjs } from "dayjs";
+import { MemberPayload } from "./store";
 import { MemberChild } from "./user";
 import { IMemberPhoto } from "./store";
 
@@ -41,6 +42,8 @@ export interface MembershipValues {
   [MembershipFields.BelongsTo]?: string;
   [MembershipFields.IsActive]?: boolean;
 }
+
+export type MembershipSubmissionPayload = MemberPayload;
 
 export interface IPostalCode {
   ID: number;

@@ -734,6 +734,121 @@ export const createNewMember = onRequest(
   }
 );
 
+export const submitMemberForm = onRequest(
+  USER_CONFIG,
+  async (request, response) => {
+    corsHandler(request, response, async () => {
+      if (request.method === "OPTIONS") {
+        response.status(204).send();
+        return;
+      }
+
+      if (request.method !== "POST") {
+        response.set("Allow", "POST");
+        response.status(405).send("Método não permitido. Use POST.");
+        return;
+      }
+
+      try {
+        const { payload } = request.body || {};
+        const normalizedPayload =
+          payload && typeof payload === "object" ? payload : request.body || {};
+
+        const {
+          fullname,
+          email,
+          role,
+          active,
+          authUid,
+          photo,
+          photoStoragePath,
+          createdAt,
+          updatedAt,
+          createdBy,
+          isActive,
+          ...safePayload
+        } = normalizedPayload as Record<string, unknown>;
+        void role;
+        void active;
+        void authUid;
+        void photoStoragePath;
+        void createdAt;
+        void updatedAt;
+        void createdBy;
+        void isActive;
+
+        const normalizedFullname = String(fullname ?? "").trim();
+        const normalizedEmail = String(email ?? "").trim();
+
+        if (!normalizedFullname || !normalizedEmail) {
+          response.status(400).send("Dados incompletos ou inválidos!");
+          return;
+        }
+
+        const existing = await findUserByNormalized(
+          normalizedFullname,
+          normalizedEmail
+        );
+
+        if (existing) {
+          response.status(409).send("Usuário já existe.");
+          return;
+        }
+
+        const userRef = firestore.collection(DatabaseTableKeys.Users).doc();
+
+        const userDoc: IUser = {
+          authUid: userRef.id,
+          fullname: normalizedFullname,
+          email: normalizedEmail,
+          role: UserRole.Member,
+          active: false,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdBy: normalizedEmail,
+          ...safePayload,
+        };
+
+        if (isPhotoPayload(photo)) {
+          const uploadedPhoto = await uploadUserPhoto(photo, userRef.id);
+          if (uploadedPhoto) {
+            userDoc.photo = uploadedPhoto.url;
+            userDoc.photoStoragePath = uploadedPhoto.storagePath;
+          }
+        } else if (typeof photo === "string" && photo.trim()) {
+          if (photo.startsWith("data:image/")) {
+            const uploadedPhoto = await uploadUserPhoto(
+              { file: photo, filename: "profile" },
+              userRef.id
+            );
+            if (uploadedPhoto) {
+              userDoc.photo = uploadedPhoto.url;
+              userDoc.photoStoragePath = uploadedPhoto.storagePath;
+            }
+          } else if (isRemotePhotoUrl(photo)) {
+            userDoc.photo = photo;
+          }
+        }
+
+        await userRef.set(userDoc);
+
+        void logAuditEvent({
+          action: "member.public.submit",
+          targetType: "user",
+          targetId: userRef.id,
+          metadata: { email: userDoc.email, fullname: userDoc.fullname },
+          actor: { email: userDoc.email },
+        });
+
+        response.status(201).send({ uid: userRef.id });
+      } catch (error) {
+        console.error("Erro ao enviar ficha:", error);
+        response.status(500).send("Erro ao enviar ficha.");
+      }
+    });
+  }
+);
+
 export const setUserRole = onRequest(USER_CONFIG, async (request, response) => {
   corsHandler(request, response, async () => {
     if (request.method === "OPTIONS") {

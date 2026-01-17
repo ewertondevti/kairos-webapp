@@ -1,17 +1,24 @@
 import { churchRoleOptions as defaultChurchRoleOptions } from "@/constants/churchRoles";
 import { MembershipFields } from "@/features/membership/membership.enums";
-import { dateInputFormat, disabledDate } from "@/utils/app";
+import {
+  dateInputFormat,
+  disabledDate,
+  formatPersonName,
+  personNameRules,
+} from "@/utils/app";
 import { Col, DatePicker, Divider, Form, Input, Row, Select } from "antd";
 import Title from "antd/es/typography/Title";
 import styles from "./EcclesiasticalInfo.module.scss";
 
 type EcclesiasticalInfoProps = {
   showChurchRole?: boolean;
+  requireChurchRole?: boolean;
   churchRoleOptions?: { label: string; value: string }[];
 };
 
 export const EcclesiasticalInfo = ({
   showChurchRole = true,
+  requireChurchRole = true,
   churchRoleOptions,
 }: EcclesiasticalInfoProps) => {
   const roleOptions = churchRoleOptions ?? defaultChurchRoleOptions;
@@ -58,6 +65,10 @@ export const EcclesiasticalInfo = ({
           <Form.Item
             name={MembershipFields.BaptizedPastor}
             label="Pastor que batizou"
+            rules={personNameRules}
+            getValueFromEvent={(event) =>
+              formatPersonName(event?.target?.value ?? "")
+            }
           >
             <Input placeholder="Nome do pastor que batizou..." />
           </Form.Item>
@@ -87,7 +98,11 @@ export const EcclesiasticalInfo = ({
             <Form.Item
               name={MembershipFields.ChurchRole}
               label="Cargo na igreja"
-              rules={[{ required: true, message: "Selecione o cargo." }]}
+              rules={
+                requireChurchRole
+                  ? [{ required: true, message: "Selecione o cargo." }]
+                  : undefined
+              }
             >
               <Select options={roleOptions} placeholder="Selecione o cargo" />
             </Form.Item>

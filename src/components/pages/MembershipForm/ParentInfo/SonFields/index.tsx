@@ -1,5 +1,10 @@
 import { MembershipFields } from "@/features/membership/membership.enums";
-import { dateInputFormat, disabledDate } from "@/utils/app";
+import {
+  dateInputFormat,
+  disabledDate,
+  formatPersonName,
+  personNameRules,
+} from "@/utils/app";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   Button,
@@ -38,7 +43,11 @@ export const SonFields = () => {
                       message:
                         "Adicione o nome completo do filho ou remova este campo.",
                     },
+                    ...personNameRules,
                   ]}
+                  getValueFromEvent={(event) =>
+                    formatPersonName(event?.target?.value ?? "")
+                  }
                 >
                   <Input placeholder="Nome completo do filho..." />
                 </Form.Item>

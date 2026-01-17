@@ -1,8 +1,9 @@
 "use client";
 
 import { MembershipFields } from "@/features/membership/membership.enums";
+import { firebaseAuth } from "@/firebase";
 import { logAuditEvent } from "@/services/auditService";
-import { updateUserProfile } from "@/services/userServices";
+import { submitMembershipForm } from "@/services/userServices";
 import { MembershipValues } from "@/types/membership";
 import { MemberPayload } from "@/types/store";
 import {
@@ -42,14 +43,16 @@ export const MembershipForm = () => {
       ),
     };
 
-    updateUserProfile(payload)
+    submitMembershipForm(payload)
       .then(() => {
-        message.success("Dados atualizados com sucesso!");
-        void logAuditEvent({
-          action: "member.self.update",
-          targetType: "user",
-          metadata: { fields: Object.keys(values) },
-        });
+        message.success("Dados enviados com sucesso!");
+        if (firebaseAuth.currentUser) {
+          void logAuditEvent({
+            action: "member.self.update",
+            targetType: "user",
+            metadata: { fields: Object.keys(values) },
+          });
+        }
       })
       .catch((error) => {
         console.error(error);
