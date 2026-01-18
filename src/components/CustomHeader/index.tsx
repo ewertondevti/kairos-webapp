@@ -151,11 +151,7 @@ export const CustomHeader = () => {
       <div className={styles.overlay} />
       {/* Green accent bar at bottom */}
       <div className={styles.accentBar} />
-      <div
-        className={`${styles.inner} ${
-          !isAuthenticated ? styles.innerUnauthenticated : ""
-        }`}
-      >
+      <div className={styles.inner}>
         <Flex align="center" className={styles.headerFlex}>
           {/* Logo */}
           <Flex
@@ -166,7 +162,7 @@ export const CustomHeader = () => {
             role="button"
             tabIndex={0}
             aria-label="Voltar para a página inicial"
-            className={`${styles.logoContainer} logo-container`}
+            className={`${styles.logoContainer} logo-container flex-1`}
           >
             <div className={styles.logoCircle}>
               {/* Outer black ring with green accent */}
